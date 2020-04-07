@@ -1,0 +1,6 @@
+vendor/
+.idea/
+composer.phar
+.phpunit.result.cache
+coverage.xml
+clover.xml

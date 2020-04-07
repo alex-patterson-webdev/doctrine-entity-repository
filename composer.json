@@ -1,0 +1,39 @@
+{
+  "name": "alex-patterson-webdev/doctrine-entity-repository",
+  "version": "1.0.0",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "authors": [
+    {
+      "name": "Alex Patterson",
+      "email": "alex.patterson.webdev@gmail.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.2",
+    "doctrine/orm" : "^2.7",
+    "alex-patterson-webdev/factory" : "dev-master"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.5",
+    "phpunit/phpunit": "^8"
+  },
+  "autoload": {
+    "psr-4": {
+      "Arp\\DoctrineEntityRepository\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ArpTest\\DoctrineEntityRepository\\": "test/phpunit"
+    }
+  },
+  "scripts": {
+    "test": "phpunit --coverage-clover=coverage.xml"
+  },
+  "config": {
+    "preferred-install": "dist",
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}
