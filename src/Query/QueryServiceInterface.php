@@ -6,6 +6,7 @@ namespace Arp\DoctrineEntityRepository\Query;
 
 use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -48,4 +49,15 @@ interface QueryServiceInterface
      * @throws QueryServiceException
      */
     public function findMany(array $criteria, array $options = []);
+
+    /**
+     * Return a new query builder instance.
+     *
+     * @param string|null $alias The optional query builder alias.
+     *
+     * @return QueryBuilder
+     */
+    public function createQueryBuilder(string $alias = null): QueryBuilder;
+
+
 }

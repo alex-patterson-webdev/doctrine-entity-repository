@@ -11,10 +11,11 @@
   ],
   "require": {
     "php": ">=7.2",
-    "doctrine/orm" : "^2.7",
-    "alex-patterson-webdev/entity" : "dev-master",
-    "alex-patterson-webdev/factory" : "*",
-    "alex-patterson-webdev/event-dispatcher" : "dev-master"
+    "alex-patterson-webdev/entity": "dev-master",
+    "alex-patterson-webdev/event-dispatcher": "^0.1",
+    "alex-patterson-webdev/date-time": "dev-master",
+    "alex-patterson-webdev/factory": "*",
+    "doctrine/orm": "^2.7"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.5",

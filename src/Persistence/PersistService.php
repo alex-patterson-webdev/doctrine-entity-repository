@@ -170,7 +170,11 @@ class PersistService implements PersistServiceInterface
             $this->entityManager->persist($entity);
         } catch (\Throwable $e) {
             throw new PersistServiceException(
-                sprintf('The persist operation failed for entity \'%s\' : %s', $this->entityName, $e->getMessage()),
+                sprintf(
+                    'The persist operation failed for entity \'%s\' : %s',
+                    $this->getEntityName(),
+                    $e->getMessage()
+                ),
                 $e->getCode(),
                 $e
             );
@@ -191,7 +195,11 @@ class PersistService implements PersistServiceInterface
             $this->entityManager->flush($entityOrCollection);
         } catch (\Throwable $e) {
             throw new PersistServiceException(
-                sprintf('The flush operation failed for entity \'%s\' : %s', $this->entityName, $e->getMessage()),
+                sprintf(
+                    'The flush operation failed for entity \'%s\' : %s',
+                    $this->getEntityName(),
+                    $e->getMessage()
+                ),
                 $e->getCode(),
                 $e
             );
@@ -213,7 +221,11 @@ class PersistService implements PersistServiceInterface
             $this->entityManager->clear($entityName);
         } catch (\Throwable $e) {
             throw new PersistServiceException(
-                sprintf('The flush operation failed for entity \'%s\' : %s', $this->entityName, $e->getMessage()),
+                sprintf(
+                    'The flush operation failed for entity \'%s\' : %s',
+                    $this->getEntityName(),
+                    $e->getMessage()
+                ),
                 $e->getCode(),
                 $e
             );
@@ -229,7 +241,7 @@ class PersistService implements PersistServiceInterface
             $this->entityManager->beginTransaction();
         } catch (\Throwable $e) {
             throw new PersistServiceException(
-                sprintf('Failed to begin transaction : %s', $e->getMessage()),
+                sprintf('Failed to start transaction : %s', $e->getMessage()),
                 $e->getCode(),
                 $e
             );

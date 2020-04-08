@@ -52,7 +52,7 @@ class QueryService implements QueryServiceInterface
      *
      * @return QueryBuilder
      */
-    protected function createQueryBuilder(string $alias = null): QueryBuilder
+    public function createQueryBuilder(string $alias = null): QueryBuilder
     {
         $queryBuilder = $this->entityManager->createQueryBuilder();
 
@@ -106,7 +106,15 @@ class QueryService implements QueryServiceInterface
         }
 
         try {
-            return $this->prepareQuery($queryOrBuilder, $options)->execute();
+            $query = $this->prepareQuery($queryOrBuilder, $options);
+
+            if (isset($options['log_sql']) && true === $options['log_sql']) {
+                $this->logger->debug(
+                    sprintf('Executing SQL : %s', $query->getSQL()),
+                    $query->getParameters()->toArray()
+                );
+            }
+            return $query->execute();
         } catch (\Throwable $e) {
             $message = sprintf('Failed to execute query : %s', $e->getMessage());
 
@@ -198,6 +206,20 @@ class QueryService implements QueryServiceInterface
 
             throw new QueryServiceException($message, $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Return the result set count.
+     *
+     * @param array $criteria
+     *
+     * @return mixed
+     */
+    public function count(array $criteria)
+    {
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+
+        return $unitOfWork->getEntityPersister($this->entityName)->count($criteria);
     }
 
     /**
