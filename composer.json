@@ -12,7 +12,9 @@
   "require": {
     "php": ">=7.2",
     "doctrine/orm" : "^2.7",
-    "alex-patterson-webdev/entity" : "dev-master"
+    "alex-patterson-webdev/entity" : "dev-master",
+    "alex-patterson-webdev/factory" : "*",
+    "alex-patterson-webdev/event-dispatcher" : "dev-master"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.5",

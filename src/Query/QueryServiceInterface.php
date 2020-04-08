@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 
 /**
@@ -22,7 +23,7 @@ interface QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    public function findOneById($id, array $options = []) :?EntityInterface;
+    public function findOneById($id, array $options = []): ?EntityInterface;
 
     /**
      * Find a single entity matching the provided criteria.
@@ -34,7 +35,7 @@ interface QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    public function findOne(array $criteria, array $options = []) :?EntityInterface;
+    public function findOne(array $criteria, array $options = []): ?EntityInterface;
 
     /**
      * Find a collection of entities that match the provided criteria.
@@ -47,5 +48,4 @@ interface QueryServiceInterface
      * @throws QueryServiceException
      */
     public function findMany(array $criteria, array $options = []);
-
 }

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence;
 
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
 use Arp\Entity\EntityInterface;
-use Arp\Entity\Repository\Persistence\Exception\PersistServiceException;
-use Arp\Entity\Repository\TransactionServiceInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -14,6 +13,13 @@ use Arp\Entity\Repository\TransactionServiceInterface;
  */
 interface PersistServiceInterface extends TransactionServiceInterface
 {
+    /**
+     * Return the full qualified class name of the entity.
+     *
+     * @return string
+     */
+    public function getEntityName(): string;
+
     /**
      * Create or update a entity instance.
      *
@@ -27,16 +33,14 @@ interface PersistServiceInterface extends TransactionServiceInterface
     public function save(EntityInterface $entity, array $options = []): EntityInterface;
 
     /**
-     * Persist the entity instance.
+     * Schedule the entity for insertion.
      *
-     * @param EntityInterface $entity  The entity that should be persisted.
-     * @param array           $options The optional persist options.
+     * @param EntityInterface $entity
+     * @param array           $options
      *
-     * @return EntityInterface
-     *
-     * @throws PersistServiceException If the persist cannot be performed.
+     * @throws PersistServiceException
      */
-    public function persist(EntityInterface $entity, array $options = []): EntityInterface;
+    public function persist(EntityInterface $entity, array $options = []): void;
 
     /**
      * Delete an entity instance.
@@ -51,14 +55,12 @@ interface PersistServiceInterface extends TransactionServiceInterface
     public function delete(EntityInterface $entity, array $options = []): bool;
 
     /**
-     * Flush the database changes.
+     * Perform a flush of the unit of work.
      *
-     * @param EntityInterface[]|EntityInterface|null $entityOrCollection
+     * @param EntityInterface|EntityInterface[]|null $entityOrCollection
      * @param array                                  $options
      *
-     * @return void
-     *
-     * @throws PersistServiceException  If the entity or collection cannot be flushed.
+     * @throws PersistServiceException
      */
     public function flush($entityOrCollection = null, array $options = []): void;
 
@@ -71,5 +73,5 @@ interface PersistServiceInterface extends TransactionServiceInterface
      *
      * @throws PersistServiceException
      */
-    public function clear(string $entityName = null): void;
+    public function clear(?string $entityName): void;
 }

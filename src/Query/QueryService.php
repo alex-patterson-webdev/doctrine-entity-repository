@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManager;
@@ -66,7 +67,7 @@ class QueryService implements QueryServiceInterface
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
      * @param array                      $options
      *
-     * @return EntityInterface|null
+     * @return EntityInterface|null|array
      *
      * @throws QueryServiceException
      */
@@ -107,11 +108,11 @@ class QueryService implements QueryServiceInterface
         try {
             return $this->prepareQuery($queryOrBuilder, $options)->execute();
         } catch (\Throwable $e) {
-            throw new QueryServiceException(
-                sprintf('Failed to execute query : %s', $e->getMessage()),
-                $e->getCode(),
-                $e
-            );
+            $message = sprintf('Failed to execute query : %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
         }
     }
 
@@ -142,20 +143,30 @@ class QueryService implements QueryServiceInterface
      */
     public function findOne(array $criteria, array $options = []): ?EntityInterface
     {
-        $orderBy = isset($options['order_by']) ? $options['order_by'] : null;
+        if (isset($options['entity']) && $options['entity'] instanceof $this->entityName) {
+            $entity = $options['entity'];
+        }
 
         try {
             $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
 
-            $entity = $persister->load($criteria, null, null, [], null, 1, $orderBy);
+            $entity = $persister->load(
+                $criteria,
+                $entity ?? null,
+                $options['association'] ?? null,
+                $options['hints'] ?? [],
+                $options['lock_mode'] ?? null,
+                1,
+                $options['order_by'] ?? null
+            );
 
             return ($entity instanceof EntityInterface) ? $entity : null;
         } catch (\Throwable $e) {
-            throw new QueryServiceException(
-                sprintf('Failed to execute \'findOne\' query: %s', $e->getMessage()),
-                $e->getCode(),
-                $e
-            );
+            $message = sprintf('Failed to execute \'findOne\' query: %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
         }
     }
 
@@ -165,26 +176,27 @@ class QueryService implements QueryServiceInterface
      * @param array $criteria The search criteria that should be matched on.
      * @param array $options  The optional query options.
      *
-     * @return EntityInterface[]
+     * @return EntityInterface[]|\Traversable
      *
      * @throws QueryServiceException
      */
     public function findMany(array $criteria, array $options = [])
     {
-        $orderBy = $options['order_by'] ?? null;
-        $limit = $options['limit'] ?? null;
-        $offset = $options['offset'] ?? null;
-
         try {
             $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
 
-            return $persister->loadAll($criteria, $orderBy, $limit, $offset);
-        } catch (\Throwable $e) {
-            throw new QueryServiceException(
-                sprintf('Failed to execute \'findMany\' : %s', $e->getMessage()),
-                $e->getCode(),
-                $e
+            return $persister->loadAll(
+                $criteria,
+                $options['order_by'] ?? null,
+                $options['limit'] ?? null,
+                $options['offset'] ?? null
             );
+        } catch (\Throwable $e) {
+            $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
         }
     }
 
@@ -198,64 +210,53 @@ class QueryService implements QueryServiceInterface
      */
     protected function prepareQueryBuilder(QueryBuilder $queryBuilder, array $options = []): QueryBuilder
     {
-        foreach ($options as $name => $value) {
-            switch ($name) {
-                case 'first_result' :
-                    $queryBuilder->setFirstResult($value);
-                break;
-
-                case 'max_results' :
-                    $queryBuilder->setMaxResults($value);
-                break;
-            }
+        if (array_key_exists('first_result', $options)) {
+            $queryBuilder->setFirstResult($options['first_result']);
         }
+
+        if (array_key_exists('max_results', $options)) {
+            $queryBuilder->setMaxResults($options['max_results']);
+        }
+
         return $queryBuilder;
     }
 
     /**
      * Prepare the provided query by setting the $options.
      *
+     * @todo Reduce cyclomatic complexity
+     *
      * @param AbstractQuery $query
      * @param array         $options
      *
      * @return AbstractQuery
      */
-    protected function prepareQuery(AbstractQuery $query, array $options = [])
+    protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {
-        foreach ($options as $name => $value) {
-            switch ($name) {
-                case 'params' :
-                    $query->setParameters($value);
-                break;
+        if (array_key_exists('params', $options)) {
+            $query->setParameters($options['params']);
+        }
 
-                case 'hydration_mode' :
-                    $query->setHydrationMode($value);
-                break;
+        if (array_key_exists('hydration_mode', $options)) {
+            $query->setHydrationMode($options['hydration_mode']);
+        }
 
-                case 'hydration_cache_profile' :
-                    $query->setHydrationCacheProfile($value);
-                break;
+        if (array_key_exists('hydration_cache_profile', $options)) {
+            $query->setHydrationCacheProfile($options['hydration_cache_profile']);
+        }
 
-                case 'result_set_mapping' :
-                    $query->setResultSetMapping($value);
-                break;
+        if (array_key_exists('result_set_mapping', $options)) {
+            $query->setResultSetMapping($options['result_set_mapping']);
+        }
 
-                case 'hints' :
-                    if (is_array($value)) {
-                        foreach ($value as $hint => $hintValue) {
-                            $query->setHint($hint, $hintValue);
-                        }
-                    }
-                break;
+        if (isset($options['hints']) && is_array($options['hints'])) {
+            foreach ($options['hints'] as $hint => $hintValue) {
+                $query->setHint($hint, $hintValue);
             }
+        }
 
-            if ($query instanceof Query) {
-                switch ($name) {
-                    case 'dql' :
-                        $query->setDQL($value);
-                    break;
-                }
-            }
+        if (! empty($options['dql']) && $query instanceof Query) {
+            $query->setDQL($options['dql']);
         }
 
         return $query;

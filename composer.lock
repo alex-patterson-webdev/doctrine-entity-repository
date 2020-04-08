@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "779359e351afc2337d05e3498d4ffbfd",
+    "content-hash": "2a0edae980d481bb7431f1b4a2aa3702",
     "packages": [
         {
             "name": "alex-patterson-webdev/entity",
@@ -42,6 +42,73 @@
             ],
             "description": "Shared library of domain objects, traits and interfaces",
             "time": "2020-04-08T10:31:52+00:00"
+        },
+        {
+            "name": "alex-patterson-webdev/event-dispatcher",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alex-patterson-webdev/event-dispatcher.git",
+                "reference": "118d9bb512b6ac8fcdb3fa5c73345df301532de8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/event-dispatcher/zipball/118d9bb512b6ac8fcdb3fa5c73345df301532de8",
+                "reference": "118d9bb512b6ac8fcdb3fa5c73345df301532de8",
+                "shasum": ""
+            },
+            "require": {
+                "alex-patterson-webdev/factory": "^1",
+                "php": ">=7.2",
+                "psr/event-dispatcher": "^1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8",
+                "squizlabs/php_codesniffer": "^3.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arp\\EventDispatcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "time": "2020-03-26T00:06:45+00:00"
+        },
+        {
+            "name": "alex-patterson-webdev/factory",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alex-patterson-webdev/factory.git",
+                "reference": "59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/factory/zipball/59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0",
+                "reference": "59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^8"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Arp\\Factory\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Alex Patterson",
+                    "email": "alex.patterson.webdev@gmail.com"
+                }
+            ],
+            "time": "2020-02-09T19:17:23+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -1071,6 +1138,52 @@
                 "psr"
             ],
             "time": "2017-02-14T16:28:37+00:00"
+        },
+        {
+            "name": "psr/event-dispatcher",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/event-dispatcher.git",
+                "reference": "dbefd12671e8a14ec7f180cab83036ed26714bb0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/event-dispatcher/zipball/dbefd12671e8a14ec7f180cab83036ed26714bb0",
+                "reference": "dbefd12671e8a14ec7f180cab83036ed26714bb0",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\EventDispatcher\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Standard interfaces for event handling.",
+            "keywords": [
+                "events",
+                "psr",
+                "psr-14"
+            ],
+            "time": "2019-01-08T18:20:26+00:00"
         },
         {
             "name": "symfony/console",
@@ -2906,7 +3019,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "alex-patterson-webdev/entity": 20
+        "alex-patterson-webdev/entity": 20,
+        "alex-patterson-webdev/event-dispatcher": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
