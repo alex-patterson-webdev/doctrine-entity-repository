@@ -8,7 +8,7 @@ use Doctrine\Persistence\ObjectRepository;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
- * @package Entity\src\Repository
+ * @package Arp\DoctrineEntityRepository
  */
 interface EntityRepositoryInterface extends ObjectRepository
 {
