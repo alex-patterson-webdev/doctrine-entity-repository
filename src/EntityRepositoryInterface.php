@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
+use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
+use Arp\Entity\EntityInterface;
 use Doctrine\Persistence\ObjectRepository;
 
 /**
@@ -12,5 +14,15 @@ use Doctrine\Persistence\ObjectRepository;
  */
 interface EntityRepositoryInterface extends ObjectRepository
 {
-
+    /**
+     * Save a single entity instance.
+     *
+     * @param EntityInterface $entity
+     * @param array           $options
+     *
+     * @return EntityInterface
+     *
+     * @throws EntityRepositoryException
+     */
+    public function save(EntityInterface $entity, array $options = []): EntityInterface;
 }

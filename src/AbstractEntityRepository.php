@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository;
 
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
@@ -138,6 +139,27 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 ),
                 $e->getCode(),
                 $e
+            );
+        }
+    }
+
+    /**
+     * Save a single entity instance.
+     *
+     * @param EntityInterface $entity
+     * @param array           $options
+     *
+     * @return EntityInterface
+     *
+     * @throws EntityRepositoryException
+     */
+    public function save(EntityInterface $entity, array $options = []): EntityInterface
+    {
+        try {
+            return $this->persistService->save($entity, $options);
+        } catch (PersistServiceException $e) {
+            throw new EntityRepositoryException(
+                sprintf('Failed to save entity : %s', $e->getMessage())
             );
         }
     }

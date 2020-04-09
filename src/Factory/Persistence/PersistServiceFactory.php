@@ -83,10 +83,6 @@ final class PersistServiceFactory implements FactoryInterface
             );
         }
 
-        $eventDispatcher = new EventDispatcher();
-
-
-
         return new PersistService($classMetadata, $eventDispatcher, $logger);
     }
 }
