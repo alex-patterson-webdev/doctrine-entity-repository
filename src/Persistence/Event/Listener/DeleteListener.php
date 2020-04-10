@@ -22,6 +22,16 @@ final class DeleteListener implements AggregateListenerInterface
     private $logger;
 
     /**
+     * @var FlushListener
+     */
+    private $flushListener;
+
+    /**
+     * @var ClearListener
+     */
+    private $clearListener;
+
+    /**
      * @var HardDeleteListener|null
      */
     private $hardDeleteListener;
@@ -33,15 +43,21 @@ final class DeleteListener implements AggregateListenerInterface
 
     /**
      * @param LoggerInterface $logger
+     * @param FlushListener $flushListener
+     * @param ClearListener $clearListener
      * @param HardDeleteListener|null $hardDeleteListener
      * @param SoftDeleteListener|null $softDeleteListener
      */
     public function __construct(
         LoggerInterface $logger,
+        FlushListener $flushListener,
+        ClearListener $clearListener,
         ?HardDeleteListener $hardDeleteListener,
         ?SoftDeleteListener $softDeleteListener
     ) {
         $this->logger = $logger;
+        $this->flushListener = $flushListener;
+        $this->clearListener = $clearListener;
         $this->hardDeleteListener = $hardDeleteListener;
         $this->softDeleteListener = $softDeleteListener;
     }
@@ -64,12 +80,15 @@ final class DeleteListener implements AggregateListenerInterface
 
         if (null !== $this->softDeleteListener) {
             $this->logger->info('Registering soft delete listener');
-            $collection->addListenerForEvent(EntityEventName::DELETE, $this->softDeleteListener, 5);
+            $collection->addListenerForEvent(EntityEventName::DELETE, $this->softDeleteListener, 1);
         }
 
         if (null !== $this->hardDeleteListener) {
             $this->logger->info('Registering hard delete listener');
-            $collection->addListenerForEvent(EntityEventName::DELETE, $this->hardDeleteListener, 5);
+            $collection->addListenerForEvent(EntityEventName::DELETE, $this->hardDeleteListener, 1);
         }
+
+        $collection->addListenerForEvent(EntityEventName::DELETE, $this->flushListener, 1);
+        $collection->addListenerForEvent(EntityEventName::DELETE, $this->clearListener, -1);
     }
 }

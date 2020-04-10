@@ -68,9 +68,9 @@ final class DateTimeListenerTest extends TestCase
         $collection->expects($this->exactly(3))
             ->method('addListenerForEvent')
             ->withConsecutive(
-                [EntityEventName::CREATE, $this->dateCreatedListener, 5],
-                [EntityEventName::UPDATE, $this->dateUpdateListener, 5],
-                [EntityEventName::DELETE, $this->dateDeletedListener, 5]
+                [EntityEventName::CREATE, $this->dateCreatedListener, 10],
+                [EntityEventName::UPDATE, $this->dateUpdateListener, 10],
+                [EntityEventName::DELETE, $this->dateDeletedListener, 10]
             );
 
         $listener->addListeners($collection);
