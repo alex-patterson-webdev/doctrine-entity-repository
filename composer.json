@@ -35,7 +35,14 @@
   "scripts": {
     "test": "phpunit --coverage-clover=coverage.xml"
   },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://dev.satis.local"
+    }
+  ],
   "config": {
+    "secure-http": false,
     "preferred-install": "dist",
     "optimize-autoloader": true,
     "sort-packages": true

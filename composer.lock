@@ -4,28 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f474668b0f08cfad80adf01b8abd4fa9",
+    "content-hash": "c1b22695483fb4ed32ce03ae52906c86",
     "packages": [
         {
             "name": "alex-patterson-webdev/date-time",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/alex-patterson-webdev/date-time.git",
-                "reference": "28aefb65e0236d9ba84867d8152144aea0504a1d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/alex-patterson-webdev/date-time/zipball/28aefb65e0236d9ba84867d8152144aea0504a1d",
-                "reference": "28aefb65e0236d9ba84867d8152144aea0504a1d",
-                "shasum": ""
+                "url": "/home/alexp/www/git/alex-patterson-webdev/date-time.git",
+                "reference": "6df699d9c40aaf46dd3844bfa71c08729b5f7f93"
             },
             "require": {
                 "alex-patterson-webdev/factory": "^1",
                 "php": ">=7.2"
             },
             "require-dev": {
-                "phpmd/phpmd": "^2.8",
                 "phpunit/phpunit": "^8",
                 "squizlabs/php_codesniffer": "^3.5"
             },
@@ -35,28 +28,31 @@
                     "Arp\\DateTime\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "ArpTest\\DateTime\\": "test/phpunit/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "phpunit --coverage-clover=coverage.xml"
+                ]
+            },
             "authors": [
                 {
                     "name": "Alex Patterson",
                     "email": "alex.patterson.webdev@gmail.com"
                 }
             ],
-            "time": "2020-03-18T16:44:59+00:00"
+            "time": "2020-03-15T23:33:16+00:00"
         },
         {
             "name": "alex-patterson-webdev/entity",
             "version": "dev-feature/1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/alex-patterson-webdev/entity.git",
-                "reference": "df2ac2eaf83583acc1e84ac4c67ac55483ffa7d1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/alex-patterson-webdev/entity/zipball/df2ac2eaf83583acc1e84ac4c67ac55483ffa7d1",
-                "reference": "df2ac2eaf83583acc1e84ac4c67ac55483ffa7d1",
-                "shasum": ""
+                "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
+                "reference": "38cd5a761a1de70d69f51e3a82adf53247b02974"
             },
             "require": {
                 "php": ">=7.2"
@@ -71,7 +67,16 @@
                     "Arp\\Entity\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "ArpTest\\Entity\\": "test/phpunit"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "phpunit --coverage-clover=coverage.xml"
+                ]
+            },
             "authors": [
                 {
                     "name": "Alex Patterson",
@@ -79,7 +84,7 @@
                 }
             ],
             "description": "Shared library of domain objects, traits and interfaces",
-            "time": "2020-04-08T22:42:33+00:00"
+            "time": "2020-04-10T18:10:57+00:00"
         },
         {
             "name": "alex-patterson-webdev/event-dispatcher",
@@ -124,7 +129,7 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/alex-patterson-webdev/factory.git",
+                "url": "/home/alexp/www/git/alex-patterson-webdev/factory.git",
                 "reference": "59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0"
             },
             "dist": {
