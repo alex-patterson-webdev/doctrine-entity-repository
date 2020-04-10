@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DateTime\Exception\DateTimeFactoryException;
+use Arp\DoctrineEntityRepository\Constant\DeleteMode;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DateDeletedAwareInterface;
 
@@ -21,14 +23,18 @@ class DateDeletedListener extends AbstractDateTimeListener
      */
     public function __invoke(EntityEvent $event)
     {
+        $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::HARD);
         $entity = $event->getEntity();
 
-        if (null === $entity || ! $entity instanceof DateDeletedAwareInterface) {
+        if (
+            null === $entity
+            || (! $entity instanceof DateDeletedAwareInterface)
+            || DeleteMode::HARD === $deleteMode
+        ) {
             return;
         }
 
         $dateDeleted = $this->dateTimeFactory->createDateTime();
-
         $entity->setDateDeleted($dateDeleted);
 
         $this->logger->info(
