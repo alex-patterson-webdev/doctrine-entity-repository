@@ -12,6 +12,7 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DeleteAwareInterface;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -130,6 +131,158 @@ final class HardDeleteListenerTest extends TestCase
 
         // We should not be calling on the entity manager.
         $event->expects($this->never())->method('getEntityManager');
+
+        $listener($event);
+    }
+
+    /**
+     * Assert that if the EntityManager::remove() call throws an exception the __invoke() method will catch, log
+     * and rethrow a PersistenceException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\HardDeleteListener::__invoke
+     *
+     * @throws PersistenceException
+     */
+    public function testInvokeWillCatchEntityManagerRemoveExceptionsAndRethrowAsPersistenceException(): void
+    {
+        $listener = new HardDeleteListener($this->logger);
+
+        /** @var EntityEvent|MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $event->expects($this->once())
+            ->method('getEntity')
+            ->willReturn($entity);
+
+        $entityName = EntityInterface::class;
+
+        $event->expects($this->once())
+            ->method('getEntityName')
+            ->willReturn($entityName);
+
+        $entityId = '12345';
+
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
+
+        $deleteMode = DeleteMode::HARD;
+
+        /** @var ParametersInterface|MockObject $params */
+        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+
+        $event->expects($this->once())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $params->expects($this->once())
+            ->method('getParam')
+            ->with(EntityEventOption::DELETE_MODE, DeleteMode::HARD)
+            ->willReturn($deleteMode);
+
+        /** @var EntityManagerInterface|MockObject $entityManager */
+        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+
+        $event->expects($this->once())
+            ->method('getEntityManager')
+            ->willReturn($entityManager);
+
+        $exceptionMessage = 'This is a test exception message';
+        $exceptionCode = 456;
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
+
+        $entityManager->expects($this->once())
+            ->method('remove')
+            ->willThrowException($exception);
+
+        $exceptionMessage = sprintf(
+            'Failed to perform delete of entity \'%s::%s\' : %s',
+            $entityName,
+            $entityId,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($exceptionMessage, ['exception' => $exception, 'entity_name' => $entityName, 'id' => $entityId]);
+
+        $this->expectExceptionMessage(PersistenceException::class);
+        $this->expectExceptionMessage($exceptionMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $listener($event);
+    }
+
+    /**
+     * Assert that the __invoke() method will perform the entity manager remove if the delete mdoe is set to HARD.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\HardDeleteListener::__invoke
+     *
+     * @throws PersistenceException
+     */
+    public function testInvokeWillDeleteEntityWithDeleteModeHard(): void
+    {
+        $listener = new HardDeleteListener($this->logger);
+
+        /** @var EntityEvent|MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $event->expects($this->once())
+            ->method('getEntity')
+            ->willReturn($entity);
+
+        $entityName = EntityInterface::class;
+
+        $event->expects($this->once())
+            ->method('getEntityName')
+            ->willReturn($entityName);
+
+        $entityId = '12345';
+
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
+
+        $deleteMode = DeleteMode::HARD;
+
+        /** @var ParametersInterface|MockObject $params */
+        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+
+        $event->expects($this->once())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $params->expects($this->once())
+            ->method('getParam')
+            ->with(EntityEventOption::DELETE_MODE, DeleteMode::HARD)
+            ->willReturn($deleteMode);
+
+        /** @var EntityManagerInterface|MockObject $entityManager */
+        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+
+        $event->expects($this->once())
+            ->method('getEntityManager')
+            ->willReturn($entityManager);
+
+        $entityManager->expects($this->once())
+            ->method('remove')
+            ->with($entity);
+
+        $this->logger->expects($this->once())
+            ->method('info')
+            ->with(
+                sprintf(
+                    'Successfully performed the hard delete operation for entity \'%s::%s\'',
+                    $entityName,
+                    $entityId
+                )
+            );
 
         $listener($event);
     }

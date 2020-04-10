@@ -62,20 +62,6 @@ final class HardDeleteListener
                     $entityId
                 )
             );
-
-            if (!$entity instanceof DeleteAwareInterface) {
-                $errorMessage = sprintf(
-                    'The delete mode \'%s\' is invalid for entity \'%s\'; The entity must implement interface \'%s\'',
-                    $deleteMode,
-                    $entityName,
-                    DeleteAwareInterface::class
-                );
-
-                $this->logger->warning($errorMessage);
-
-                throw new PersistenceException($errorMessage);
-            }
-
             return;
         }
 
