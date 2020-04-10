@@ -64,12 +64,12 @@ final class DeleteListener implements AggregateListenerInterface
 
         if (null !== $this->softDeleteListener) {
             $this->logger->info('Registering soft delete listener');
-            $collection->addListenerForEvent(EntityEventName::DELETE, $this->softDeleteListener, 1);
+            $collection->addListenerForEvent(EntityEventName::DELETE, $this->softDeleteListener, 5);
         }
 
         if (null !== $this->hardDeleteListener) {
             $this->logger->info('Registering hard delete listener');
-            $collection->addListenerForEvent(EntityEventName::DELETE, $this->hardDeleteListener, 1);
+            $collection->addListenerForEvent(EntityEventName::DELETE, $this->hardDeleteListener, 5);
         }
     }
 }

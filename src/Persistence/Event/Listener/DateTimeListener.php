@@ -54,8 +54,8 @@ final class DateTimeListener implements AggregateListenerInterface
      */
     public function addListeners(AddListenerAwareInterface $collection): void
     {
-        $collection->addListenerForEvent(EntityEventName::CREATE, $this->dateCreatedListener, 5);
-        $collection->addListenerForEvent(EntityEventName::UPDATE, $this->dateUpdatedListener, 5);
-        $collection->addListenerForEvent(EntityEventName::DELETE, $this->dateDeletedListener, 5);
+        $collection->addListenerForEvent(EntityEventName::CREATE, $this->dateCreatedListener, 10);
+        $collection->addListenerForEvent(EntityEventName::UPDATE, $this->dateUpdatedListener, 10);
+        $collection->addListenerForEvent(EntityEventName::DELETE, $this->dateDeletedListener, 10);
     }
 }
