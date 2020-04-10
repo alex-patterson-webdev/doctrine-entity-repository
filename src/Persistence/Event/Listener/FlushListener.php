@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DoctrineEntityRepository\Constant\FlushMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Constant\FlushMode;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Psr\Log\LoggerInterface;
 

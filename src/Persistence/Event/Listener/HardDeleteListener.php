@@ -48,9 +48,12 @@ final class HardDeleteListener
         $entityName = $event->getEntityName();
         $entityId = $entity->getId();
 
-        $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE);
+        $deleteMode = $event->getParameters()->getParam(
+            EntityEventOption::DELETE_MODE,
+            ($entity instanceof DeleteAwareInterface ? DeleteMode::SOFT : DeleteMode::HARD)
+        );
 
-        if (DeleteMode::SOFT === $deleteMode) {
+        if (DeleteMode::HARD !== $deleteMode) {
             $this->logger->info(
                 sprintf(
                     'Delete mode \'%s\' detected : Skipping hard delete operations for entity \'%s::%s\'',
