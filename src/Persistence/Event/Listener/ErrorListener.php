@@ -60,7 +60,8 @@ final class ErrorListener implements AggregateListenerInterface
                 $exception->getMessage()
             );
 
-            $event->setException(new PersistenceException($exceptionMessage, $exception->getCode(), $exception));
+            $exception = new PersistenceException($exceptionMessage, $exception->getCode(), $exception);
+            $event->setException($exception);
         }
 
         $this->logger->error($exception->getMessage(), compact('exception'));

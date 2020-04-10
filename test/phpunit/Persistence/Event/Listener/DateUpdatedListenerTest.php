@@ -47,6 +47,4 @@ final class DateUpdatedListenerTest extends TestCase
 
         $this->assertIsCallable($listener);
     }
-
-
 }

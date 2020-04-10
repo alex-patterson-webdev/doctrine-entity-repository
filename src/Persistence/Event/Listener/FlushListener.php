@@ -41,7 +41,7 @@ final class FlushListener
         if (FlushMode::ENABLED !== $flushMode) {
             $this->logger->info(
                 sprintf(
-                    'Skipping flush operations for entity class \'%s\' with mode \'%s\'',
+                    'Skipping flush operations for entity \'%s\' with mode \'%s\'',
                     $entityName,
                     $flushMode
                 )
@@ -49,9 +49,7 @@ final class FlushListener
             return;
         }
 
-        $entityManager = $event->getEntityManager();
-
         $this->logger->info(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
-        $entityManager->flush();
+        $event->getEntityManager()->flush();
     }
 }

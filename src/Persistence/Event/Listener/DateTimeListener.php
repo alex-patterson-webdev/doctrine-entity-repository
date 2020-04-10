@@ -26,13 +26,23 @@ final class DateTimeListener implements AggregateListenerInterface
     private $dateUpdatedListener;
 
     /**
+     * @var DateDeletedListener
+     */
+    private $dateDeletedListener;
+
+    /**
      * @param DateCreatedListener $dateCreatedListener
      * @param DateUpdatedListener $dateUpdatedListener
+     * @param DateDeletedListener $dateDeletedListener
      */
-    public function __construct(DateCreatedListener $dateCreatedListener, DateUpdatedListener $dateUpdatedListener)
-    {
+    public function __construct(
+        DateCreatedListener $dateCreatedListener,
+        DateUpdatedListener $dateUpdatedListener,
+        DateDeletedListener $dateDeletedListener
+    ) {
         $this->dateCreatedListener = $dateCreatedListener;
         $this->dateUpdatedListener = $dateUpdatedListener;
+        $this->dateDeletedListener = $dateDeletedListener;
     }
 
     /**
@@ -44,7 +54,8 @@ final class DateTimeListener implements AggregateListenerInterface
      */
     public function addListeners(AddListenerAwareInterface $collection): void
     {
-        $collection->addListenerForEvent(EntityEventName::CREATE, $this->dateCreatedListener, 1);
-        $collection->addListenerForEvent(EntityEventName::UPDATE, $this->dateUpdatedListener, 1);
+        $collection->addListenerForEvent(EntityEventName::CREATE, $this->dateCreatedListener, 5);
+        $collection->addListenerForEvent(EntityEventName::UPDATE, $this->dateUpdatedListener, 5);
+        $collection->addListenerForEvent(EntityEventName::DELETE, $this->dateDeletedListener, 5);
     }
 }

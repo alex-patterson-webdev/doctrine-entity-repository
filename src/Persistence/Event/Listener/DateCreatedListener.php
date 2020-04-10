@@ -12,7 +12,7 @@ use Arp\Entity\DateCreatedAwareInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class DateCreatedListener extends AbstractDateTimeListener
+class DateCreatedListener extends AbstractDateTimeListener
 {
     /**
      * @param EntityEvent $event

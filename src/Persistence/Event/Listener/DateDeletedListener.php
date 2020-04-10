@@ -12,7 +12,7 @@ use Arp\Entity\DateDeletedAwareInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class DateDeletedListener extends AbstractDateTimeListener
+class DateDeletedListener extends AbstractDateTimeListener
 {
     /**
      * @param EntityEvent $event
