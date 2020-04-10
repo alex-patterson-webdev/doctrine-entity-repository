@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event;
 
-use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event
  */
-class PersistErrorEvent extends AbstractPersistEvent
+class EntityErrorEvent extends AbstractEntityEvent
 {
     /**
      * @var \Throwable
@@ -18,18 +18,20 @@ class PersistErrorEvent extends AbstractPersistEvent
     private $exception;
 
     /**
-     * @param PersistServiceInterface $persistService
-     * @param string                  $eventName
-     * @param \Throwable              $exception
-     * @param array                   $params
+     * @param string                 $eventName
+     * @param string                 $entityName
+     * @param EntityManagerInterface $entityManager
+     * @param \Throwable             $exception
+     * @param array                  $params
      */
     public function __construct(
-        PersistServiceInterface $persistService,
         string $eventName,
+        string $entityName,
+        EntityManagerInterface $entityManager,
         \Throwable $exception,
         array $params = []
     ) {
-        parent::__construct($persistService, $eventName, $params);
+        parent::__construct($eventName, $entityName, $entityManager, $params);
 
         $this->exception = $exception;
     }

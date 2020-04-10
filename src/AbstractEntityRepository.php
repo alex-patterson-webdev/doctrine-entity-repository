@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
+use Arp\DoctrineEntityRepository\Exception\EntityNotFoundException;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
@@ -73,7 +74,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a single entity instance matching the provided $criteria.
      *
-     * @param array $criteria  The entity filter criteria.
+     * @param array $criteria The entity filter criteria.
      *
      * @return EntityInterface|null
      *
@@ -157,9 +158,56 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             return $this->persistService->save($entity, $options);
-        } catch (PersistServiceException $e) {
+        } catch (PersistenceException $e) {
             throw new EntityRepositoryException(
                 sprintf('Failed to save entity : %s', $e->getMessage())
+            );
+        }
+    }
+
+    /**
+     * Delete an entity.
+     *
+     * @param EntityInterface|int|string $entity
+     * @param array                      $options
+     *
+     * @return bool
+     *
+     * @throws EntityRepositoryException
+     */
+    public function delete($entity, array $options = []): bool
+    {
+        if (!is_int($entity) && !is_string($entity) && !$entity instanceof EntityInterface) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'The \'entity\' argument must be \'int\' or an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    EntityInterface::class,
+                    (is_object($entity) ? get_class($entity) : gettype($entity)),
+                    __METHOD__
+                )
+            );
+        }
+
+        if (! is_object($entity)) {
+            $id = $entity;
+            $entity = $this->find($id);
+
+            if (null === $entity) {
+                throw new EntityNotFoundException(
+                    sprintf(
+                        'Unable to delete entity \'%s::%s\' : The entity could not be found',
+                        $this->entityName,
+                        $id
+                    )
+                );
+            }
+        }
+
+        try {
+            return $this->persistService->delete($entity, $options);
+        } catch (PersistenceException $e) {
+            throw new EntityRepositoryException(
+                sprintf('Failed to delete entity : %s', $e->getMessage())
             );
         }
     }
