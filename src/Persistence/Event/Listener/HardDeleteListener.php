@@ -50,15 +50,29 @@ final class HardDeleteListener
 
         $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE);
 
-        if (DeleteMode::SOFT === $deleteMode && $entity instanceof DeleteAwareInterface) {
+        if (DeleteMode::SOFT === $deleteMode) {
             $this->logger->info(
                 sprintf(
-                    '\'%s\' delete mode detected : Skipping hard delete operations for entity \'%s::%s\'',
+                    'Delete mode \'%s\' detected : Skipping hard delete operations for entity \'%s::%s\'',
                     $deleteMode,
                     $entityName,
                     $entityId
                 )
             );
+
+            if (!$entity instanceof DeleteAwareInterface) {
+                $errorMessage = sprintf(
+                    'The delete mode \'%s\' is invalid for entity \'%s\'; The entity must implement interface \'%s\'',
+                    $deleteMode,
+                    $entityName,
+                    DeleteAwareInterface::class
+                );
+
+                $this->logger->warning($errorMessage);
+
+                throw new PersistenceException($errorMessage);
+            }
+
             return;
         }
 
