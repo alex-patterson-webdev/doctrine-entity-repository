@@ -10,6 +10,6 @@ namespace Arp\DoctrineEntityRepository\Constant;
  */
 final class FlushMode
 {
-    public const ENABLED = 'all';
-    public const DISABLED = 'single';
+    public const ENABLED = 'enabled';
+    public const DISABLED = 'disabled';
 }
