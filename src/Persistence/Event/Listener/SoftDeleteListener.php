@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
+use Arp\DoctrineEntityRepository\Constant\DeleteMode;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DeleteAwareInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -14,18 +17,61 @@ use Arp\Entity\DeleteAwareInterface;
 final class SoftDeleteListener
 {
     /**
-     * @param PersistEvent $event
+     * @var LoggerInterface
      */
-    public function __invoke(PersistEvent $event)
+    private $logger;
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function __construct(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+    }
+
+    /**
+     * @param EntityEvent $event
+     */
+    public function __invoke(EntityEvent $event)
     {
         $entity = $event->getEntity();
 
-        if (null === $entity) {
+        if (null === $entity || !$entity instanceof DeleteAwareInterface) {
             return;
         }
 
-        if ($entity instanceof DeleteAwareInterface) {
-            $entity->setDeleted(true);
+        if ($entity->isDeleted()) {
+            $this->logger->info(
+                sprintf(
+                    'Ignoring soft delete operations for already deleted entity \'%s::%s\'',
+                    $event->getEntityName(),
+                    $entity->getId()
+                )
+            );
+            return;
         }
+
+        $persistMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::HARD);
+
+        if (DeleteMode::SOFT !== $persistMode) {
+            $this->logger->info(
+                sprintf(
+                    'Soft deleting has been disabled via configuration option \'%s\'',
+                    EntityEventOption::DELETE_MODE
+                )
+            );
+            return;
+        }
+
+        $this->logger->info(
+            sprintf(
+                'Performing \'%s\' delete for entity \'%s::%s\'',
+                DeleteMode::SOFT,
+                $event->getEntityName(),
+                $entity->getId()
+            )
+        );
+
+        $entity->setDeleted(true);
     }
 }

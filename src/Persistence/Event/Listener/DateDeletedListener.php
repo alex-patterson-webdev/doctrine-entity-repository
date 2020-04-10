@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DateTime\Exception\DateTimeFactoryException;
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DateDeletedAwareInterface;
 
 /**
@@ -15,11 +15,11 @@ use Arp\Entity\DateDeletedAwareInterface;
 final class DateDeletedListener extends AbstractDateTimeListener
 {
     /**
-     * @param PersistEvent $event
+     * @param EntityEvent $event
      *
      * @throws DateTimeFactoryException
      */
-    public function __invoke(PersistEvent $event)
+    public function __invoke(EntityEvent $event)
     {
         $entity = $event->getEntity();
 
