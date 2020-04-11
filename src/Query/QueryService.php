@@ -82,7 +82,7 @@ class QueryService implements QueryServiceInterface
         if (!is_array($result)) {
             return $result;
         }
-        if (count($result) > 2) {
+        if (count($result) > 1) {
             return null;
         }
 
