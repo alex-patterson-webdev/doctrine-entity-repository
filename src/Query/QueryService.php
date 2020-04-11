@@ -71,7 +71,7 @@ class QueryService implements QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    protected function getSingleResultOrNull($queryOrBuilder, array $options = [])
+    public function getSingleResultOrNull($queryOrBuilder, array $options = [])
     {
         return $this->execute($queryOrBuilder, $options);
     }
@@ -86,7 +86,7 @@ class QueryService implements QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    protected function execute($queryOrBuilder, array $options = [])
+    public function execute($queryOrBuilder, array $options = [])
     {
         if ($queryOrBuilder instanceof QueryBuilder) {
             $this->prepareQueryBuilder($queryOrBuilder);
