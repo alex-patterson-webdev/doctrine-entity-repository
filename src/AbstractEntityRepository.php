@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\Exception\EntityNotFoundException;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
@@ -161,6 +164,45 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         } catch (PersistenceException $e) {
             throw new EntityRepositoryException(
                 sprintf('Failed to save entity : %s', $e->getMessage())
+            );
+        }
+    }
+
+    /**
+     * Save a collection of entities in a single transaction.
+     *
+     * @param iterable|EntityInterface[] $collection The collection of entities that should be saved.
+     * @param array                      $options    the optional save options.
+     *
+     * @return iterable
+     *
+     * @throws EntityRepositoryException If the save cannot be completed
+     */
+    public function saveCollection(iterable $collection, array $options = []): iterable
+    {
+        try {
+            $saveOptions = array_replace_recursive(
+                [
+                    EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+                ],
+                $options
+            );
+
+            $this->persistService->beginTransaction();
+
+            $entities = [];
+            foreach ($collection as $entity) {
+                $entities[] = $this->save($entity, $saveOptions);
+            }
+
+            $this->persistService->flush($entities);
+            $this->persistService->commitTransaction();
+        } catch (PersistenceException $e) {
+            throw new EntityRepositoryException(
+                sprintf('Failed to save \'%s\' collection : %s', $this->entityName, $e->getMessage()),
+                $e->getCode(),
+                $e
             );
         }
     }

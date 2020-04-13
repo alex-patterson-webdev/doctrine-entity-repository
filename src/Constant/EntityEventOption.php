@@ -14,4 +14,5 @@ final class EntityEventOption
     public const CLEAR_MODE = 'clear_mode';
     public const PERSIST_MODE = 'persist_mode';
     public const DELETE_MODE = 'delete_mode';
+    public const TRANSACTION_MODE = 'transaction_mode';
 }
