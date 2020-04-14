@@ -128,26 +128,26 @@ final class TransactionListener implements AggregateListenerInterface
     {
         $transactionMode = $event->getParameters()->getParam(EntityEventOption::TRANSACTION_MODE);
 
-        if (TransactionMode::ENABLED !== $transactionMode) {
-            $entityName = $event->getEntityName();
-            $eventName = $event->getEventName();
-            $entity = $event->getEntity();
-
-            $this->logger->info(
-                sprintf(
-                    'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
-                    $eventName,
-                    $methodName,
-                    $entityName,
-                    (isset($entity) ? $entity->getId() : '0'),
-                    $transactionMode
-                ),
-                compact('eventName', 'entityName', 'transactionMode')
-            );
-
-            return false;
+        if (TransactionMode::ENABLED === $transactionMode) {
+            return true;
         }
 
-        return true;
+        $entityName = $event->getEntityName();
+        $eventName = $event->getEventName();
+        $entity = $event->getEntity();
+
+        $this->logger->info(
+            sprintf(
+                'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
+                $eventName,
+                $methodName,
+                $entityName,
+                (isset($entity) ? $entity->getId() : '0'),
+                $transactionMode
+            ),
+            compact('eventName', 'entityName', 'transactionMode')
+        );
+
+        return false;
     }
 }
