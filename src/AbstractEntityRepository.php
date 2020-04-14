@@ -198,6 +198,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             $this->persistService->flush($entities);
             $this->persistService->commitTransaction();
+
+            return $entities;
         } catch (PersistenceException $e) {
             throw new EntityRepositoryException(
                 sprintf('Failed to save \'%s\' collection : %s', $this->entityName, $e->getMessage()),
