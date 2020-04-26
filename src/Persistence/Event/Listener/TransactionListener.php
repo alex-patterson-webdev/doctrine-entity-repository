@@ -7,6 +7,8 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\TransactionMode;
+use Arp\DoctrineEntityRepository\Persistence\Event\AbstractEntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
@@ -97,21 +99,19 @@ final class TransactionListener implements AggregateListenerInterface
     }
 
     /**
-     * @param EntityEvent $event
+     * @param EntityErrorEvent $event
      */
-    public function rollbackTransaction(EntityEvent $event): void
+    public function rollbackTransaction(EntityErrorEvent $event): void
     {
         if (!$this->isEnabled($event, __FUNCTION__)) {
             return;
         }
-        $entity = $event->getEntity();
 
         $this->logger->info(
             sprintf(
-                'Rolling back  \'%s\' transaction for entity \'%s::%s\'',
+                'Rolling back  \'%s\' transaction for entity class \'%s\'',
                 $event->getEventName(),
-                $event->getEntityName(),
-                (isset($entity) ? $entity->getId() : '0')
+                $event->getEntityName()
             )
         );
 
@@ -119,12 +119,12 @@ final class TransactionListener implements AggregateListenerInterface
     }
 
     /**
-     * @param EntityEvent $event
-     * @param string      $methodName
+     * @param AbstractEntityEvent $event
+     * @param string              $methodName
      *
      * @return bool
      */
-    private function isEnabled(EntityEvent $event, string $methodName): bool
+    private function isEnabled(AbstractEntityEvent $event, string $methodName): bool
     {
         $transactionMode = $event->getParameters()->getParam(EntityEventOption::TRANSACTION_MODE);
 
@@ -134,7 +134,7 @@ final class TransactionListener implements AggregateListenerInterface
 
         $entityName = $event->getEntityName();
         $eventName = $event->getEventName();
-        $entity = $event->getEntity();
+        $entity = ($event instanceof EntityEvent) ? $event->getEntity() : null;
 
         $this->logger->info(
             sprintf(
