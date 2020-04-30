@@ -71,7 +71,19 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function find($id): ?EntityInterface
     {
-        return $this->findOneBy(['id' => $id]);
+        try {
+            return $this->queryService->findOneById($id);
+        } catch (\Throwable $e) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'Unable to find entity of type \'%s\' : %s',
+                    $this->entityName,
+                    $e->getMessage()
+                ),
+                $e->getCode(),
+                $e
+            );
+        }
     }
 
     /**
