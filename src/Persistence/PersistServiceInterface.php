@@ -57,12 +57,11 @@ interface PersistServiceInterface extends TransactionServiceInterface
     /**
      * Perform a flush of the unit of work.
      *
-     * @param EntityInterface|EntityInterface[]|null $entityOrCollection
-     * @param array                                  $options
+     * @param array $options
      *
      * @throws PersistenceException
      */
-    public function flush($entityOrCollection = null, array $options = []): void;
+    public function flush(array $options = []): void;
 
     /**
      * Release managed entities from the identity map.
