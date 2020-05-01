@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence;
 
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 
 /**
@@ -28,7 +28,7 @@ interface PersistServiceInterface extends TransactionServiceInterface
      *
      * @return EntityInterface
      *
-     * @throws PersistServiceException  If the entity cannot be saved.
+     * @throws PersistenceException  If the entity cannot be saved.
      */
     public function save(EntityInterface $entity, array $options = []): EntityInterface;
 
@@ -38,7 +38,7 @@ interface PersistServiceInterface extends TransactionServiceInterface
      * @param EntityInterface $entity
      * @param array           $options
      *
-     * @throws PersistServiceException
+     * @throws PersistenceException
      */
     public function persist(EntityInterface $entity, array $options = []): void;
 
@@ -50,7 +50,7 @@ interface PersistServiceInterface extends TransactionServiceInterface
      *
      * @return boolean
      *
-     * @throws PersistServiceException  If the collection cannot be deleted.
+     * @throws PersistenceException  If the collection cannot be deleted.
      */
     public function delete(EntityInterface $entity, array $options = []): bool;
 
@@ -60,18 +60,16 @@ interface PersistServiceInterface extends TransactionServiceInterface
      * @param EntityInterface|EntityInterface[]|null $entityOrCollection
      * @param array                                  $options
      *
-     * @throws PersistServiceException
+     * @throws PersistenceException
      */
     public function flush($entityOrCollection = null, array $options = []): void;
 
     /**
      * Release managed entities from the identity map.
      *
-     * @param string|null $entityName
-     *
      * @return void
      *
-     * @throws PersistServiceException
+     * @throws PersistenceException
      */
-    public function clear(?string $entityName): void;
+    public function clear(): void;
 }

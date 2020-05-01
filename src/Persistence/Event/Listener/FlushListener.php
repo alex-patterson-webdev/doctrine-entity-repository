@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
-use Arp\DoctrineEntityRepository\Constant\PersistEventOption;
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -32,27 +31,25 @@ final class FlushListener
     /**
      * Perform a flush of the current unit of work.
      *
-     * @param PersistEvent $event
-     *
-     * @throws PersistServiceException If the flush operation fails
+     * @param EntityEvent $event
      */
-    public function __invoke(PersistEvent $event): void
+    public function __invoke(EntityEvent $event): void
     {
-        $flushMode = $event->getParameters()->getParam(PersistEventOption::FLUSH_MODE, FlushMode::ALL);
+        $flushMode = $event->getParameters()->getParam(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED);
+        $entityName = $event->getEntityName();
 
-        if (FlushMode::NONE === $flushMode) {
-            $this->logger->info(sprintf('Skipping flush operations with mode \'%s\'', $flushMode));
+        if (FlushMode::ENABLED !== $flushMode) {
+            $this->logger->info(
+                sprintf(
+                    'Skipping flush operations for entity \'%s\' with mode \'%s\'',
+                    $entityName,
+                    $flushMode
+                )
+            );
             return;
         }
 
-        $persistService = $event->getPersistService();
-
-        if (FlushMode::ALL === $flushMode) {
-            $this->logger->info(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
-            $persistService->flush();
-        } elseif (FlushMode::SINGLE === $flushMode) {
-            $this->logger->info(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
-            $persistService->flush($event);
-        }
+        $this->logger->info(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
+        $event->getEntityManager()->flush();
     }
 }

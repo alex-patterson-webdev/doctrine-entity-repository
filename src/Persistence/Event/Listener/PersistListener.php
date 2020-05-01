@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DoctrineEntityRepository\Constant\PersistEventOption;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\PersistMode;
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
+use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -16,22 +17,64 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
 final class PersistListener
 {
     /**
-     * @param PersistEvent $event
-     *
-     * @throws PersistServiceException
+     * @var LoggerInterface
      */
-    public function __invoke(PersistEvent $event): void
+    private $logger;
+
+    /**
+     * @param LoggerInterface $logger
+     */
+    public function __construct(LoggerInterface $logger)
     {
-        if ($event->hasEntity()) {
-            return;
+        $this->logger = $logger;
+    }
+
+    /**
+     * Register the entity for persistence.
+     *
+     * @param EntityEvent $event
+     *
+     * @throws PersistenceException If the entity cannot be found or persisted.
+     */
+    public function __invoke(EntityEvent $event): void
+    {
+        $entityName = $event->getEntityName();
+        $entity = $event->getEntity();
+
+        if (null === $entity) {
+            $errorMessage = sprintf(
+                'Unable to perform entity persist operation for entity of type \'%s\': The entity is null',
+                $entityName
+            );
+
+            $this->logger->error($errorMessage, compact('entityName'));
+
+            throw new PersistenceException($errorMessage);
         }
 
-        $persistMode = $event->getParameters()->getParam(PersistEventOption::PERSIST_MODE, PersistMode::ENABLED);
+        $persistMode = $event->getParameters()->getParam(EntityEventOption::PERSIST_MODE, PersistMode::ENABLED);
 
         if (PersistMode::ENABLED !== $persistMode) {
+            $this->logger->info(
+                sprintf(
+                    'Skipping persist operation for entity \'%s\' with persist mode \'%s\'',
+                    $entityName,
+                    $persistMode
+                ),
+                compact('entityName', 'persistMode')
+            );
             return;
         }
 
-        $event->getPersistService()->persist($event->getEntity());
+        $this->logger->info(
+            sprintf(
+                'Performing persist operation for entity \'%s\' with persist mode \'%s\'',
+                $entityName,
+                $persistMode
+            ),
+            compact('entityName', 'persistMode')
+        );
+
+        $event->getEntityManager()->persist($entity);
     }
 }

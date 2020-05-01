@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\ClearMode;
-use Arp\DoctrineEntityRepository\Constant\PersistEventOption;
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -32,27 +31,30 @@ final class ClearListener
     /**
      * Perform a clear of the current unit of work's identity map.
      *
-     * @param PersistEvent $event
-     *
-     * @throws PersistServiceException If the clear operation fails.
+     * @param EntityEvent $event
      */
-    public function __invoke(PersistEvent $event): void
+    public function __invoke(EntityEvent $event): void
     {
-        $clearMode = $event->getParameters()->getParam(PersistEventOption::CLEAR_MODE, ClearMode::NONE);
+        $clearMode = $event->getParameters()->getParam(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED);
 
-        if (ClearMode::NONE === $clearMode) {
-            $this->logger->info(sprintf('Skipping clear operations with mode \'%s\'', $clearMode));
+        if (ClearMode::ENABLED !== $clearMode) {
+            $this->logger->info(
+                sprintf(
+                    'Clear mode is disabled for entity \'%s\'; skipping entity manager clear operations',
+                    $event->getEntityName()
+                )
+            );
             return;
         }
 
-        $persistService = $event->getPersistService();
+        $this->logger->info(
+            sprintf(
+                'Performing entity manager clear operations for entity class \'%s\'',
+                $event->getEntityName()
+            )
+        );
 
-        if (ClearMode::ALL === $clearMode) {
-            $this->logger->info(sprintf('Performing clear operations with mode \'%s\'', $clearMode));
-            $persistService->clear(null);
-        } elseif (ClearMode::SINGLE === $clearMode) {
-            $this->logger->info(sprintf('Performing clear operations with mode \'%s\'', $clearMode));
-            $persistService->clear($persistService->getEntityName());
-        }
+        $entityManager = $event->getEntityManager();
+        $entityManager->clear();
     }
 }

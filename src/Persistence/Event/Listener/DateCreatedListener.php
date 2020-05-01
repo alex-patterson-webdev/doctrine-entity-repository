@@ -5,35 +5,61 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DateTime\Exception\DateTimeFactoryException;
-use Arp\DoctrineEntityRepository\Persistence\Event\PersistEvent;
+use Arp\DoctrineEntityRepository\Constant\DateCreatedMode;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DateCreatedAwareInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class DateCreatedListener extends AbstractDateTimeListener
+class DateCreatedListener extends AbstractDateTimeListener
 {
     /**
-     * @param PersistEvent $event
+     * @param EntityEvent $event
      *
      * @throws DateTimeFactoryException
      */
-    public function __invoke(PersistEvent $event)
+    public function __invoke(EntityEvent $event)
     {
+        $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
-        if (null === $entity || ! $entity instanceof DateCreatedAwareInterface) {
+        if (!$entity instanceof DateCreatedAwareInterface) {
+            $this->logger->debug(
+                sprintf(
+                    'Ignoring created date operations : \'%s\' does not implement \'%s\'.',
+                    $entityName,
+                    DateCreatedAwareInterface::class
+                )
+            );
             return;
         }
 
-        $dateCreated = $this->dateTimeFactory->createDateTime();
+        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreatedMode::ENABLED);
 
+        if (DateCreatedMode::ENABLED !== $mode) {
+            $this->logger->info(
+                sprintf(
+                    'Ignoring created date operations : \'%s\' has a date create mode set to \'%s\'.',
+                    $entityName,
+                    $mode
+                )
+            );
+            return;
+        }
+
+
+        $dateCreated = $this->dateTimeFactory->createDateTime();
         $entity->setDateCreated($dateCreated);
 
         $this->logger->info(
-            'The \'dateCreated\' property was set to the current date time',
-            compact('entity', 'dateCreated')
+            sprintf(
+                'Setting new created date \'%s\' for entity of type \'%s\'',
+                $dateCreated->format(\DateTime::ATOM),
+                $entityName
+            )
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
+use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
@@ -71,9 +72,21 @@ class QueryService implements QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    protected function getSingleResultOrNull($queryOrBuilder, array $options = [])
+    public function getSingleResultOrNull($queryOrBuilder, array $options = [])
     {
-        return $this->execute($queryOrBuilder, $options);
+        $result = $this->execute($queryOrBuilder, $options);
+
+        if (empty($result)) {
+            return null;
+        }
+        if (!is_array($result)) {
+            return $result;
+        }
+        if (count($result) > 1) {
+            return null;
+        }
+
+        return array_shift($result);
     }
 
     /**
@@ -86,7 +99,7 @@ class QueryService implements QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    protected function execute($queryOrBuilder, array $options = [])
+    public function execute($queryOrBuilder, array $options = [])
     {
         if ($queryOrBuilder instanceof QueryBuilder) {
             $this->prepareQueryBuilder($queryOrBuilder);
@@ -151,21 +164,17 @@ class QueryService implements QueryServiceInterface
      */
     public function findOne(array $criteria, array $options = []): ?EntityInterface
     {
-        if (isset($options['entity']) && $options['entity'] instanceof $this->entityName) {
-            $entity = $options['entity'];
-        }
-
         try {
             $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
 
             $entity = $persister->load(
                 $criteria,
-                $entity ?? null,
-                $options['association'] ?? null,
-                $options['hints'] ?? [],
-                $options['lock_mode'] ?? null,
+                $options[QueryServiceOption::ENTITY] ?? null,
+                $options[QueryServiceOption::ASSOCIATION] ?? null,
+                $options[QueryServiceOption::HINTS] ?? [],
+                $options[QueryServiceOption::LOCK_MODE] ?? null,
                 1,
-                $options['order_by'] ?? null
+                $options[QueryServiceOption::ORDER_BY] ?? null
             );
 
             return ($entity instanceof EntityInterface) ? $entity : null;
@@ -195,9 +204,9 @@ class QueryService implements QueryServiceInterface
 
             return $persister->loadAll(
                 $criteria,
-                $options['order_by'] ?? null,
-                $options['limit'] ?? null,
-                $options['offset'] ?? null
+                $options[QueryServiceOption::ORDER_BY] ?? null,
+                $options[QueryServiceOption::LIMIT] ?? null,
+                $options[QueryServiceOption::OFFSET] ?? null
             );
         } catch (\Throwable $e) {
             $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());
@@ -232,12 +241,12 @@ class QueryService implements QueryServiceInterface
      */
     protected function prepareQueryBuilder(QueryBuilder $queryBuilder, array $options = []): QueryBuilder
     {
-        if (array_key_exists('first_result', $options)) {
-            $queryBuilder->setFirstResult($options['first_result']);
+        if (array_key_exists(QueryServiceOption::FIRST_RESULT, $options)) {
+            $queryBuilder->setFirstResult($options[QueryServiceOption::FIRST_RESULT]);
         }
 
-        if (array_key_exists('max_results', $options)) {
-            $queryBuilder->setMaxResults($options['max_results']);
+        if (array_key_exists(QueryServiceOption::MAX_RESULTS, $options)) {
+            $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
         }
 
         return $queryBuilder;
@@ -252,6 +261,8 @@ class QueryService implements QueryServiceInterface
      * @param array         $options
      *
      * @return AbstractQuery
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {
@@ -259,8 +270,8 @@ class QueryService implements QueryServiceInterface
             $query->setParameters($options['params']);
         }
 
-        if (array_key_exists('hydration_mode', $options)) {
-            $query->setHydrationMode($options['hydration_mode']);
+        if (array_key_exists(QueryServiceOption::HYDRATION_MODE, $options)) {
+            $query->setHydrationMode($options[QueryServiceOption::HYDRATION_MODE]);
         }
 
         if (array_key_exists('hydration_cache_profile', $options)) {
@@ -271,14 +282,14 @@ class QueryService implements QueryServiceInterface
             $query->setResultSetMapping($options['result_set_mapping']);
         }
 
-        if (isset($options['hints']) && is_array($options['hints'])) {
-            foreach ($options['hints'] as $hint => $hintValue) {
+        if (isset($options[QueryServiceOption::HINTS]) && is_array($options[QueryServiceOption::HINTS])) {
+            foreach ($options[QueryServiceOption::HINTS] as $hint => $hintValue) {
                 $query->setHint($hint, $hintValue);
             }
         }
 
-        if (! empty($options['dql']) && $query instanceof Query) {
-            $query->setDQL($options['dql']);
+        if (! empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
+            $query->setDQL($options[QueryServiceOption::DQL]);
         }
 
         return $query;

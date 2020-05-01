@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\TransactionMode;
+use Arp\DoctrineEntityRepository\Exception\EntityNotFoundException;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistServiceException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
@@ -67,13 +71,25 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function find($id): ?EntityInterface
     {
-        return $this->findOneBy(['id' => $id]);
+        try {
+            return $this->queryService->findOneById($id);
+        } catch (\Throwable $e) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'Unable to find entity of type \'%s\' : %s',
+                    $this->entityName,
+                    $e->getMessage()
+                ),
+                $e->getCode(),
+                $e
+            );
+        }
     }
 
     /**
      * Return a single entity instance matching the provided $criteria.
      *
-     * @param array $criteria  The entity filter criteria.
+     * @param array $criteria The entity filter criteria.
      *
      * @return EntityInterface|null
      *
@@ -157,10 +173,103 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             return $this->persistService->save($entity, $options);
-        } catch (PersistServiceException $e) {
+        } catch (PersistenceException $e) {
             throw new EntityRepositoryException(
                 sprintf('Failed to save entity : %s', $e->getMessage())
             );
         }
+    }
+
+    /**
+     * Save a collection of entities in a single transaction.
+     *
+     * @param iterable|EntityInterface[] $collection The collection of entities that should be saved.
+     * @param array                      $options    the optional save options.
+     *
+     * @return iterable
+     *
+     * @throws EntityRepositoryException If the save cannot be completed
+     */
+    public function saveCollection(iterable $collection, array $options = []): iterable
+    {
+        try {
+            $saveOptions = array_replace_recursive(
+                [
+                    EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+                ],
+                $options
+            );
+
+            $this->persistService->beginTransaction();
+
+            $entities = [];
+            foreach ($collection as $entity) {
+                $entities[] = $this->save($entity, $saveOptions);
+            }
+
+            $this->persistService->flush($entities);
+            $this->persistService->commitTransaction();
+
+            return $entities;
+        } catch (PersistenceException $e) {
+            throw new EntityRepositoryException(
+                sprintf('Failed to save \'%s\' collection : %s', $this->entityName, $e->getMessage()),
+                $e->getCode(),
+                $e
+            );
+        }
+    }
+
+    /**
+     * Delete an entity.
+     *
+     * @param EntityInterface|int|string $entity
+     * @param array                      $options
+     *
+     * @return bool
+     *
+     * @throws EntityRepositoryException
+     */
+    public function delete($entity, array $options = []): bool
+    {
+        if (!is_int($entity) && !is_string($entity) && !$entity instanceof EntityInterface) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'The \'entity\' argument must be \'int\' or an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    EntityInterface::class,
+                    (is_object($entity) ? get_class($entity) : gettype($entity)),
+                    __METHOD__
+                )
+            );
+        }
+
+        if (! is_object($entity)) {
+            $id = $entity;
+            $entity = $this->find($id);
+
+            if (null === $entity) {
+                throw new EntityNotFoundException(
+                    sprintf(
+                        'Unable to delete entity \'%s::%s\' : The entity could not be found',
+                        $this->entityName,
+                        $id
+                    )
+                );
+            }
+        }
+
+        try {
+            return $this->persistService->delete($entity, $options);
+        } catch (PersistenceException $e) {
+            throw new EntityRepositoryException(
+                sprintf('Failed to delete entity : %s', $e->getMessage())
+            );
+        }
+    }
+
+    public function clear(): void
+    {
+        $this->persistService->clear();
     }
 }

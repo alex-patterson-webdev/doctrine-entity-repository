@@ -10,7 +10,6 @@ namespace Arp\DoctrineEntityRepository\Constant;
  */
 final class ClearMode
 {
-    public const ALL = 'all';
-    public const SINGLE = 'single';
-    public const NONE = 'NONE';
+    public const ENABLED = 'enabled';
+    public const DISABLED = 'disabled';
 }

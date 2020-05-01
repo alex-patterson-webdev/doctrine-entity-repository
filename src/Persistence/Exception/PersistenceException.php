@@ -8,7 +8,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Exception;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Exception
  */
-class PersistServiceException extends \Exception
+class PersistenceException extends \Exception
 {
 
 }

@@ -6,6 +6,7 @@ namespace Arp\DoctrineEntityRepository\Query;
 
 use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -51,6 +52,16 @@ interface QueryServiceInterface
     public function findMany(array $criteria, array $options = []);
 
     /**
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array                      $options
+     *
+     * @return EntityInterface|null|array
+     *
+     * @throws QueryServiceException
+     */
+    public function getSingleResultOrNull($queryOrBuilder, array $options = []);
+
+    /**
      * Return a new query builder instance.
      *
      * @param string|null $alias The optional query builder alias.
@@ -59,5 +70,24 @@ interface QueryServiceInterface
      */
     public function createQueryBuilder(string $alias = null): QueryBuilder;
 
+    /**
+     * Construct and execute the query.
+     *
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array                      $options
+     *
+     * @return mixed
+     *
+     * @throws QueryServiceException
+     */
+    public function execute($queryOrBuilder, array $options = []);
 
+    /**
+     * Return the result set count.
+     *
+     * @param array $criteria
+     *
+     * @return mixed
+     */
+    public function count(array $criteria);
 }
