@@ -267,4 +267,9 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             );
         }
     }
+
+    public function clear(): void
+    {
+        $this->persistService->clear();
+    }
 }

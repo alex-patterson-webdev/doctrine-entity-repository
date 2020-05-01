@@ -35,34 +35,26 @@ final class ClearListener
      */
     public function __invoke(EntityEvent $event): void
     {
-        $clearMode = $event->getParameters()->getParam(EntityEventOption::CLEAR_MODE, ClearMode::NONE);
-        $entityName = $event->getEntityName();
+        $clearMode = $event->getParameters()->getParam(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED);
 
-        if (ClearMode::NONE === $clearMode) {
+        if (ClearMode::ENABLED !== $clearMode) {
             $this->logger->info(
                 sprintf(
-                    'Skipping clear operations for entity class \'%s\' with mode \'%s\'',
-                    $entityName,
-                    $clearMode
+                    'Clear mode is disabled for entity \'%s\'; skipping entity manager clear operations',
+                    $event->getEntityName()
                 )
             );
             return;
         }
 
-        $entityManager = $event->getEntityManager();
+        $this->logger->info(
+            sprintf(
+                'Performing entity manager clear operations for entity class \'%s\'',
+                $event->getEntityName()
+            )
+        );
 
-        if (ClearMode::ALL === $clearMode) {
-            $this->logger->info(sprintf('Performing clear operations for all entities with mode \'%s\'', $clearMode));
-            $entityManager->clear(null);
-        } elseif (ClearMode::SINGLE === $clearMode) {
-            $this->logger->info(
-                sprintf(
-                    'Performing clear operations for entity class \'%s\' mode \'%s\'',
-                    $entityName,
-                    $clearMode
-                )
-            );
-            $entityManager->clear($entityName);
-        }
+        $entityManager = $event->getEntityManager();
+        $entityManager->clear();
     }
 }

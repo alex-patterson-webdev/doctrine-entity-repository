@@ -67,11 +67,9 @@ interface PersistServiceInterface extends TransactionServiceInterface
     /**
      * Release managed entities from the identity map.
      *
-     * @param string|null $entityName
-     *
      * @return void
      *
      * @throws PersistenceException
      */
-    public function clear(?string $entityName): void;
+    public function clear(): void;
 }
