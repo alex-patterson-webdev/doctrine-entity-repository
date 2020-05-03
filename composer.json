@@ -2,6 +2,7 @@
   "name": "alex-patterson-webdev/doctrine-entity-repository",
   "version": "1.0.0",
   "minimum-stability": "dev",
+  "prefer-stable": true,
   "authors": [
     {
       "name": "Alex Patterson",
@@ -34,7 +35,15 @@
   "scripts": {
     "test": "php vendor/bin/phpunit --coverage-clover=coverage.xml"
   },
+  "repositories": [
+    {
+      "type": "composer",
+      "url": "http://dev.satis.local"
+    }
+  ],
   "config": {
+    "secure-http": false,
+    "preferred-install": "dist",
     "optimize-autoloader": true,
     "sort-packages": true
   }
