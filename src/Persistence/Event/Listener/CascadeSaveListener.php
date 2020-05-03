@@ -7,6 +7,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\EntityRepositoryProviderInterface;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\Entity\EntityInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
@@ -43,35 +44,49 @@ final class CascadeSaveListener
             return;
         }
 
-        foreach ($metadata->getAssociationMappings() as $associationMapping) {
-            if (!isset($associationMapping['isCascadePersist']) || true !== $associationMapping['isCascadePersist']) {
+        foreach ($metadata->getAssociationMappings() as $mapping) {
+            // We only want to save associations that are configured to cascade
+            if (!isset($mapping['isCascadePersist']) || true !== $mapping['isCascadePersist']) {
                 continue;
             }
 
-            /** @var string $targetEntityName */
-            $targetEntityName = $associationMapping['targetEntity'] ?? null;
-            $fieldName = $associationMapping['fieldName'] ?? null;
-            $associationType = $associationMapping['type'] ?? null;
-
-            if (null === $targetEntityName || null === $associationType) {
+            if (!isset($mapping['targetEntityName'], $mapping['fieldName'], $mapping['type'])) {
                 continue;
             }
 
-            $targetRepository = $this->repositoryProvider->getEntityRepository($targetEntityName);
+            $targetEntity = $this->resolveTarget($mapping['fieldName'], $entity);
+            if (null === $targetEntity) {
+                // We were unable to resolve the referenced entity
+                continue;
+            }
+
+            $targetRepository = $this->repositoryProvider->getEntityRepository($mapping['targetEntityName']);
             if (null === $targetRepository) {
                 continue;
             }
 
-            $methodName = 'get' . ucfirst($fieldName);
-            if ($associationType !== ClassMetadata::MANY_TO_ONE || !method_exists($entity, $methodName)) {
-                continue;
-            }
-
-            $targetEntity = $entity->{$methodName};
-
-            if ($targetEntity instanceof $targetEntityName) {
+            if (
+                ClassMetadata::MANY_TO_ONE === $mapping['type']
+                && $targetEntity instanceof $mapping['targetEntityName']
+            ) {
                 $targetRepository->save($targetEntity);
             }
         }
+    }
+
+    /**
+     * @param string          $targetFieldName
+     * @param EntityInterface $entity
+     *
+     * @return EntityInterface|EntityInterface[]|null
+     */
+    private function resolveTarget(string $targetFieldName, EntityInterface $entity)
+    {
+        $methodName = 'get' . ucfirst($targetFieldName);
+        if (!method_exists($entity, $methodName)) {
+            return null;
+        }
+
+        return $entity->{$methodName};
     }
 }
