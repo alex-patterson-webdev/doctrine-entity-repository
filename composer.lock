@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a3fe461a36767784a58b0a927b0138de",
+    "content-hash": "bb588e4db98be5b9e51b9fbfccb6de15",
     "packages": [
         {
             "name": "alex-patterson-webdev/date-time",
@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/alex-patterson-webdev/date-time.git",
-                "reference": "cab7d483ebcbd27dcf749b9d345b9d4e4e9bdcea"
+                "reference": "f6ec60227c16364380ecea8435a1e67f80150962"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/alex-patterson-webdev/date-time/zipball/cab7d483ebcbd27dcf749b9d345b9d4e4e9bdcea",
-                "reference": "cab7d483ebcbd27dcf749b9d345b9d4e4e9bdcea",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/date-time/zipball/f6ec60227c16364380ecea8435a1e67f80150962",
+                "reference": "f6ec60227c16364380ecea8435a1e67f80150962",
                 "shasum": ""
             },
             "require": {
@@ -42,7 +42,7 @@
                     "email": "alex.patterson.webdev@gmail.com"
                 }
             ],
-            "time": "2020-05-03T13:14:52+00:00"
+            "time": "2020-05-03T13:50:53+00:00"
         },
         {
             "name": "alex-patterson-webdev/entity",
@@ -50,7 +50,13 @@
             "source": {
                 "type": "git",
                 "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
-                "reference": "7937de589e93783820c958a9022ef86c11b6e9a3"
+                "reference": "51b3e15076e7150f09fcd12541d2e41eae50ed9a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/entity/zipball/51b3e15076e7150f09fcd12541d2e41eae50ed9a",
+                "reference": "51b3e15076e7150f09fcd12541d2e41eae50ed9a",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.2"
@@ -65,16 +71,7 @@
                     "Arp\\Entity\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "ArpTest\\Entity\\": "test/phpunit"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "phpunit --coverage-clover=coverage.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "authors": [
                 {
                     "name": "Alex Patterson",
@@ -82,7 +79,7 @@
                 }
             ],
             "description": "Shared library of domain objects, traits and interfaces",
-            "time": "2020-05-03T13:29:08+00:00"
+            "time": "2020-05-03T16:06:49+00:00"
         },
         {
             "name": "alex-patterson-webdev/event-dispatcher",
@@ -3127,8 +3124,8 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "alex-patterson-webdev/date-time": 20,
-        "alex-patterson-webdev/entity": 20,
-        "alex-patterson-webdev/event-dispatcher": 20
+        "alex-patterson-webdev/event-dispatcher": 20,
+        "alex-patterson-webdev/entity": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

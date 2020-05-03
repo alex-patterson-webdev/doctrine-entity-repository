@@ -12,11 +12,11 @@
   "require": {
     "php": ">=7.2",
     "alex-patterson-webdev/date-time": "dev-feature/1.0.0",
-    "alex-patterson-webdev/entity": "dev-feature/1.0.0",
     "alex-patterson-webdev/event-dispatcher": "dev-feature/0.2.0",
+    "alex-patterson-webdev/entity": "dev-feature/1.0.0",
     "alex-patterson-webdev/factory": "*",
     "doctrine/orm": "^2.7",
-    "psr/log" : "^1.1"
+    "psr/log": "^1.1"
   },
   "require-dev": {
     "squizlabs/php_codesniffer": "^3.5",
