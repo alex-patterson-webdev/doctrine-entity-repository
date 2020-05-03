@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\EntityRepositoryProviderInterface;
+use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
-use Arp\Entity\EntityInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
-class CascadeSaveListener
+/**
+ * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
+ * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
+ */
+final class CascadeSaveListener
 {
     /**
      * @var EntityRepositoryProviderInterface
@@ -25,30 +30,48 @@ class CascadeSaveListener
 
     /**
      * @param EntityEvent $event
+     *
+     * @throws EntityRepositoryException
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
         $entityManager = $event->getEntityManager();
         $metadata = $entityManager->getClassMetadata($event->getEntityName());
 
-        foreach ($metadata->getAssociationMappings() as $associationMapping) {
-
+        $entity = $event->getEntity();
+        if (null === $entity) {
+            return;
         }
-    }
 
-    /**
-     * @param EntityInterface $entity
-     */
-    private function cascadeSave(EntityInterface $entity): void
-    {
+        foreach ($metadata->getAssociationMappings() as $associationMapping) {
+            if (!isset($associationMapping['isCascadePersist']) || true !== $associationMapping['isCascadePersist']) {
+                continue;
+            }
 
-    }
+            /** @var string $targetEntityName */
+            $targetEntityName = $associationMapping['targetEntity'] ?? null;
+            $fieldName = $associationMapping['fieldName'] ?? null;
+            $associationType = $associationMapping['type'] ?? null;
 
-    /**
-     * @param iterable $collection
-     */
-    private function cascadeCollection(iterable $collection): void
-    {
+            if (null === $targetEntityName || null === $associationType) {
+                continue;
+            }
 
+            $targetRepository = $this->repositoryProvider->getEntityRepository($targetEntityName);
+            if (null === $targetRepository) {
+                continue;
+            }
+
+            $methodName = 'get' . ucfirst($fieldName);
+            if ($associationType !== ClassMetadata::MANY_TO_ONE || !method_exists($entity, $methodName)) {
+                continue;
+            }
+
+            $targetEntity = $entity->{$methodName};
+
+            if ($targetEntity instanceof $targetEntityName) {
+                $targetRepository->save($targetEntity);
+            }
+        }
     }
 }
