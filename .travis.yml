@@ -6,7 +6,7 @@ php:
   - 7.4
 
 install:
-  - travis_retry composer install --no-interaction --no-suggest
+  - travis_retry composer install -vvv --no-interaction --no-suggest
 
 script:
   - composer test

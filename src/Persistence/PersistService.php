@@ -9,7 +9,7 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 
@@ -25,7 +25,7 @@ class PersistService implements PersistServiceInterface
     protected $entityName;
 
     /**
-     * @var EntityManager
+     * @var EntityManagerInterface
      */
     protected $entityManager;
 
@@ -41,13 +41,13 @@ class PersistService implements PersistServiceInterface
 
     /**
      * @param string                   $entityName
-     * @param EntityManager            $entityManager
+     * @param EntityManagerInterface   $entityManager
      * @param EventDispatcherInterface $eventDispatcher
      * @param LoggerInterface          $logger
      */
     public function __construct(
         string $entityName,
-        EntityManager $entityManager,
+        EntityManagerInterface $entityManager,
         EventDispatcherInterface $eventDispatcher,
         LoggerInterface $logger
     ) {
@@ -166,6 +166,19 @@ class PersistService implements PersistServiceInterface
      */
     public function persist(EntityInterface $entity, array $options = []): void
     {
+        $entityName = $this->getEntityName();
+
+        if (! $entity instanceof $entityName) {
+            throw new PersistenceException(
+                sprintf(
+                    'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    $this->getEntityName(),
+                    get_class($entity),
+                    __METHOD__
+                )
+            );
+        }
+
         try {
             $this->entityManager->persist($entity);
         } catch (\Throwable $e) {
@@ -184,15 +197,14 @@ class PersistService implements PersistServiceInterface
     /**
      * Perform a flush of the unit of work.
      *
-     * @param EntityInterface|EntityInterface[]|null $entityOrCollection
-     * @param array                                  $options
+     * @param array $options
      *
      * @throws PersistenceException
      */
-    public function flush($entityOrCollection = null, array $options = []): void
+    public function flush(array $options = []): void
     {
         try {
-            $this->entityManager->flush($entityOrCollection);
+            $this->entityManager->flush();
         } catch (\Throwable $e) {
             throw new PersistenceException(
                 sprintf(
@@ -209,20 +221,53 @@ class PersistService implements PersistServiceInterface
     /**
      * Release managed entities from the identity map.
      *
-     * @param string|null $entityName
-     *
      * @return void
      *
      * @throws PersistenceException
      */
-    public function clear(?string $entityName): void
+    public function clear(): void
     {
         try {
-            $this->entityManager->clear($entityName);
+            $this->entityManager->clear();
         } catch (\Throwable $e) {
             throw new PersistenceException(
                 sprintf(
                     'The flush operation failed for entity \'%s\' : %s',
+                    $this->getEntityName(),
+                    $e->getMessage()
+                ),
+                $e->getCode(),
+                $e
+            );
+        }
+    }
+
+    /**
+     * @param EntityInterface $entity
+     *
+     * @throws PersistenceException
+     */
+    public function refresh(EntityInterface $entity): void
+    {
+        $entityName = $this->getEntityName();
+
+        if (! $entity instanceof $entityName) {
+            throw new PersistenceException(
+                sprintf(
+                    'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    $this->getEntityName(),
+                    get_class($entity),
+                    __METHOD__
+                )
+            );
+        }
+
+        try {
+            $this->entityManager->refresh($entity);
+        } catch (\Throwable $e) {
+            throw new PersistenceException(
+                sprintf(
+                    'The refresh operation failed for entity \'%s\' : %s',
                     $this->getEntityName(),
                     $e->getMessage()
                 ),
