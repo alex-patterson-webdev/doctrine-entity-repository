@@ -166,6 +166,19 @@ class PersistService implements PersistServiceInterface
      */
     public function persist(EntityInterface $entity, array $options = []): void
     {
+        $entityName = $this->getEntityName();
+
+        if (! $entity instanceof $entityName) {
+            throw new PersistenceException(
+                sprintf(
+                    'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    $this->getEntityName(),
+                    get_class($entity),
+                    __METHOD__
+                )
+            );
+        }
+
         try {
             $this->entityManager->persist($entity);
         } catch (\Throwable $e) {
@@ -220,6 +233,41 @@ class PersistService implements PersistServiceInterface
             throw new PersistenceException(
                 sprintf(
                     'The flush operation failed for entity \'%s\' : %s',
+                    $this->getEntityName(),
+                    $e->getMessage()
+                ),
+                $e->getCode(),
+                $e
+            );
+        }
+    }
+
+    /**
+     * @param EntityInterface $entity
+     *
+     * @throws PersistenceException
+     */
+    public function refresh(EntityInterface $entity): void
+    {
+        $entityName = $this->getEntityName();
+
+        if (! $entity instanceof $entityName) {
+            throw new PersistenceException(
+                sprintf(
+                    'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    $this->getEntityName(),
+                    get_class($entity),
+                    __METHOD__
+                )
+            );
+        }
+
+        try {
+            $this->entityManager->refresh($entity);
+        } catch (\Throwable $e) {
+            throw new PersistenceException(
+                sprintf(
+                    'The refresh operation failed for entity \'%s\' : %s',
                     $this->getEntityName(),
                     $e->getMessage()
                 ),

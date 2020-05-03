@@ -71,4 +71,11 @@ interface PersistServiceInterface extends TransactionServiceInterface
      * @throws PersistenceException
      */
     public function clear(): void;
+
+    /**
+     * @param EntityInterface $entity
+     *
+     * @throws PersistenceException
+     */
+    public function refresh(EntityInterface $entity): void;
 }
