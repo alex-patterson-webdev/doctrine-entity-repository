@@ -6,7 +6,7 @@ namespace Arp\DoctrineEntityRepository;
 
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\Entity\EntityInterface;
-use Doctrine\Persistence\ObjectRepository;
+use Doctrine\Common\Persistence\ObjectRepository;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
