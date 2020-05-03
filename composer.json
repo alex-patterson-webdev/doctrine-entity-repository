@@ -11,7 +11,7 @@
   ],
   "require": {
     "php": ">=7.2",
-    "alex-patterson-webdev/date-time": "dev-master",
+    "alex-patterson-webdev/date-time": "dev-feature/1.0.0",
     "alex-patterson-webdev/entity": "dev-feature/1.0.0",
     "alex-patterson-webdev/event-dispatcher": "dev-feature/0.2.0",
     "alex-patterson-webdev/factory": "*",
