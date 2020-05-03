@@ -50,7 +50,7 @@
             "source": {
                 "type": "git",
                 "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
-                "reference": "50730bd5f2116ead6e24d83079f214f98197dbdd"
+                "reference": "7937de589e93783820c958a9022ef86c11b6e9a3"
             },
             "require": {
                 "php": ">=7.2"
@@ -82,7 +82,7 @@
                 }
             ],
             "description": "Shared library of domain objects, traits and interfaces",
-            "time": "2020-04-17T18:34:57+00:00"
+            "time": "2020-05-03T13:29:08+00:00"
         },
         {
             "name": "alex-patterson-webdev/event-dispatcher",
