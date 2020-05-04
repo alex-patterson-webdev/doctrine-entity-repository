@@ -13,6 +13,7 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\PersistentCollection;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -103,7 +104,7 @@ final class CascadeSaveListener
         foreach ($classMetadata->getAssociationMappings() as $mapping) {
             if (
                 !isset(
-                    $mapping['targetEntityName'],
+                    $mapping['targetEntity'],
                     $mapping['fieldName'],
                     $mapping['type'],
                     $mapping['isCascadePersist']
@@ -118,15 +119,15 @@ final class CascadeSaveListener
                 $entity,
                 $mapping['fieldName'],
                 $classMetadata,
-                $this->getClassMetadata($mapping['targetEntityName'], $entityManager)
+                $this->getClassMetadata($mapping['targetEntity'], $entityManager)
             );
 
-            if (!$this->isValidAssociation($targetEntityOrCollection, $classMetadata, $mapping['fieldName'])) {
+            if (!$this->isValidAssociation($targetEntityOrCollection, $mapping)) {
                 continue;
             }
 
             $this->saveAssociation(
-                $mapping['targetEntityName'],
+                $mapping['targetEntity'],
                 $mapping['type'],
                 $targetEntityOrCollection,
                 (is_iterable($targetEntityOrCollection) ? $collectionSaveOptions : $saveOptions)
@@ -136,26 +137,28 @@ final class CascadeSaveListener
 
     /**
      * @param EntityInterface|EntityInterface[]|iterable|null $entityOrCollection
-     * @param ClassMetadata                                   $classMetadata
-     * @param string                                          $fieldName
+     * @param array                                           $mapping
      *
      * @return bool
-     *
-     * @throws PersistenceException
      */
-    private function isValidAssociation($entityOrCollection, ClassMetadata $classMetadata, string $fieldName): bool
+    private function isValidAssociation($entityOrCollection, array $mapping): bool
     {
-        $associationMapping = $this->getAssociationMapping($classMetadata, $fieldName);
-        $fieldMapping = $this->getFieldMapping($classMetadata, $fieldName);
+        if (null === $entityOrCollection) {
+            $isNullable = isset($mapping['joinColumns'][0]['nullable'])
+                ? (bool)$mapping['joinColumns'][0]['nullable']
+                : false;
 
-        $test = 1;
+            if (!$isNullable) {
+                return false;
+            }
+        }
 
         return true;
     }
 
     /**
      * @param string                                     $targetEntityName
-     * @param string                                     $associationType
+     * @param int                                        $associationType
      * @param EntityInterface|EntityInterface[]|iterable $entityOrCollection
      * @param array                                      $saveOptions
      *
@@ -164,7 +167,7 @@ final class CascadeSaveListener
      */
     private function saveAssociation(
         string $targetEntityName,
-        string $associationType,
+        int $associationType,
         $entityOrCollection,
         array $saveOptions = []
     ): void {
@@ -190,6 +193,17 @@ final class CascadeSaveListener
             ClassMetadata::ONE_TO_MANY === $associationType
             && (is_iterable($entityOrCollection))
         ) {
+            if (
+                $entityOrCollection instanceof PersistentCollection
+                && (
+                    $entityOrCollection->isEmpty()
+                    || !$entityOrCollection->isDirty()
+                    || !$entityOrCollection->isInitialized()
+                )
+            ) {
+                // Ignore collections that are empty/unmodified/notloaded
+                return;
+            }
             $targetRepository->saveCollection($entityOrCollection, $saveOptions);
         }
     }
@@ -259,56 +273,6 @@ final class CascadeSaveListener
             $errorMessage = sprintf(
                 'The entity metadata mapping for class \'%s\' could not be loaded: %s',
                 $entityName,
-                $e->getMessage()
-            );
-            $this->logger->error($errorMessage);
-
-            throw new PersistenceException($errorMessage, $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * @param ClassMetadata $metadata
-     * @param string        $fieldName
-     *
-     * @return array
-     *
-     * @throws PersistenceException
-     */
-    private function getFieldMapping(ClassMetadata $metadata, string $fieldName): array
-    {
-        try {
-            return $metadata->getFieldMapping($fieldName);
-        } catch (\Throwable $e) {
-            $errorMessage = sprintf(
-                'Failed to load field mapping information for field \'%s::%s\': %s',
-                $metadata->getName(),
-                $fieldName,
-                $e->getMessage()
-            );
-            $this->logger->error($errorMessage);
-
-            throw new PersistenceException($errorMessage, $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * @param ClassMetadata $metadata
-     * @param string        $fieldName
-     *
-     * @return array
-     *
-     * @throws PersistenceException
-     */
-    private function getAssociationMapping(ClassMetadata $metadata, string $fieldName): array
-    {
-        try {
-            return $metadata->getAssociationMapping($fieldName);
-        } catch (\Throwable $e) {
-            $errorMessage = sprintf(
-                'Failed to load association mapping information for field \'%s::%s\': %s',
-                $metadata->getName(),
-                $fieldName,
                 $e->getMessage()
             );
             $this->logger->error($errorMessage);
