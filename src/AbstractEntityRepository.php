@@ -196,26 +196,36 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     public function saveCollection(iterable $collection, array $options = []): iterable
     {
         try {
-            $saveOptions = array_replace_recursive(
-                [
-                    EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
-                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
-                ],
-                $options
-            );
+            $saveOptions = [
+                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+            ];
 
-            $this->persistService->beginTransaction();
+            $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
+            $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
+
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->beginTransaction();
+            }
 
             $entities = [];
             foreach ($collection as $entity) {
                 $entities[] = $this->save($entity, $saveOptions);
             }
 
-            $this->persistService->flush();
-            $this->persistService->commitTransaction();
+            if (FlushMode::ENABLED === $flushMode) {
+                $this->persistService->flush();
+            }
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->commitTransaction();
+            }
 
             return $entities;
         } catch (\Throwable $e) {
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->rollbackTransaction();
+            }
+
             $errorMessage = sprintf(
                 'Unable to save collection of type \'%s\' : %s',
                 $this->entityName,
