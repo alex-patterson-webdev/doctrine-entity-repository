@@ -8,7 +8,7 @@ use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Log\LoggerInterface;
@@ -25,7 +25,7 @@ class QueryService implements QueryServiceInterface
     protected $entityName;
 
     /**
-     * @var EntityManager
+     * @var EntityManagerInterface
      */
     protected $entityManager;
 
@@ -35,11 +35,11 @@ class QueryService implements QueryServiceInterface
     protected $logger;
 
     /**
-     * @param string          $entityName
-     * @param EntityManager   $entityManager
-     * @param LoggerInterface $logger
+     * @param string                 $entityName
+     * @param EntityManagerInterface $entityManager
+     * @param LoggerInterface        $logger
      */
-    public function __construct(string $entityName, EntityManager $entityManager, LoggerInterface $logger)
+    public function __construct(string $entityName, EntityManagerInterface $entityManager, LoggerInterface $logger)
     {
         $this->entityName = $entityName;
         $this->entityManager = $entityManager;
@@ -264,14 +264,14 @@ class QueryService implements QueryServiceInterface
     /**
      * Prepare the provided query by setting the $options.
      *
-     * @todo Reduce cyclomatic complexity
-     *
      * @param AbstractQuery $query
      * @param array         $options
      *
      * @return AbstractQuery
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     * @todo Reduce cyclomatic complexity
+     *
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {
@@ -297,7 +297,7 @@ class QueryService implements QueryServiceInterface
             }
         }
 
-        if (! empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
+        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
             $query->setDQL($options[QueryServiceOption::DQL]);
         }
 
