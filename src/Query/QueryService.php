@@ -249,6 +249,15 @@ class QueryService implements QueryServiceInterface
             $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
         }
 
+        if (array_key_exists(QueryServiceOption::ORDER_BY, $options)) {
+            foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
+                $queryBuilder->addOrderBy(
+                    $fieldName,
+                    ('DESC' === strtoupper($orderDirection) ? 'DESC' : 'ASC')
+                );
+            }
+        }
+
         return $queryBuilder;
     }
 
