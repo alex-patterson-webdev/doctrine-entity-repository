@@ -39,7 +39,9 @@ final class EntityValidationListener implements AggregateListenerInterface
      */
     public function addListeners(AddListenerAwareInterface $collection): void
     {
+        $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'validateEntity'], 1000);
         $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'validateEntity'], 1000);
+        $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'validateEntity'], 1000);
     }
 
     /**
@@ -67,7 +69,7 @@ final class EntityValidationListener implements AggregateListenerInterface
             throw new InvalidArgumentException($errorMessage);
         }
 
-        if (! $entity instanceof EntityInterface || $entity instanceof $eventName) {
+        if (! $entity instanceof EntityInterface || !$entity instanceof $entityName) {
             $errorMessage = sprintf(
                 'The entity class of type \'%s\' does not match the expected \'%s\' for event \'%s\'',
                 (is_object($entity) ? get_class($entity) : gettype($entity)),
