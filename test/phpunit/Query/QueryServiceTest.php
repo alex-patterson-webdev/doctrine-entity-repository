@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace ArpTest\DoctrineEntityRepository\Query;
 
+use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\DoctrineEntityRepository\Query\QueryService;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -108,5 +112,115 @@ final class QueryServiceTest extends TestCase
             ->with($this->entityName, $alias);
 
         $this->assertInstanceOf(QueryBuilder::class, $queryService->createQueryBuilder($alias));
+    }
+
+    /**
+     * Assert that if we provide a invalid query object to execute() a QueryServiceException will be thrown.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     *
+     * @throws QueryServiceException
+     */
+    public function testExecuteWillThrowQueryServiceExceptionIfProvidedInvalidQuery(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        $invalidQuery = new \stdClass();
+
+        $this->expectException(QueryServiceException::class);
+        $this->expectExceptionMessage(
+            sprintf(
+                'Query provided must be of type \'%s\'; \'%s\' provided in \'%s::%s\'.',
+                AbstractQuery::class,
+                (is_object($invalidQuery) ? get_class($invalidQuery) : gettype($invalidQuery)),
+                QueryService::class,
+                'execute'
+            )
+        );
+
+        $queryService->execute($invalidQuery);
+    }
+
+    /**
+     * Assert that a query object provided to execute will be prepared with the provided options and then executed.
+     *
+     * @param array $options  The optional query options to assert get set on the query when being prepared.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
+     *
+     * @dataProvider getExecuteWillPrepareAndExecuteQueryData
+     * @throws QueryServiceException
+     */
+    public function testExecuteWillPrepareAndExecuteQuery(array $options = []): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var AbstractQuery|MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        if (array_key_exists('params', $options)) {
+            $query->expects($this->once())
+                ->method('setParameters')
+                ->with($options['params']);
+        }
+
+        if (array_key_exists(QueryServiceOption::HYDRATION_MODE, $options)) {
+            $query->expects($this->once())
+                ->method('setHydrationMode')
+                ->with($options[QueryServiceOption::HYDRATION_MODE]);
+        }
+
+        if (array_key_exists('hydration_cache_profile', $options)) {
+            $query->expects($this->once())
+                ->method('setHydrationCacheProfile')
+                ->with($options['hydration_cache_profile']);
+        }
+
+        if (array_key_exists('result_set_mapping', $options)) {
+            $query->expects($this->once())
+                ->method('setResultSetMapping')
+                ->with($options['result_set_mapping']);
+        }
+
+        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
+            $query->expects($this->once())
+                ->method('setDQL')
+                ->with($options[QueryServiceOption::DQL]);
+        }
+
+        $query->expects($this->once())->method('execute')->willReturn([]);
+
+        $queryService->execute($query, $options);
+    }
+
+    /**
+     * @return array|\array[][]
+     */
+    public function getExecuteWillPrepareAndExecuteQueryData(): array
+    {
+        return [
+            // Empty options
+            [
+                [],
+            ],
+
+            // Set parameters
+            [
+                [
+                    'params' => [
+                        'foo' => 'bar',
+                        'baz' => 123,
+                    ]
+                ],
+            ],
+
+            // Hydration Mode
+            [
+                [
+                    QueryServiceOption::HYDRATION_MODE => Query::HYDRATE_ARRAY,
+                ]
+            ],
+        ];
     }
 }

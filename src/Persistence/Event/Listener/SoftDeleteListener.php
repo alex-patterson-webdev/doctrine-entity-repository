@@ -19,7 +19,7 @@ final class SoftDeleteListener
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param LoggerInterface $logger

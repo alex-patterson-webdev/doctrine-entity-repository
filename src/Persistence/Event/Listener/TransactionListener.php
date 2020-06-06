@@ -24,7 +24,7 @@ final class TransactionListener implements AggregateListenerInterface
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param LoggerInterface $logger

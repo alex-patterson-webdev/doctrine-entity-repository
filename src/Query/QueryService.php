@@ -121,12 +121,6 @@ class QueryService implements QueryServiceInterface
         try {
             $query = $this->prepareQuery($queryOrBuilder, $options);
 
-            if (isset($options['log_sql']) && true === $options['log_sql']) {
-                $this->logger->debug(
-                    sprintf('Executing SQL : %s', $query->getSQL()),
-                    $query->getParameters()->toArray()
-                );
-            }
             return $query->execute();
         } catch (\Throwable $e) {
             $message = sprintf('Failed to execute query : %s', $e->getMessage());
@@ -281,10 +275,6 @@ class QueryService implements QueryServiceInterface
 
         if (array_key_exists(QueryServiceOption::HYDRATION_MODE, $options)) {
             $query->setHydrationMode($options[QueryServiceOption::HYDRATION_MODE]);
-        }
-
-        if (array_key_exists('hydration_cache_profile', $options)) {
-            $query->setHydrationCacheProfile($options['hydration_cache_profile']);
         }
 
         if (array_key_exists('result_set_mapping', $options)) {

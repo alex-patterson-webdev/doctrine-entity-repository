@@ -25,22 +25,22 @@ final class CascadeSaveListener
     /**
      * @var EntityRepositoryProviderInterface
      */
-    private $repositoryProvider;
+    private EntityRepositoryProviderInterface $repositoryProvider;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @var array
      */
-    private $defaultSaveOptions = [];
+    private array $defaultSaveOptions;
 
     /**
      * @var array
      */
-    private $defaultCollectionSaveOptions = [];
+    private array $defaultCollectionSaveOptions;
 
     /**
      * @param EntityRepositoryProviderInterface $repositoryProvider
@@ -69,6 +69,7 @@ final class CascadeSaveListener
     public function __invoke(EntityEvent $event): void
     {
         $entity = $event->getEntity();
+
         if (null === $entity) {
             return;
         }
