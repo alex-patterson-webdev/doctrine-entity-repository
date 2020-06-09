@@ -51,6 +51,18 @@ interface EntityRepositoryInterface extends ObjectRepository
     public function delete($entity, array $options = []): bool;
 
     /**
+     * Perform a deletion of a collection of entities.
+     *
+     * @param iterable|EntityInterface $collection
+     * @param array                    $options
+     *
+     * @return int
+     *
+     * @throws EntityRepositoryException
+     */
+    public function deleteCollection(iterable $collection, array $options = []): int;
+
+    /**
      * @throws EntityRepositoryException
      */
     public function clear(): void;

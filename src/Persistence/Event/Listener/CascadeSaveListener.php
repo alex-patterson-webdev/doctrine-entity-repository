@@ -20,7 +20,7 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class CascadeSaveListener
+class CascadeSaveListener
 {
     /**
      * @var EntityRepositoryProviderInterface
@@ -74,9 +74,10 @@ final class CascadeSaveListener
             return;
         }
 
-        $parameters = $event->getParameters();
-        $cascadeMode = $parameters->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
         $entityName = $event->getEntityName();
+        $parameters = $event->getParameters();
+
+        $cascadeMode = $parameters->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
 
         if (CascadeMode::ALL !== $cascadeMode && CascadeMode::SAVE !== $cascadeMode) {
             $this->logger->info(
@@ -99,7 +100,32 @@ final class CascadeSaveListener
             $parameters->getParam(EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, [])
         );
 
-        $entityManager = $event->getEntityManager();
+        $this->saveAssociations(
+            $entityName,
+            $entity,
+            $event->getEntityManager(),
+            $saveOptions,
+            $collectionSaveOptions
+        );
+    }
+
+    /**
+     * @param string                 $entityName
+     * @param EntityInterface        $entity
+     * @param EntityManagerInterface $entityManager
+     * @param array                  $saveOptions
+     * @param array                  $collectionSaveOptions
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    private function saveAssociations(
+        string $entityName,
+        EntityInterface $entity,
+        EntityManagerInterface $entityManager,
+        array $saveOptions = [],
+        array $collectionSaveOptions = []
+    ): void {
         $classMetadata = $this->getClassMetadata($entityName, $entityManager);
 
         foreach ($classMetadata->getAssociationMappings() as $mapping) {
@@ -186,13 +212,13 @@ final class CascadeSaveListener
         }
 
         if (
-            ClassMetadata::MANY_TO_ONE === $associationType
-            && $entityOrCollection instanceof $targetEntityName
+            $entityOrCollection instanceof $targetEntityName
+            && (ClassMetadata::MANY_TO_ONE === $associationType || ClassMetadata::ONE_TO_ONE === $associationType)
         ) {
             $targetRepository->save($entityOrCollection, $saveOptions);
         } elseif (
-            ClassMetadata::ONE_TO_MANY === $associationType
-            && (is_iterable($entityOrCollection))
+            is_iterable($entityOrCollection)
+            && (ClassMetadata::ONE_TO_MANY === $associationType || ClassMetadata::MANY_TO_MANY === $associationType)
         ) {
             if (
                 $entityOrCollection instanceof PersistentCollection

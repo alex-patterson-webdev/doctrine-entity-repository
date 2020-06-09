@@ -24,22 +24,22 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * @var string
      */
-    protected $entityName;
+    protected string $entityName;
 
     /**
      * @var QueryServiceInterface
      */
-    protected $queryService;
+    protected QueryServiceInterface $queryService;
 
     /**
      * @var PersistServiceInterface
      */
-    protected $persistService;
+    protected PersistServiceInterface $persistService;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @param string                  $entityName
@@ -196,11 +196,6 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     public function saveCollection(iterable $collection, array $options = []): iterable
     {
         try {
-            $saveOptions = [
-                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
-                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
-            ];
-
             $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
             $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
 
@@ -209,6 +204,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             }
 
             $entities = [];
+            $saveOptions = [
+                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+            ];
+
             foreach ($collection as $entity) {
                 $entities[] = $this->save($entity, $saveOptions);
             }
@@ -282,6 +282,64 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             return $this->persistService->delete($entity, $options);
         } catch (\Throwable $e) {
             $errorMessage = sprintf('Unable to delete entity of type \'%s\': %s', $this->entityName, $e->getMessage());
+
+            $this->logger->error($errorMessage);
+
+            throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Perform a deletion of a collection of entities.
+     *
+     * @param iterable|EntityInterface $collection
+     * @param array                    $options
+     *
+     * @return int
+     *
+     * @throws EntityRepositoryException
+     */
+    public function deleteCollection(iterable $collection, array $options = []): int
+    {
+        try {
+            $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
+            $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
+
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->beginTransaction();
+            }
+
+            $deleteOptions = [
+                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+            ];
+
+            $deleted = 0;
+            foreach ($collection as $entity) {
+                if ($this->delete($entity, $deleteOptions)) {
+                    $deleted++;
+                }
+            }
+
+            if (FlushMode::ENABLED === $flushMode) {
+                $this->persistService->flush();
+            }
+
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->commitTransaction();
+            }
+
+            return $deleted;
+        } catch (\Throwable $e) {
+            if (TransactionMode::ENABLED === $transactionMode) {
+                $this->persistService->rollbackTransaction();
+            }
+
+            $errorMessage = sprintf(
+                'Unable to delete collection of type \'%s\' : %s',
+                $this->entityName,
+                $e->getMessage()
+            );
 
             $this->logger->error($errorMessage);
 
