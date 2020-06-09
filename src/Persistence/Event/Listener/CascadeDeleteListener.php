@@ -49,7 +49,10 @@ final class CascadeDeleteListener
         $entity = $event->getEntity();
 
         if (null === $entity) {
-            return;
+            $errorMessage= sprintf('Missing required entity in \'%s\'', static::class);
+            $this->logger->error($errorMessage);
+
+            throw new PersistenceException($errorMessage);
         }
 
         $entityName = $event->getEntityName();

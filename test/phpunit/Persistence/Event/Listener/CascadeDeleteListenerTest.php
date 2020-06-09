@@ -7,8 +7,9 @@ namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\CascadeMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
-use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
+use Arp\DoctrineEntityRepository\Persistence\CascadeDeleteService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
@@ -22,12 +23,12 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class CascadeSaveListenerTest extends TestCase
+final class CascadeDeleteListenerTest extends TestCase
 {
     /**
-     * @var CascadeSaveService|MockObject
+     * @var CascadeDeleteService|MockObject
      */
-    private CascadeSaveService $cascadeSaveService;
+    private CascadeDeleteService $cascadeDeleteService;
 
     /**
      * @var LoggerInterface|MockObject
@@ -39,7 +40,7 @@ final class CascadeSaveListenerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->cascadeSaveService = $this->createMock(CascadeSaveService::class);
+        $this->cascadeDeleteService = $this->createMock(CascadeDeleteService::class);
 
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
     }
@@ -47,11 +48,11 @@ final class CascadeSaveListenerTest extends TestCase
     /**
      * Assert that the listener is a callable class.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener
      */
     public function testIsCallable(): void
     {
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
         $this->assertIsCallable($listener);
     }
@@ -65,7 +66,7 @@ final class CascadeSaveListenerTest extends TestCase
     public function testInvokeWillThrowPersistenceExceptionAndLogInvalidEntity(): void
     {
         /** @var CascadeSaveListener|MockObject $listener */
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -76,7 +77,7 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        $errorMessage = sprintf('Missing required entity in \'%s\'', CascadeSaveListener::class);
+        $errorMessage = sprintf('Missing required entity in \'%s\'', CascadeDeleteListener::class);
 
         $this->logger->expects($this->once())
             ->method('error')
@@ -89,20 +90,20 @@ final class CascadeSaveListenerTest extends TestCase
     }
 
     /**
-     * Assert that __invoke() will NOT execute the cascade save operations if the provided cascade mode
+     * Assert that __invoke() will NOT execute the cascade delete operations if the provided cascade mode
      * has been set to NONE.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener::__invoke
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener::__invoke
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
      */
-    public function testInvokeWillNotCascadeSaveIfCascadeModeIsNone(): void
+    public function testInvokeWillNotCascadeDeleteIfCascadeModeIsNone(): void
     {
         $entityName = EntityInterface::class;
         $cascadeMode = CascadeMode::NONE;
 
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -134,7 +135,7 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('info')
             ->with(
                 sprintf(
-                    'Ignoring cascade save operations with mode \'%s\' for entity \'%s\'',
+                    'Ignoring cascade delete operations with mode \'%s\' for entity \'%s\'',
                     $cascadeMode,
                     $entityName
                 )
@@ -146,32 +147,32 @@ final class CascadeSaveListenerTest extends TestCase
     }
 
     /**
-     * Assert that the event listener will execute the cascade save services saveAssociations() method with a valid
+     * Assert that the event listener will execute the cascade delete services deleteAssociations() method with a valid
      * cascade mode provided.
      *
      * @param string|null $cascadeMode
      * @param array       $options
      * @param array       $collectionOptions
      *
-     * @dataProvider getCascadeSaveData
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener::__invoke
+     * @dataProvider getCascadeDeleteData
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener::__invoke
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
      */
-    public function testCascadeSave(?string $cascadeMode, array $options = [], array $collectionOptions = []): void
+    public function testCascadeDelete(?string $cascadeMode, array $options = [], array $collectionOptions = []): void
     {
         if (null === $cascadeMode) {
             $cascadeMode = CascadeMode::ALL;
         }
 
-        if (CascadeMode::ALL !== $cascadeMode && CascadeMode::SAVE !== $cascadeMode) {
+        if (CascadeMode::ALL !== $cascadeMode && CascadeMode::DELETE !== $cascadeMode) {
             $this->fail(
                 sprintf(
                     'Invalid test case \'cascadeMode\'. The \'%s\' '
                     . 'test expects either \'%s\' or \'%s\' as valid test values',
                     __METHOD__,
-                    CascadeMode::SAVE,
+                    CascadeMode::DELETE,
                     CascadeMode::ALL
                 )
             );
@@ -179,7 +180,7 @@ final class CascadeSaveListenerTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -206,8 +207,8 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('getParam')
             ->withConsecutive(
                 [EntityEventOption::CASCADE_MODE, CascadeMode::ALL],
-                [EntityEventOption::CASCADE_SAVE_OPTIONS, []],
-                [EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, []]
+                [EntityEventOption::CASCADE_DELETE_OPTIONS, []],
+                [EntityEventOption::CASCADE_DELETE_COLLECTION_OPTIONS, []]
             )->willReturnOnConsecutiveCalls(
                 $cascadeMode,
                 $options,
@@ -223,10 +224,10 @@ final class CascadeSaveListenerTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('info')
-            ->with(sprintf('Performing cascade save operations for entity \'%s\'', $entityName));
+            ->with(sprintf('Performing cascade delete operations for entity \'%s\'', $entityName));
 
-        $this->cascadeSaveService->expects($this->once())
-            ->method('saveAssociations')
+        $this->cascadeDeleteService->expects($this->once())
+            ->method('deleteAssociations')
             ->with($entityManager, $entityName, $entity, $options, $collectionOptions);
 
         $this->assertNull($listener($event));
@@ -235,14 +236,14 @@ final class CascadeSaveListenerTest extends TestCase
     /**
      * @return array|array[]
      */
-    public function getCascadeSaveData(): array
+    public function getCascadeDeleteData(): array
     {
         return [
             [
                 null,
             ],
             [
-                CascadeMode::SAVE,
+                CascadeMode::DELETE,
             ],
             [
                 CascadeMode::ALL,
