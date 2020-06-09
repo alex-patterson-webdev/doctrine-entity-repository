@@ -316,7 +316,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             $deleted = 0;
             foreach ($collection as $entity) {
-                if ($this->delete($entity, $deleteOptions)) {
+                if (true === $this->delete($entity, $deleteOptions)) {
                     $deleted++;
                 }
             }

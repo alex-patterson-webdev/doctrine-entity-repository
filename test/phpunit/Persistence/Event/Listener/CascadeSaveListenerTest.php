@@ -2,31 +2,32 @@
 
 declare(strict_types=1);
 
-namespace Persistence\Event\Listener;
+namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\CascadeMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
-use Arp\DoctrineEntityRepository\EntityRepositoryProviderInterface;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
+use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
- * @package Persistence\Event\Listener
+ * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class CascadeSaveListenerTest extends TestCase
 {
     /**
-     * @var EntityRepositoryProviderInterface|MockObject
+     * @var CascadeSaveService|MockObject
      */
-    private EntityRepositoryProviderInterface $entityRepositoryProvider;
+    private CascadeSaveService $cascadeSaveService;
 
     /**
      * @var LoggerInterface|MockObject
@@ -34,21 +35,11 @@ final class CascadeSaveListenerTest extends TestCase
     private LoggerInterface $logger;
 
     /**
-     * @var array
-     */
-    private array $defaultSaveOptions = [];
-
-    /**
-     * @var array
-     */
-    private array $defaultCollectionSaveOptions = [];
-
-    /**
      * Prepare the test case dependencies
      */
     public function setUp(): void
     {
-        $this->entityRepositoryProvider = $this->getMockForAbstractClass(EntityRepositoryProviderInterface::class);
+        $this->cascadeSaveService = $this->createMock(CascadeSaveService::class);
 
         $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
     }
@@ -60,14 +51,41 @@ final class CascadeSaveListenerTest extends TestCase
      */
     public function testIsCallable(): void
     {
-        $listener = new CascadeSaveListener(
-            $this->entityRepositoryProvider,
-            $this->logger,
-            $this->defaultSaveOptions,
-            $this->defaultCollectionSaveOptions
-        );
+        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
 
         $this->assertIsCallable($listener);
+    }
+
+    /**
+     * Assert that a PersistenceException is thrown if the event cannot provided a valid entity instance.
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    public function testInvokeWillThrowPersistenceExceptionAndLogInvalidEntity(): void
+    {
+        /** @var CascadeSaveListener|MockObject $listener */
+        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+
+        /** @var EntityEvent|MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        $entity = null;
+
+        $event->expects($this->once())
+            ->method('getEntity')
+            ->willReturn($entity);
+
+        $errorMessage = sprintf('Missing required entity in \'%s\'', CascadeSaveListener::class);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $this->assertNull($listener($event));
     }
 
     /**
@@ -84,12 +102,7 @@ final class CascadeSaveListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $cascadeMode = CascadeMode::NONE;
 
-        $listener = new CascadeSaveListener(
-            $this->entityRepositoryProvider,
-            $this->logger,
-            $this->defaultSaveOptions,
-            $this->defaultCollectionSaveOptions
-        );
+        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -132,18 +145,41 @@ final class CascadeSaveListenerTest extends TestCase
         $this->assertNull($listener($event));
     }
 
-
-    public function testInvokeWillCallSaveAssociations(): void
+    /**
+     * Assert that the event listener will execute the cascade save services saveAssociations() method with a valid
+     * cascade mode provided.
+     *
+     * @param string|null $cascadeMode
+     * @param array       $options
+     * @param array       $collectionOptions
+     *
+     * @dataProvider getCascadeSaveData
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener::__invoke
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    public function testCascadeSave(?string $cascadeMode, array $options = [], array $collectionOptions = []): void
     {
-        $entityName = EntityInterface::class;
-        $cascadeMode = CascadeMode::ALL;
+        if (null === $cascadeMode) {
+            $cascadeMode = CascadeMode::ALL;
+        }
 
-        $listener = new CascadeSaveListener(
-            $this->entityRepositoryProvider,
-            $this->logger,
-            $this->defaultSaveOptions,
-            $this->defaultCollectionSaveOptions
-        );
+        if (CascadeMode::ALL !== $cascadeMode && CascadeMode::SAVE !== $cascadeMode) {
+            $this->fail(
+                sprintf(
+                    'Invalid test case \'cascadeMode\'. The \'%s\' '
+                    . 'test expects either \'%s\' or \'%s\' as valid test values',
+                    __METHOD__,
+                    CascadeMode::DELETE,
+                    CascadeMode::ALL
+                )
+            );
+        }
+
+        $entityName = EntityInterface::class;
+
+        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -166,9 +202,52 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('getParameters')
             ->willReturn($params);
 
-        $params->expects($this->once())
+        $params->expects($this->exactly(3))
             ->method('getParam')
-            ->with(EntityEventOption::CASCADE_MODE, CascadeMode::ALL)
-            ->willReturn($cascadeMode);
+            ->withConsecutive(
+                [EntityEventOption::CASCADE_MODE, CascadeMode::ALL],
+                [EntityEventOption::CASCADE_SAVE_OPTIONS, []],
+                [EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, []]
+            )->willReturnOnConsecutiveCalls(
+                $cascadeMode,
+                $options,
+                $collectionOptions
+            );
+
+        /** @var EntityManagerInterface|MockObject $entityManager */
+        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+
+        $event->expects($this->once())
+            ->method('getEntityManager')
+            ->willReturn($entityManager);
+
+        $this->logger->expects($this->once())
+            ->method('info')
+            ->with(sprintf('Performing cascade save operations for entity \'%s\'', $entityName));
+
+        $this->cascadeSaveService->expects($this->once())
+            ->method('saveAssociations')
+            ->with($entityManager, $entityName, $entity, $options, $collectionOptions);
+
+        $this->assertNull($listener($event));
     }
+
+    /**
+     * @return array|array[]
+     */
+    public function getCascadeSaveData(): array
+    {
+        return [
+            [
+                null,
+            ],
+            [
+                CascadeMode::SAVE,
+            ],
+            [
+                CascadeMode::ALL,
+            ],
+        ];
+    }
+
 }

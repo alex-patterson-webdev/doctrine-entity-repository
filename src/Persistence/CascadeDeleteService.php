@@ -22,6 +22,7 @@ class CascadeDeleteService extends AbstractCascadeService
      * @param array                  $deleteOptions
      * @param array                  $deleteCollectionOptions
      *
+     * @throws EntityRepositoryException
      * @throws PersistenceException
      */
     public function deleteAssociations(

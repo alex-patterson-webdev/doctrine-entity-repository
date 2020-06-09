@@ -17,6 +17,8 @@ final class EntityEventOption
     public const CASCADE_MODE = 'cascade_mode';
     public const CASCADE_SAVE_OPTIONS = 'cascade_save_options';
     public const CASCADE_SAVE_COLLECTION_OPTIONS = 'cascade_save_collection_options';
+    public const CASCADE_DELETE_OPTIONS = 'cascade_delete_options';
+    public const CASCADE_DELETE_COLLECTION_OPTIONS = 'cascade_delete_collection_options';
     public const TRANSACTION_MODE = 'transaction_mode';
     public const DATE_CREATED_MODE = 'date_created_mode';
     public const DATE_UPDATED_MODE = 'date_updated_mode';
