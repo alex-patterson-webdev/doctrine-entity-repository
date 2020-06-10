@@ -16,12 +16,12 @@ abstract class AbstractEntityEvent extends NamedEvent
     /**
      * @var string
      */
-    private $entityName;
+    private string $entityName;
 
     /**
      * @var EntityManagerInterface
      */
-    private $entityManager;
+    private EntityManagerInterface $entityManager;
 
     /**
      * @param string                 $eventName

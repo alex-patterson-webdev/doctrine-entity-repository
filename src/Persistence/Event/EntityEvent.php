@@ -13,7 +13,7 @@ use Arp\Entity\EntityInterface;
 class EntityEvent extends AbstractEntityEvent
 {
     /**
-     * @var EntityInterface
+     * @var EntityInterface|null
      */
     private $entity;
 
