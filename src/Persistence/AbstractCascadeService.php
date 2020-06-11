@@ -58,25 +58,27 @@ abstract class AbstractCascadeService
         EntityManagerInterface $entityManager,
         string $entityName
     ): EntityRepositoryInterface {
-        /** @var EntityRepositoryInterface $targetRepository */
         try {
+            /** @var EntityRepositoryInterface $targetRepository */
             $targetRepository = $entityManager->getRepository($entityName);
         } catch (\Throwable $e) {
             $errorMessage = sprintf(
-                'Unable to perform cascade operation for entity of type \'%s\': %s',
+                'An error occurred while attempting to load the repository for entity class \'%s\' : %s',
                 $entityName,
                 $e->getMessage()
             );
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
-            throw new PersistenceException($errorMessage);
+            throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
 
-        if (null === $targetRepository) {
+        if (null === $targetRepository || !($targetRepository instanceof EntityRepositoryInterface)) {
             $errorMessage = sprintf(
-                'Unable to perform cascade operation for entity of type \'%s\': '
-                . 'The entity repository could not be found',
-                $entityName
+                'The entity repository must be an object of type \'%s\'; \'%s\' returned in \'%s::%s\'',
+                EntityRepositoryInterface::class,
+                (is_object($targetRepository) ? get_class($targetRepository) : gettype($targetRepository)),
+                static::class,
+                __FUNCTION__
             );
             $this->logger->error($errorMessage);
 
@@ -161,14 +163,14 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @param string                 $entityName
      * @param EntityManagerInterface $entityManager
+     * @param string                 $entityName
      *
      * @return ClassMetadata
      *
      * @throws PersistenceException
      */
-    protected function getClassMetadata(string $entityName, EntityManagerInterface $entityManager): ClassMetadata
+    protected function getClassMetadata(EntityManagerInterface $entityManager, string $entityName): ClassMetadata
     {
         try {
             return $entityManager->getClassMetadata($entityName);

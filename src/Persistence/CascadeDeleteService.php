@@ -35,7 +35,7 @@ class CascadeDeleteService extends AbstractCascadeService
         $deleteOptions = array_replace_recursive($this->options, $deleteOptions);
         $deleteCollectionOptions = array_replace_recursive($this->collectionOptions, $deleteCollectionOptions);
 
-        $classMetadata = $this->getClassMetadata($entityName, $entityManager);
+        $classMetadata = $this->getClassMetadata($entityManager, $entityName);
         $mappings = $classMetadata->getAssociationMappings();
 
         $this->logger->info(
@@ -69,7 +69,7 @@ class CascadeDeleteService extends AbstractCascadeService
                 $entity,
                 $mapping['fieldName'],
                 $classMetadata,
-                $this->getClassMetadata($mapping['targetEntity'], $entityManager)
+                $this->getClassMetadata($entityManager, $mapping['targetEntity'])
             );
 
             if (!$this->isValidAssociation($targetEntityOrCollection, $mapping)) {

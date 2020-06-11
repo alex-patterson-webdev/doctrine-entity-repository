@@ -35,7 +35,7 @@ class CascadeSaveService extends AbstractCascadeService
         $saveOptions = array_replace_recursive($this->options, $saveOptions);
         $saveCollectionOptions = array_replace_recursive($this->collectionOptions, $saveCollectionOptions);
 
-        $classMetadata = $this->getClassMetadata($entityName, $entityManager);
+        $classMetadata = $this->getClassMetadata($entityManager, $entityName);
         $mappings = $classMetadata->getAssociationMappings();
 
         $this->logger->info(
@@ -60,8 +60,8 @@ class CascadeSaveService extends AbstractCascadeService
                 sprintf(
                     'The entity field \'%s::%s\' is configured for cascade operations for target entity \'%s\'',
                     $entityName,
-                    $mappings['fieldName'],
-                    $mappings['targetEntity']
+                    $mapping['fieldName'],
+                    $mapping['targetEntity']
                 )
             );
 
@@ -69,7 +69,7 @@ class CascadeSaveService extends AbstractCascadeService
                 $entity,
                 $mapping['fieldName'],
                 $classMetadata,
-                $this->getClassMetadata($mapping['targetEntity'], $entityManager)
+                $this->getClassMetadata($entityManager, $mapping['targetEntity'])
             );
 
             if (!$this->isValidAssociation($targetEntityOrCollection, $mapping)) {
@@ -77,7 +77,7 @@ class CascadeSaveService extends AbstractCascadeService
                     sprintf(
                         'The entity field \'%s::%s\' value could not be resolved',
                         $entityName,
-                        $mappings['fieldName']
+                        $mapping['fieldName']
                     )
                 );
                 continue;
@@ -87,7 +87,7 @@ class CascadeSaveService extends AbstractCascadeService
                 sprintf(
                     'Performing cascading save operations for field \'%s::%s\'',
                     $entityName,
-                    $mappings['fieldName']
+                    $mapping['fieldName']
                 )
             );
 
@@ -115,11 +115,11 @@ class CascadeSaveService extends AbstractCascadeService
         $entityOrCollection,
         array $options = []
     ): void {
-        $targetRepository = $this->getTargetRepository($entityManager, $targetEntityName);
-
         if (is_iterable($entityOrCollection)) {
+            $targetRepository = $this->getTargetRepository($entityManager, $targetEntityName);
             $targetRepository->saveCollection($entityOrCollection, $options);
         } elseif ($entityOrCollection instanceof EntityInterface) {
+            $targetRepository = $this->getTargetRepository($entityManager, $targetEntityName);
             $targetRepository->save($entityOrCollection, $options);
         } else {
             $errorMessage = sprintf(
