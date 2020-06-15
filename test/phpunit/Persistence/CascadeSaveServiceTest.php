@@ -9,6 +9,7 @@ use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
+use Arp\Entity\EntityTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -282,9 +283,8 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::__construct
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::getClassMetadata
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::resolveTargetEntityOrCollection
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -333,10 +333,7 @@ final class CascadeSaveServiceTest extends TestCase
             ->method('info')
             ->withConsecutive(
                 [
-                    sprintf(
-                        'Processing cascade save operations for for entity class \'%s\'',
-                        $entityName
-                    )
+                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName)
                 ],
                 [
                     sprintf(
@@ -360,6 +357,111 @@ final class CascadeSaveServiceTest extends TestCase
             $methodName,
             $mapping['fieldName'],
             $mapping['targetEntity']
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $cascadeService->saveAssociations($this->entityManager, $entityName, $entity);
+    }
+
+    /**
+     * Assert that calls to saveAssociations() will raise a PersistenceException if the provided entity method call
+     * throws an exception
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    public function testSaveAssociationsWillThrowAPersistenceExceptionIfTheTargetEntityCannotBeLoaded(): void
+    {
+        $cascadeService = new CascadeSaveService($this->logger, $this->options, $this->collectionOptions);
+
+        $entityName = EntityInterface::class;
+
+        $exceptionMessage = 'This is a test exception message';
+        $exception = new \Error($exceptionMessage);
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = new class($exception) implements EntityInterface {
+            use EntityTrait;
+            public \Throwable $exception;
+
+            public function __construct(\Throwable $exception)
+            {
+                $this->exception = $exception;
+            }
+
+            public function getFoo(): string
+            {
+                throw $this->exception;
+            }
+        };
+
+        /**
+         * @var ClassMetadata|MockObject $classMetadata
+         * @var ClassMetadata|MockObject $targetMetadata
+         */
+        $classMetadata = $this->createMock(ClassMetadata::class);
+        $targetMetadata = $this->createMock(ClassMetadata::class);
+
+        $mapping = [
+            'targetEntity' => EntityInterface::class,
+            'fieldName' => 'foo',
+            'type' => 'string',
+            'isCascadePersist' => true,
+        ];
+
+        $mappings = [$mapping];
+
+        $this->entityManager->expects($this->exactly(2))
+            ->method('getClassMetadata')
+            ->withConsecutive(
+                [$entityName],
+                [$mapping['targetEntity']]
+            )
+            ->willReturnOnConsecutiveCalls(
+                $classMetadata,
+                $targetMetadata
+            );
+
+        $classMetadata->expects($this->once())
+            ->method('getAssociationMappings')
+            ->willReturn($mappings);
+
+        $this->logger->expects($this->exactly(2))
+            ->method('info')
+            ->withConsecutive(
+                [
+                    sprintf(
+                        'Processing cascade save operations for for entity class \'%s\'',
+                        $entityName
+                    )
+                ],
+                [
+                    sprintf(
+                        'The entity field \'%s::%s\' is configured for cascade operations for target entity \'%s\'',
+                        $entityName,
+                        $mapping['fieldName'],
+                        $mapping['targetEntity']
+                    )
+                ]
+            );
+
+        $classMetadata->expects($this->once())->method('getName')->willReturn($entityName);
+        $targetMetadata->expects($this->once())->method('getName')->willReturn($mapping['targetEntity']);
+
+        $methodName = 'get' . ucfirst($mapping['fieldName']);
+
+        $errorMessage = sprintf(
+            'The call to resolve entity of type \'%s\' from method call \'%s::%s\' failed: %s',
+            $mapping['targetEntity'],
+            $entityName,
+            $methodName,
+            $exceptionMessage
         );
 
         $this->logger->expects($this->once())
