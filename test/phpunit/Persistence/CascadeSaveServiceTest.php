@@ -474,4 +474,85 @@ final class CascadeSaveServiceTest extends TestCase
         $cascadeService->saveAssociations($this->entityManager, $entityName, $entity);
     }
 
+    /**
+     * Assert that calls to saveAssociations() when mapping data contains associations that are either incorrectly
+     * configured (missing required keys) or are not cascade persist.
+     *
+     * @param array $mappingData The association mapping data for a single field to test
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     *
+     * @dataProvider getSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingDataData
+     */
+    public function testSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingData(array $mappingData): void
+    {
+        /** @var CascadeSaveService|MockObject $cascadeService */
+        $cascadeService = $this->getMockBuilder(CascadeSaveService::class)
+            ->setConstructorArgs([$this->logger, $this->options, $this->collectionOptions])
+            ->onlyMethods(['saveAssociation'])
+            ->getMock();
+
+        $entityName = EntityInterface::class;
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        /** @var ClassMetadata|MockObject $classMetadata */
+        $classMetadata = $this->createMock(ClassMetadata::class);
+
+        $this->entityManager->expects($this->once())
+            ->method('getClassMetadata')
+            ->with($entityName)
+            ->willReturn($classMetadata);
+
+        $classMetadata->expects($this->once())
+            ->method('getAssociationMappings')
+            ->willReturn([$mappingData]);
+
+        $cascadeService->saveAssociations($this->entityManager, $entityName, $entity);
+    }
+
+    /**
+     * @return array
+     */
+    public function getSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingDataData(): array
+    {
+        return [
+            [
+                [
+
+                ],
+            ],
+
+            [
+                [
+                    'targetEntity' => EntityInterface::class,
+                ],
+            ],
+
+            [
+                [
+                    'targetEntity' => EntityInterface::class,
+                    'fieldName' => 'foo',
+                ],
+            ],
+
+            [
+                [
+                    'targetEntity' => EntityInterface::class,
+                    'fieldName' => 'foo',
+                    'type' => 1
+                ],
+            ],
+
+            [
+                [
+                    'targetEntity' => EntityInterface::class,
+                    'fieldName' => 'foo',
+                    'type' => 1,
+                    'isCascadePersist' => false
+                ],
+            ]
+        ];
+    }
 }
