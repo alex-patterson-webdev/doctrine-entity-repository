@@ -480,9 +480,12 @@ final class CascadeSaveServiceTest extends TestCase
      *
      * @param array $mappingData The association mapping data for a single field to test
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
      *
      * @dataProvider getSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingDataData
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
      */
     public function testSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingData(array $mappingData): void
     {
@@ -555,4 +558,7 @@ final class CascadeSaveServiceTest extends TestCase
             ]
         ];
     }
+
+
+
 }

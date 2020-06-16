@@ -133,11 +133,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * @param int|null   $limit
      * @param int|null   $offset
      *
-     * @return EntityInterface[]
+     * @return EntityInterface[]|iterable
      *
      * @throws EntityRepositoryException
      */
-    public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): array
+    public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): iterable
     {
         try {
             $options = [
@@ -195,10 +195,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function saveCollection(iterable $collection, array $options = []): iterable
     {
-        try {
-            $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
-            $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
+        $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
+        $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
 
+        try {
             if (TransactionMode::ENABLED === $transactionMode) {
                 $this->persistService->beginTransaction();
             }
@@ -241,8 +241,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Delete an entity.
      *
-     * @param EntityInterface|int|string $entity
-     * @param array                      $options
+     * @param EntityInterface|string $entity
+     * @param array                  $options
      *
      * @return bool
      *
@@ -250,10 +250,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function delete($entity, array $options = []): bool
     {
-        if (!is_int($entity) && !is_string($entity) && !$entity instanceof EntityInterface) {
+        if (!is_string($entity) && !$entity instanceof EntityInterface) {
             throw new EntityRepositoryException(
                 sprintf(
-                    'The \'entity\' argument must be \'int\' or an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                    'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
+                    . '\'%s\' provided in \'%s\'',
                     EntityInterface::class,
                     (is_object($entity) ? get_class($entity) : gettype($entity)),
                     __METHOD__
@@ -261,8 +262,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             );
         }
 
-        if (! is_object($entity)) {
-            $id = (int) $entity;
+        if (is_string($entity)) {
+            $id = $entity;
             $entity = $this->find($id);
 
             if (null === $entity) {
@@ -281,7 +282,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         try {
             return $this->persistService->delete($entity, $options);
         } catch (\Throwable $e) {
-            $errorMessage = sprintf('Unable to delete entity of type \'%s\': %s', $this->entityName, $e->getMessage());
+            $errorMessage = sprintf(
+                'Unable to delete entity of type \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
+            );
 
             $this->logger->error($errorMessage);
 

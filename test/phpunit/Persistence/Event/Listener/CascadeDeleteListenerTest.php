@@ -28,12 +28,12 @@ final class CascadeDeleteListenerTest extends TestCase
     /**
      * @var CascadeDeleteService|MockObject
      */
-    private CascadeDeleteService $cascadeDeleteService;
+    private $cascadeDeleteService;
 
     /**
      * @var LoggerInterface|MockObject
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * Prepare the test case dependencies
