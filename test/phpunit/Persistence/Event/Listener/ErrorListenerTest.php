@@ -6,7 +6,6 @@ namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
-use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
