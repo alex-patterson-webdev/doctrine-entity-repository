@@ -187,11 +187,11 @@ class QueryService implements QueryServiceInterface
      * @param array $criteria The search criteria that should be matched on.
      * @param array $options  The optional query options.
      *
-     * @return EntityInterface[]|\Traversable
+     * @return EntityInterface[]|iterable
      *
      * @throws QueryServiceException
      */
-    public function findMany(array $criteria, array $options = [])
+    public function findMany(array $criteria, array $options = []): iterable
     {
         try {
             $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);

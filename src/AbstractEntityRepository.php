@@ -306,10 +306,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function deleteCollection(iterable $collection, array $options = []): int
     {
-        try {
-            $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
-            $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
+        $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
+        $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
 
+        try {
             if (TransactionMode::ENABLED === $transactionMode) {
                 $this->persistService->beginTransaction();
             }
