@@ -102,7 +102,7 @@ class CascadeSaveService extends AbstractCascadeService
 
     /**
      * @param EntityManagerInterface                     $entityManager
-     * @param string                                     $targetEntityName
+     * @param string                                     $entityName
      * @param EntityInterface|EntityInterface[]|iterable $entityOrCollection
      * @param array                                      $options
      *
@@ -111,20 +111,18 @@ class CascadeSaveService extends AbstractCascadeService
      */
     public function saveAssociation(
         EntityManagerInterface $entityManager,
-        string $targetEntityName,
+        string $entityName,
         $entityOrCollection,
         array $options = []
     ): void {
         if (is_iterable($entityOrCollection)) {
-            $targetRepository = $this->getTargetRepository($entityManager, $targetEntityName);
-            $targetRepository->saveCollection($entityOrCollection, $options);
+            $this->getTargetRepository($entityManager, $entityName)->saveCollection($entityOrCollection, $options);
         } elseif ($entityOrCollection instanceof EntityInterface) {
-            $targetRepository = $this->getTargetRepository($entityManager, $targetEntityName);
-            $targetRepository->save($entityOrCollection, $options);
+            $this->getTargetRepository($entityManager, $entityName)->save($entityOrCollection, $options);
         } else {
             $errorMessage = sprintf(
                 'Unable to cascade save target entity \'%s\': The entity or collection is of an invalid type \'%s\'',
-                $targetEntityName,
+                $entityName,
                 (is_object($entityOrCollection) ? get_class($entityOrCollection) : gettype($entityOrCollection))
             );
 

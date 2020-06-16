@@ -45,14 +45,14 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @todo We should implement a way to decorate the call the getRepository() with a concrete implementation
-     *       of the EntityRepositoryProviderInterface
-     *
      * @param EntityManagerInterface $entityManager
      * @param string                 $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
+     * @todo We should implement a way to decorate the call the getRepository() with a concrete implementation
+     *       of the EntityRepositoryProviderInterface
+     *
      */
     protected function getTargetRepository(
         EntityManagerInterface $entityManager,
