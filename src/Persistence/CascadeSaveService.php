@@ -73,14 +73,15 @@ class CascadeSaveService extends AbstractCascadeService
             );
 
             if (!$this->isValidAssociation($targetEntityOrCollection, $mapping)) {
-                $this->logger->info(
-                    sprintf(
-                        'The entity field \'%s::%s\' value could not be resolved',
-                        $entityName,
-                        $mapping['fieldName']
-                    )
+                $errorMessage = sprintf(
+                    'The entity field \'%s::%s\' value could not be resolved',
+                    $entityName,
+                    $mappings['fieldName']
                 );
-                continue;
+
+                $this->logger->error($errorMessage);
+
+                throw new PersistenceException($errorMessage);
             }
 
             $this->logger->info(

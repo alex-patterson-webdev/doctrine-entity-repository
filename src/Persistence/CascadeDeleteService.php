@@ -78,10 +78,10 @@ class CascadeDeleteService extends AbstractCascadeService
                     $entityName,
                     $mappings['fieldName']
                 );
+
                 $this->logger->error($errorMessage);
 
                 throw new PersistenceException($errorMessage);
-                continue;
             }
 
             $this->logger->info(
