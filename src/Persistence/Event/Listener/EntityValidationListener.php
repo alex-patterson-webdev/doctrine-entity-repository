@@ -22,7 +22,7 @@ final class EntityValidationListener implements AggregateListenerInterface
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param LoggerInterface $logger

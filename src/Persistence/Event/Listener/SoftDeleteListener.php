@@ -19,7 +19,7 @@ final class SoftDeleteListener
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param LoggerInterface $logger
@@ -34,9 +34,17 @@ final class SoftDeleteListener
      */
     public function __invoke(EntityEvent $event)
     {
+        $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
         if (null === $entity || !$entity instanceof DeleteAwareInterface) {
+            $this->logger->info(
+                sprintf(
+                    'Ignoring soft delete for entity \'%s\': The entity value is either null '
+                    . 'or this entity has not configured to be able to perform soft deletes',
+                    $entityName
+                )
+            );
             return;
         }
 
@@ -44,19 +52,20 @@ final class SoftDeleteListener
             $this->logger->info(
                 sprintf(
                     'Ignoring soft delete operations for already deleted entity \'%s::%s\'',
-                    $event->getEntityName(),
+                    $entityName,
                     $entity->getId()
                 )
             );
             return;
         }
 
-        $persistMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::HARD);
+        $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::SOFT);
 
-        if (DeleteMode::SOFT !== $persistMode) {
+        if (DeleteMode::SOFT !== $deleteMode) {
             $this->logger->info(
                 sprintf(
-                    'Soft deleting has been disabled via configuration option \'%s\'',
+                    'Soft deleting has been disabled for entity \'%s\' via configuration option \'%s\'',
+                    $entityName,
                     EntityEventOption::DELETE_MODE
                 )
             );
@@ -67,7 +76,7 @@ final class SoftDeleteListener
             sprintf(
                 'Performing \'%s\' delete for entity \'%s::%s\'',
                 DeleteMode::SOFT,
-                $event->getEntityName(),
+                $entityName,
                 $entity->getId()
             )
         );

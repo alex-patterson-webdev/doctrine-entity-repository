@@ -1,0 +1,38 @@
+build:
+  environment:
+    php: 7.4.6
+  nodes:
+    analysis:
+      project_setup:
+        override:
+          - 'true'
+      tests:
+        override:
+          - php-scrutinizer-run
+          -
+            command: phpcs-run
+checks:
+  php:
+    simplify_boolean_return: true
+    properties_in_camelcaps: true
+    phpunit_assertions: true
+    return_doc_comment_if_not_inferrable: true
+    return_doc_comments: true
+    parameter_doc_comments: true
+    parameters_in_camelcaps: true
+    param_doc_comment_if_not_inferrable: true
+    fix_line_ending: true
+    check_method_contracts:
+      verify_interface_like_constraints: true
+      verify_documented_constraints: true
+      verify_parent_constraints: true
+    overriding_parameter: false
+
+coding_style:
+  php:
+    spaces:
+      general:
+        linefeed_character: return-newline
+filter:
+  dependency_paths:
+    - "vendor/"

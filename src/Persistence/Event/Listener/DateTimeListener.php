@@ -18,17 +18,17 @@ final class DateTimeListener implements AggregateListenerInterface
     /**
      * @var DateCreatedListener
      */
-    private $dateCreatedListener;
+    private DateCreatedListener $dateCreatedListener;
 
     /**
      * @var DateUpdatedListener
      */
-    private $dateUpdatedListener;
+    private DateUpdatedListener $dateUpdatedListener;
 
     /**
      * @var DateDeletedListener
      */
-    private $dateDeletedListener;
+    private DateDeletedListener $dateDeletedListener;
 
     /**
      * @param DateCreatedListener $dateCreatedListener

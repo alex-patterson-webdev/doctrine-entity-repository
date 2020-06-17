@@ -6,7 +6,7 @@ namespace Arp\DoctrineEntityRepository;
 
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\Entity\EntityInterface;
-use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\Persistence\ObjectRepository;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -49,6 +49,18 @@ interface EntityRepositoryInterface extends ObjectRepository
      * @throws EntityRepositoryException
      */
     public function delete($entity, array $options = []): bool;
+
+    /**
+     * Perform a deletion of a collection of entities.
+     *
+     * @param iterable|EntityInterface $collection
+     * @param array                    $options
+     *
+     * @return int
+     *
+     * @throws EntityRepositoryException
+     */
+    public function deleteCollection(iterable $collection, array $options = []): int;
 
     /**
      * @throws EntityRepositoryException

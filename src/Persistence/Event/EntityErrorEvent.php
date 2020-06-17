@@ -15,7 +15,7 @@ class EntityErrorEvent extends AbstractEntityEvent
     /**
      * @var \Throwable
      */
-    private $exception;
+    private \Throwable $exception;
 
     /**
      * @param string                 $eventName

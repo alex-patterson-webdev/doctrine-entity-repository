@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "php": ">=7.2",
+    "php": ">=7.4",
     "alex-patterson-webdev/date-time": "dev-feature/1.0.0",
     "alex-patterson-webdev/event-dispatcher": "dev-feature/0.2.0",
     "alex-patterson-webdev/entity": "dev-feature/1.0.0",
@@ -19,8 +19,10 @@
     "psr/log": "^1.1"
   },
   "require-dev": {
-    "squizlabs/php_codesniffer": "^3.5",
-    "phpunit/phpunit": "^8"
+    "phpunit/phpunit": "^9.1",
+    "squizlabs/php_codesniffer": "3.*",
+    "phpmd/phpmd" : "@stable",
+    "friendsofphp/php-cs-fixer": "^2.16"
   },
   "autoload": {
     "psr-4": {
@@ -29,7 +31,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "ArpTest\\DoctrineEntityRepository\\": "test/phpunit"
+      "ArpTest\\DoctrineEntityRepository\\": "test/phpunit/"
     }
   },
   "scripts": {

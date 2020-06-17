@@ -16,12 +16,12 @@ abstract class AbstractDateTimeListener
     /**
      * @var DateTimeFactoryInterface
      */
-    protected $dateTimeFactory;
+    protected DateTimeFactoryInterface $dateTimeFactory;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @param DateTimeFactoryInterface $dateTimeFactory

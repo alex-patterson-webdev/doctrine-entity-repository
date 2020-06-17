@@ -24,7 +24,7 @@ final class TransactionListener implements AggregateListenerInterface
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param LoggerInterface $logger
@@ -88,7 +88,7 @@ final class TransactionListener implements AggregateListenerInterface
 
         $this->logger->info(
             sprintf(
-                'Committing\'%s\' transaction for entity \'%s::%s\'',
+                'Committing \'%s\' transaction for entity \'%s::%s\'',
                 $event->getEventName(),
                 $event->getEntityName(),
                 (isset($entity) ? $entity->getId() : '0')
@@ -109,7 +109,7 @@ final class TransactionListener implements AggregateListenerInterface
 
         $this->logger->info(
             sprintf(
-                'Rolling back  \'%s\' transaction for entity class \'%s\'',
+                'Rolling back \'%s\' transaction for entity class \'%s\'',
                 $event->getEventName(),
                 $event->getEntityName()
             )

@@ -9,6 +9,7 @@ use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
+use Doctrine\Persistence\ObjectRepository;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -68,5 +69,22 @@ class EntityRepositoryTest extends TestCase
         );
 
         $this->assertInstanceOf(EntityRepositoryInterface::class, $repository);
+    }
+
+    /**
+     * Assert the EntityRepository implements the ObjectRepository
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository
+     */
+    public function testImplementsObjectRepository(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $this->assertInstanceOf(ObjectRepository::class, $repository);
     }
 }
