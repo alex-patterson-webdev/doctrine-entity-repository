@@ -386,8 +386,9 @@ final class CascadeSaveServiceTest extends TestCase
         $exception = new \Error($exceptionMessage);
 
         /** @var EntityInterface|MockObject $entity */
-        $entity = new class($exception) implements EntityInterface {
+        $entity = new class ($exception) implements EntityInterface {
             use EntityTrait;
+
             public \Throwable $exception;
 
             public function __construct(\Throwable $exception)
@@ -550,15 +551,144 @@ final class CascadeSaveServiceTest extends TestCase
 
             [
                 [
-                    'targetEntity' => EntityInterface::class,
-                    'fieldName' => 'foo',
-                    'type' => 1,
-                    'isCascadePersist' => false
+                    'targetEntity'     => EntityInterface::class,
+                    'fieldName'        => 'foo',
+                    'type'             => 1,
+                    'isCascadePersist' => false,
                 ],
             ]
         ];
     }
 
+    /**
+     * @param array $mappingData
+     * @param mixed $returnValue
+     *
+     * @dataProvider getSaveAssociationsThrowPersistenceExceptionIfTheAssocValueIsInvalidData
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::isValidAssociation
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    public function testSaveAssociationsThrowPersistenceExceptionIfTheAssocValueIsInvalid(
+        array $mappingData,
+        $returnValue
+    ): void {
+        $cascadeSaveService = new CascadeSaveService($this->logger, $this->options, $this->collectionOptions);
 
+        $entityName = EntityInterface::class;
+        $fieldName = 'foo';
+        $targetEntityName = $mappingData['targetEntity'] = $mappingData['targetEntity'] ?? EntityInterface::class;
+        $mappingData['fieldName'] = 'foo';
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = new class ($returnValue) implements EntityInterface {
+            use EntityTrait;
+
+            /**
+             * @var mixed
+             */
+            private $returnValue;
+
+            public function __construct($returnValue)
+            {
+                $this->returnValue = $returnValue;
+            }
+
+            public function getFoo()
+            {
+                return $this->returnValue;
+            }
+        };
+
+        /** @var ClassMetadata|MockObject $metadata */
+        $metadata = $this->createMock(ClassMetadata::class);
+
+        /** @var ClassMetadata|MockObject $targetMetadata */
+        $targetMetadata = $this->createMock(ClassMetadata::class);
+
+        $this->entityManager->expects($this->exactly(2))
+            ->method('getClassMetadata')
+            ->withConsecutive(
+                [$entityName],
+                [$targetEntityName]
+            )->willReturnOnConsecutiveCalls(
+                $metadata,
+                $targetMetadata
+            );
+
+        $mappings = [
+            $mappingData
+        ];
+
+        $metadata->expects($this->once())
+            ->method('getAssociationMappings')
+            ->willReturn($mappings);
+
+        $this->logger->expects($this->exactly(2))
+            ->method('info')
+            ->withConsecutive(
+                [
+                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName)
+                ],
+                [
+                    sprintf(
+                        'The entity field \'%s::%s\' is configured for cascade operations for target entity \'%s\'',
+                        $entityName,
+                        $fieldName,
+                        $targetEntityName
+                    )
+                ]
+            );
+
+        $errorMessage = sprintf('The entity field \'%s::%s\' value could not be resolved', $entityName, $fieldName);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $cascadeSaveService->saveAssociations($this->entityManager, $entityName, $entity);
+    }
+
+    /**
+     * @return array|\array[][]
+     */
+    public function getSaveAssociationsThrowPersistenceExceptionIfTheAssocValueIsInvalidData(): array
+    {
+        return [
+            // The return value of the assoc is NULL but the field mapping does not allow NULL should raise an error.
+            [
+                [
+                    'type'             => ClassMetadata::MANY_TO_ONE,
+                    'isCascadePersist' => true,
+                    'joinColumns'      => [
+                        [
+                            'nullable' => false,
+                        ],
+                    ],
+                ],
+                null
+            ],
+
+            // The return value of the assoc is not a EntityInterface or iterable collection
+            [
+                [
+                    'type'             => ClassMetadata::MANY_TO_ONE,
+                    'isCascadePersist' => true,
+                    'joinColumns'      => [
+                        [
+                            'nullable' => false,
+                        ],
+                    ],
+                ],
+                new \stdClass()
+            ],
+
+        ];
+    }
 
 }
