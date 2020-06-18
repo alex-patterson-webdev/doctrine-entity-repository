@@ -697,6 +697,7 @@ final class CascadeSaveServiceTest extends TestCase
      *
      * @dataProvider getSaveAssociationsData
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::resolveTargetEntityOrCollection
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException

@@ -69,7 +69,7 @@ final class EntityValidationListener implements AggregateListenerInterface
             throw new InvalidArgumentException($errorMessage);
         }
 
-        if (! $entity instanceof EntityInterface || !$entity instanceof $entityName) {
+        if (!$entity instanceof $entityName) {
             $errorMessage = sprintf(
                 'The entity class of type \'%s\' does not match the expected \'%s\' for event \'%s\'',
                 (is_object($entity) ? get_class($entity) : gettype($entity)),
