@@ -7,7 +7,6 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
-use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
@@ -84,7 +83,7 @@ final class EntityValidationListener implements AggregateListenerInterface
 
         $this->logger->info(
             sprintf(
-                'Successful validation of \'%s\' for event \'%s\'',
+                'Successfully completed validation of \'%s\' for event \'%s\'',
                 $entityName,
                 $eventName
             )

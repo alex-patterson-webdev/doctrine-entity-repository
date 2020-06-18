@@ -9,7 +9,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
 use Arp\Entity\EntityInterface;
-use Arp\Entity\EntityTrait;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
@@ -167,6 +166,51 @@ final class EntityValidationListenerTest extends TestCase
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage($errorMessage);
+
+        $listener->validateEntity($event);
+    }
+
+    /**
+     * Assert that the validateEntity() method will log and exit without errors with a valid entity instance.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener::validateEntity
+     *
+     * @throws InvalidArgumentException
+     */
+    public function testValidateEntityIsSuccessful(): void
+    {
+        $listener = new EntityValidationListener($this->logger);
+
+        /** @var EntityEvent|MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        $eventName = EntityEventName::UPDATE;
+
+        /** @var EntityInterface $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entityName = get_class($entity);
+
+        $event->expects($this->once())
+            ->method('getEventName')
+            ->willReturn($eventName);
+
+        $event->expects($this->once())
+            ->method('getEntityName')
+            ->willReturn($entityName);
+
+        $event->expects($this->once())
+            ->method('getEntity')
+            ->willReturn($entity);
+
+        $message = sprintf(
+            'Successfully completed validation of \'%s\' for event \'%s\'',
+            $entityName,
+            $eventName
+        );
+
+        $this->logger->expects($this->once())
+            ->method('info')
+            ->with($message);
 
         $listener->validateEntity($event);
     }
