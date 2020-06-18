@@ -159,7 +159,7 @@ abstract class AbstractCascadeService
                 : false;
         }
 
-        return (is_callable($entityOrCollection) || $entityOrCollection instanceof EntityInterface);
+        return (is_iterable($entityOrCollection) || $entityOrCollection instanceof EntityInterface);
     }
 
     /**

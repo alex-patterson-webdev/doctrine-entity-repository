@@ -685,10 +685,164 @@ final class CascadeSaveServiceTest extends TestCase
                         ],
                     ],
                 ],
-                new \stdClass()
+                new \stdClass(),
             ],
 
         ];
     }
 
+    /**
+     * @param array                               $mappingData
+     * @param iterable|EntityInterface|MockObject $returnValue
+     *
+     * @dataProvider getSaveAssociationsData
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     *
+     * @throws EntityRepositoryException
+     * @throws PersistenceException
+     */
+    public function testSaveAssociations(array $mappingData, $returnValue): void
+    {
+        $this->options = [
+            'foo' => 1,
+        ];
+
+        $this->collectionOptions = [
+            'bar' => 2,
+        ];
+
+        if ($returnValue instanceof EntityInterface) {
+            $saveOptions = $this->options;
+        } else {
+            $saveOptions = $this->collectionOptions;
+        }
+
+        /** @var CascadeSaveService|MockObject $cascadeSaveService */
+        $cascadeSaveService = $this->getMockBuilder(CascadeSaveService::class)
+            ->setConstructorArgs([$this->logger, $this->options, $this->collectionOptions])
+            ->onlyMethods(['saveAssociation'])
+            ->getMock();
+
+        $entityName = EntityInterface::class;
+        $fieldName = 'foo';
+        $targetEntityName = $mappingData['targetEntity'] = $mappingData['targetEntity'] ?? EntityInterface::class;
+        $mappingData['fieldName'] = 'foo';
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = new class ($returnValue) implements EntityInterface {
+            use EntityTrait;
+
+            /**
+             * @var mixed
+             */
+            private $returnValue;
+
+            public function __construct($returnValue)
+            {
+                $this->returnValue = $returnValue;
+            }
+
+            public function getFoo()
+            {
+                return $this->returnValue;
+            }
+        };
+
+        /** @var ClassMetadata|MockObject $metadata */
+        $metadata = $this->createMock(ClassMetadata::class);
+
+        /** @var ClassMetadata|MockObject $targetMetadata */
+        $targetMetadata = $this->createMock(ClassMetadata::class);
+
+        $this->entityManager->expects($this->exactly(2))
+            ->method('getClassMetadata')
+            ->withConsecutive(
+                [$entityName],
+                [$targetEntityName]
+            )->willReturnOnConsecutiveCalls(
+                $metadata,
+                $targetMetadata
+            );
+
+        $mappings = [
+            $mappingData,
+        ];
+
+        $metadata->expects($this->once())
+            ->method('getAssociationMappings')
+            ->willReturn($mappings);
+
+        $this->logger->expects($this->exactly(3))
+            ->method('info')
+            ->withConsecutive(
+                [
+                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName),
+                ],
+                [
+                    sprintf(
+                        'The entity field \'%s::%s\' is configured for cascade operations for target entity \'%s\'',
+                        $entityName,
+                        $fieldName,
+                        $targetEntityName
+                    ),
+                ],
+                [
+                    sprintf('Performing cascading save operations for field \'%s::%s\'', $entityName, $fieldName)
+                ]
+            );
+
+        $cascadeSaveService->expects($this->once())
+            ->method('saveAssociation')
+            ->with($this->entityManager, $targetEntityName, $returnValue, $saveOptions);
+
+        $cascadeSaveService->saveAssociations($this->entityManager, $entityName, $entity);
+    }
+
+    /**
+     * @return array|\array[][]
+     */
+    public function getSaveAssociationsData(): array
+    {
+        /** @var EntityInterface[]|MockObject[] $collection */
+        $collection = [
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+        ];
+        $iteratorCollection = new \ArrayIterator($collection);
+
+        return [
+            // Save a single entity association
+            [
+                [
+                    'type'             => ClassMetadata::MANY_TO_ONE,
+                    'isCascadePersist' => true,
+                    'joinColumns'      => [
+                        [
+                            'nullable' => false,
+                        ],
+                    ],
+                ],
+                $this->getMockForAbstractClass(EntityInterface::class)
+            ],
+
+            // Save a collection association
+            [
+                [
+                    'type'             => ClassMetadata::ONE_TO_MANY,
+                    'isCascadePersist' => true,
+                ],
+                $collection
+            ],
+
+            // Save an iterable collection association
+            [
+                [
+                    'type'             => ClassMetadata::MANY_TO_MANY,
+                    'isCascadePersist' => true,
+                ],
+                $iteratorCollection
+            ],
+        ];
+    }
 }
