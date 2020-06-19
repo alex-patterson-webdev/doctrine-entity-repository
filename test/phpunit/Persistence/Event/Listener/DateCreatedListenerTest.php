@@ -47,7 +47,7 @@ final class DateCreatedListenerTest extends TestCase
     /**
      * Assert that the class is callable.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__construct
      */
     public function testIsCallable(): void
     {

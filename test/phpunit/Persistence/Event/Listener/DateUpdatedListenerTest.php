@@ -47,7 +47,7 @@ final class DateUpdatedListenerTest extends TestCase
     /**
      * Assert that the class is callable.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__construct
      */
     public function testIsCallable(): void
     {
@@ -139,7 +139,7 @@ final class DateUpdatedListenerTest extends TestCase
      * Assert that we can enabled/disable the date update if the configuration options include a DATE_UPDATED_MODE of
      * ENABLED/DISABLED.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
      *
      * @throws PersistenceException
      */
