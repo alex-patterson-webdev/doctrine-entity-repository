@@ -8,7 +8,7 @@ namespace Arp\DoctrineEntityRepository\Constant;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Constant
  */
-final class DateCreatedMode
+final class DateCreateMode
 {
     public const ENABLED = 'enabled';
     public const DISABLED = 'disabled';

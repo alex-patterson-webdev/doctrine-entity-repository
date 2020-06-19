@@ -7,7 +7,7 @@ namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DateTime\DateTimeFactory;
 use Arp\DateTime\DateTimeFactoryInterface;
 use Arp\DateTime\Exception\DateTimeFactoryException;
-use Arp\DoctrineEntityRepository\Constant\DateCreatedMode;
+use Arp\DoctrineEntityRepository\Constant\DateCreateMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener;
@@ -126,7 +126,7 @@ final class DateCreatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        $mode = DateCreatedMode::DISABLED;
+        $mode = DateCreateMode::DISABLED;
 
         /** @var ParametersInterface|MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
@@ -137,7 +137,7 @@ final class DateCreatedListenerTest extends TestCase
 
         $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreatedMode::ENABLED)
+            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn($mode);
 
         $this->logger->expects($this->once())
@@ -194,7 +194,7 @@ final class DateCreatedListenerTest extends TestCase
 
         $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreatedMode::ENABLED)
+            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->will(isset($mode) ? $this->returnValue($mode) : $this->returnArgument(1));
 
         $createdDateTime = new \DateTime();
@@ -232,7 +232,7 @@ final class DateCreatedListenerTest extends TestCase
                 null, // enabled is the default, so we expect that without passing an option..
             ],
             [
-                DateCreatedMode::ENABLED,
+                DateCreateMode::ENABLED,
             ]
         ];
     }

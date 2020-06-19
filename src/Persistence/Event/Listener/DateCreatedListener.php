@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DateTime\Exception\DateTimeFactoryException;
-use Arp\DoctrineEntityRepository\Constant\DateCreatedMode;
+use Arp\DoctrineEntityRepository\Constant\DateCreateMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DateCreatedAwareInterface;
@@ -37,9 +37,9 @@ class DateCreatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreatedMode::ENABLED);
+        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED);
 
-        if (DateCreatedMode::ENABLED !== $mode) {
+        if (DateCreateMode::ENABLED !== $mode) {
             $this->logger->info(
                 sprintf(
                     'Ignoring created date operations : \'%s\' has a date create mode set to \'%s\'.',
