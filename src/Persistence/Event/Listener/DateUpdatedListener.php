@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DateTime\Exception\DateTimeFactoryException;
 use Arp\DoctrineEntityRepository\Constant\DateUpdateMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
@@ -41,42 +40,27 @@ class DateUpdatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $updateMode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
+        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
         $entityId = $entity->getId();
 
-        if (DateUpdateMode::ENABLED !== $updateMode) {
-            $this->logger->info(
-                sprintf(
-                    'The date time update of field \'dateUpdated\' '
-                    . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
-                    $entityName,
-                    $entityId,
-                    EntityEventOption::DATE_UPDATED_MODE
-                )
+        if (DateUpdateMode::ENABLED !== $mode) {
+            $message = sprintf(
+                'The date time update of field \'dateUpdated\' '
+                . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
+                $entityName,
+                $entityId,
+                EntityEventOption::DATE_UPDATED_MODE
             );
+            $this->logger->info($message);
             return;
         }
 
-        try {
-            $dateUpdated = $this->dateTimeFactory->createDateTime();
-        } catch (DateTimeFactoryException $e) {
-            $errorMessage = sprintf(
-                'Failed to create the update date time instance for entity \'%s::%s\': %s',
-                $entityName,
-                $entityId,
-                $e->getMessage()
-            );
-
-            $this->logger->error($errorMessage);
-
-            throw new PersistenceException($errorMessage);
-        }
-
+        $dateUpdated = $this->createDateTime($entityName, $entityId);
         $entity->setDateUpdated($dateUpdated);
 
         $this->logger->info(
             sprintf(
-                'The \'dateUpdated\' for entity \'%s::%s\' has been updated with new date time \'%s\'',
+                'The \'dateUpdated\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
                 $entityName,
                 $entityId,
                 $dateUpdated->format(\DateTime::ATOM)

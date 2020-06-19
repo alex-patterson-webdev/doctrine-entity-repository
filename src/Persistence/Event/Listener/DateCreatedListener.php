@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DateTime\Exception\DateTimeFactoryException;
 use Arp\DoctrineEntityRepository\Constant\DateCreateMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DateCreatedAwareInterface;
 
 /**
@@ -17,19 +17,22 @@ use Arp\Entity\DateCreatedAwareInterface;
 class DateCreatedListener extends AbstractDateTimeListener
 {
     /**
+     * Check if the created entity implements DateCreatedAwareInterface and set a new date time instance on the
+     * dateCreated property.
+     *
      * @param EntityEvent $event
      *
-     * @throws DateTimeFactoryException
+     * @throws PersistenceException
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
-        if (!$entity instanceof DateCreatedAwareInterface) {
+        if (null === $entity || !$entity instanceof DateCreatedAwareInterface) {
             $this->logger->debug(
                 sprintf(
-                    'Ignoring created date operations : \'%s\' does not implement \'%s\'.',
+                    'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
                     DateCreatedAwareInterface::class
                 )
@@ -38,27 +41,30 @@ class DateCreatedListener extends AbstractDateTimeListener
         }
 
         $mode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED);
+        $entityId = $entity->getId();
 
         if (DateCreateMode::ENABLED !== $mode) {
             $this->logger->info(
                 sprintf(
-                    'Ignoring created date operations : \'%s\' has a date create mode set to \'%s\'.',
+                    'The date time update of field \'dateCreated\' '
+                    . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
                     $entityName,
-                    $mode
+                    $entityId,
+                    EntityEventOption::DATE_CREATED_MODE
                 )
             );
             return;
         }
 
-
-        $dateCreated = $this->dateTimeFactory->createDateTime();
+        $dateCreated = $this->createDateTime($entityName, $entityId);
         $entity->setDateCreated($dateCreated);
 
         $this->logger->info(
             sprintf(
-                'Setting new created date \'%s\' for entity of type \'%s\'',
-                $dateCreated->format(\DateTime::ATOM),
-                $entityName
+                'The \'dateCreated\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
+                $entityName,
+                $entityId,
+                $dateCreated->format(\DateTime::ATOM)
             )
         );
     }
