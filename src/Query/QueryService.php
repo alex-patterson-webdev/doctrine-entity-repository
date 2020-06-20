@@ -22,17 +22,17 @@ class QueryService implements QueryServiceInterface
     /**
      * @var string
      */
-    protected $entityName;
+    protected string $entityName;
 
     /**
      * @var EntityManagerInterface
      */
-    protected $entityManager;
+    protected EntityManagerInterface $entityManager;
 
     /**
      * @var LoggerInterface
      */
-    protected $logger;
+    protected LoggerInterface $logger;
 
     /**
      * @param string                 $entityName
