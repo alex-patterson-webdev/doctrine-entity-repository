@@ -7,6 +7,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\DateUpdateMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DateUpdatedAwareInterface;
 
@@ -40,9 +41,18 @@ class DateUpdatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
         $entityId = $entity->getId();
+        if (empty($entityId)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'The entity of type \'%s\' is expected to have a valid entity id in '
+                    . 'order to update the \'dateUpdated\' property with a new date time',
+                    $entityName
+                )
+            );
+        }
 
+        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
         if (DateUpdateMode::ENABLED !== $mode) {
             $message = sprintf(
                 'The date time update of field \'dateUpdated\' '
@@ -55,7 +65,7 @@ class DateUpdatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $dateUpdated = $this->createDateTime($entityName, $entityId);
+        $dateUpdated = $this->createDateTime($entityName);
         $entity->setDateUpdated($dateUpdated);
 
         $this->logger->info(

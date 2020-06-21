@@ -151,7 +151,6 @@ final class DateCreatedListenerTest extends TestCase
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
-        $entityId = 'ABC123';
 
         /** @var DateCreatedAwareInterface|MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
@@ -176,18 +175,13 @@ final class DateCreatedListenerTest extends TestCase
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::DISABLED); // Will cause use to exit early
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
         $this->logger->expects($this->once())
             ->method('info')
             ->with(
                 sprintf(
                     'The date time update of field \'dateCreated\' '
-                    . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
+                    . 'has been disabled for new entity \'%s\' using configuration option \'%s\'',
                     $entityName,
-                    $entityId,
                     EntityEventOption::DATE_CREATED_MODE
                 )
             );
@@ -211,7 +205,6 @@ final class DateCreatedListenerTest extends TestCase
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
-        $entityId = 'ABC123';
 
         /** @var DateCreatedAwareInterface|MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
@@ -236,10 +229,6 @@ final class DateCreatedListenerTest extends TestCase
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::ENABLED);
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
         $exceptionMessage = 'This is a test exception message from DateTimeFactory';
         $exception = new DateTimeFactoryException($exceptionMessage);
 
@@ -248,9 +237,8 @@ final class DateCreatedListenerTest extends TestCase
             ->willThrowException($exception);
 
         $errorMessage = sprintf(
-            'Failed to create the update date time instance for entity \'%s::%s\': %s',
+            'Failed to create the update date time instance for entity \'%s\': %s',
             $entityName,
-            $entityId,
             $exceptionMessage
         );
 
@@ -306,10 +294,6 @@ final class DateCreatedListenerTest extends TestCase
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::ENABLED);
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
         $dateUpdated = new \DateTime();
 
         $this->dateTimeFactory->expects($this->once())
@@ -317,9 +301,8 @@ final class DateCreatedListenerTest extends TestCase
             ->willReturn($dateUpdated);
 
         $message = sprintf(
-            'The \'dateCreated\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
+            'The \'dateCreated\' property for entity \'%s\' has been updated with new date time \'%s\'',
             $entityName,
-            $entityId,
             $dateUpdated->format(\DateTime::ATOM)
         );
 

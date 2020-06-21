@@ -7,6 +7,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\DateDeleteMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DateDeletedAwareInterface;
 
@@ -40,9 +41,18 @@ class DateDeletedListener extends AbstractDateTimeListener
             return;
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
         $entityId = $entity->getId();
+        if (empty($entityId)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'The entity of type \'%s\' is expected to have a valid entity id in '
+                    . 'order to update the \'dateDeleted\' property with a new date time',
+                    $entityName
+                )
+            );
+        }
 
+        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
         if (DateDeleteMode::ENABLED !== $mode) {
             $this->logger->info(
                 sprintf(
@@ -56,7 +66,7 @@ class DateDeletedListener extends AbstractDateTimeListener
             return;
         }
 
-        $dateDeleted = $this->createDateTime($entityName, $entityId);
+        $dateDeleted = $this->createDateTime($entityName);
         $entity->setDateDeleted($dateDeleted);
 
         $this->logger->info(

@@ -164,6 +164,10 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
+
         /** @var ParametersInterface|MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
@@ -175,10 +179,6 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getParam')
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::DISABLED); // Will cause use to exit early
-
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
 
         $this->logger->expects($this->once())
             ->method('info')
@@ -224,6 +224,10 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
+
         /** @var ParametersInterface|MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
@@ -236,10 +240,6 @@ final class DateUpdatedListenerTest extends TestCase
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::ENABLED);
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
         $exceptionMessage = 'This is a test exception message from DateTimeFactory';
         $exception = new DateTimeFactoryException($exceptionMessage);
 
@@ -248,9 +248,8 @@ final class DateUpdatedListenerTest extends TestCase
             ->willThrowException($exception);
 
         $errorMessage = sprintf(
-            'Failed to create the update date time instance for entity \'%s::%s\': %s',
+            'Failed to create the update date time instance for entity \'%s\': %s',
             $entityName,
-            $entityId,
             $exceptionMessage
         );
 
@@ -294,6 +293,10 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
+
         /** @var ParametersInterface|MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
@@ -305,10 +308,6 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getParam')
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::ENABLED);
-
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
 
         $dateUpdated = new \DateTime();
 

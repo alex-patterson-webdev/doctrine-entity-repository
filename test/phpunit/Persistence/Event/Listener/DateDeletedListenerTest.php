@@ -248,9 +248,8 @@ final class DateDeletedListenerTest extends TestCase
             ->willThrowException($exception);
 
         $errorMessage = sprintf(
-            'Failed to create the update date time instance for entity \'%s::%s\': %s',
+            'Failed to create the update date time instance for entity \'%s\': %s',
             $entityName,
-            $entityId,
             $exceptionMessage
         );
 

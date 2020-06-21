@@ -37,21 +37,19 @@ abstract class AbstractDateTimeListener
 
     /**
      * @param string $entityName
-     * @param string $entityId
      *
      * @return \DateTimeInterface
      *
      * @throws PersistenceException
      */
-    protected function createDateTime(string $entityName, string $entityId): \DateTimeInterface
+    protected function createDateTime(string $entityName): \DateTimeInterface
     {
         try {
             return $this->dateTimeFactory->createDateTime();
         } catch (DateTimeFactoryException $e) {
             $errorMessage = sprintf(
-                'Failed to create the update date time instance for entity \'%s::%s\': %s',
+                'Failed to create the update date time instance for entity \'%s\': %s',
                 $entityName,
-                $entityId,
                 $e->getMessage()
             );
 
