@@ -11,7 +11,7 @@
   ],
   "require": {
     "php": ">=7.4",
-    "alex-patterson-webdev/date-time": "dev-feature/1.0.0",
+    "alex-patterson-webdev/date-time": "dev-feature/0.2.0",
     "alex-patterson-webdev/event-dispatcher": "dev-feature/0.2.0",
     "alex-patterson-webdev/entity": "dev-feature/1.0.0",
     "alex-patterson-webdev/factory": "*",
@@ -34,15 +34,15 @@
       "ArpTest\\DoctrineEntityRepository\\": "test/phpunit/"
     }
   },
-  "scripts": {
-    "test": "php vendor/bin/phpunit --coverage-clover=coverage.xml"
-  },
   "repositories": [
     {
       "type": "composer",
       "url": "http://dev.satis.local"
     }
   ],
+  "scripts": {
+    "test": "php vendor/bin/phpunit --coverage-clover=coverage.xml"
+  },
   "config": {
     "secure-http": false,
     "preferred-install": "dist",
