@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
-use Arp\DoctrineEntityRepository\Exception\EntityRepositoryNotFoundException;
-
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository
@@ -25,7 +23,7 @@ interface EntityRepositoryProviderInterface
      *
      * @return EntityRepositoryInterface
      *
-     * @throws EntityRepositoryNotFoundException
+     * @throws \Throwable
      */
     public function getRepository(string $entityName, array $options = []): EntityRepositoryInterface;
 }
