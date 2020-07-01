@@ -269,7 +269,6 @@ final class DateCreatedListenerTest extends TestCase
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
-        $entityId = 'ABC123';
 
         /** @var DateCreatedAwareInterface|MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);

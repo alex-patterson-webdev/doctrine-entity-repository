@@ -85,7 +85,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         } catch (\Throwable $e) {
             $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'id' => $id]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
