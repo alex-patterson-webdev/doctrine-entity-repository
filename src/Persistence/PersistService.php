@@ -95,16 +95,14 @@ class PersistService implements PersistServiceInterface
     protected function update(EntityInterface $entity, array $options = []): EntityInterface
     {
         try {
-            $event = $this->dispatchEvent(
-                $this->createEvent(EntityEventName::UPDATE, $entity, $options)
-            );
+            $event = $this->dispatchEvent($this->createEvent(EntityEventName::UPDATE, $entity, $options));
 
             return $event->getEntity();
         } catch (\Throwable $e) {
+            /** @var EntityErrorEvent $event */
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
-            /** @var PersistenceException $exception */
-            $exception = $event->getException();
-            throw $exception;
+
+            $this->throwEventException($event->getException());
         }
     }
 
@@ -125,10 +123,10 @@ class PersistService implements PersistServiceInterface
 
             return $event->getEntity();
         } catch (\Throwable $e) {
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
-            /** @var PersistenceException $exception */
-            $exception = $event->getException();
-            throw $exception;
+            /** @var EntityErrorEvent $event */
+            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
+
+            $this->throwEventException($event->getException());
         }
     }
 
@@ -168,7 +166,7 @@ class PersistService implements PersistServiceInterface
     {
         $entityName = $this->getEntityName();
 
-        if (! $entity instanceof $entityName) {
+        if (!$entity instanceof $entityName) {
             throw new PersistenceException(
                 sprintf(
                     'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
@@ -251,7 +249,7 @@ class PersistService implements PersistServiceInterface
     {
         $entityName = $this->getEntityName();
 
-        if (! $entity instanceof $entityName) {
+        if (!$entity instanceof $entityName) {
             throw new PersistenceException(
                 sprintf(
                     'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
@@ -371,7 +369,7 @@ class PersistService implements PersistServiceInterface
      *
      * @return EntityErrorEvent
      */
-    protected function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
+    private function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
     {
         return new EntityErrorEvent(
             $eventName,
@@ -380,5 +378,30 @@ class PersistService implements PersistServiceInterface
             $exception,
             $params
         );
+    }
+
+    /**
+     * @param \Throwable $exception
+     *
+     * @throws PersistenceException
+     * @noinspection PhpDocMissingThrowsInspection
+     */
+    private function throwEventException(\Throwable $exception): void
+    {
+        $errorMessage = sprintf(
+            'The persistence operation for entity \'%s\' failed: %s',
+            $this->entityName,
+            $exception->getMessage()
+        );
+
+        /** @var PersistenceException $exception */
+        if (!$exception instanceof PersistenceException) {
+            $exception = new PersistenceException($errorMessage, $exception->getCode(), $exception);
+        }
+
+        $this->logger->error($errorMessage, compact('exception'));
+
+        /** @noinspection PhpUnhandledExceptionInspection */
+        throw $exception;
     }
 }
