@@ -95,16 +95,14 @@ class PersistService implements PersistServiceInterface
     protected function update(EntityInterface $entity, array $options = []): EntityInterface
     {
         try {
-            $event = $this->dispatchEvent(
-                $this->createEvent(EntityEventName::UPDATE, $entity, $options)
-            );
+            $event = $this->dispatchEvent($this->createEvent(EntityEventName::UPDATE, $entity, $options));
 
             return $event->getEntity();
         } catch (\Throwable $e) {
+            /** @var EntityErrorEvent $event */
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
-            /** @var PersistenceException $exception */
-            $exception = $event->getException();
-            throw $exception;
+
+            throw $this->createEventException($event->getException());
         }
     }
 
@@ -119,16 +117,14 @@ class PersistService implements PersistServiceInterface
     protected function insert(EntityInterface $entity, array $options = []): EntityInterface
     {
         try {
-            $event = $this->dispatchEvent(
-                $this->createEvent(EntityEventName::CREATE, $entity, $options)
-            );
+            $event = $this->dispatchEvent($this->createEvent(EntityEventName::CREATE, $entity, $options));
 
             return $event->getEntity();
         } catch (\Throwable $e) {
+            /** @var EntityErrorEvent $event */
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
-            /** @var PersistenceException $exception */
-            $exception = $event->getException();
-            throw $exception;
+
+            throw $this->createEventException($event->getException());
         }
     }
 
@@ -143,16 +139,13 @@ class PersistService implements PersistServiceInterface
     public function delete(EntityInterface $entity, array $options = []): bool
     {
         try {
-            $this->dispatchEvent(
-                $this->createEvent(EntityEventName::DELETE, $entity, $options)
-            );
+            $this->dispatchEvent($this->createEvent(EntityEventName::DELETE, $entity, $options));
 
             return true;
         } catch (\Throwable $e) {
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_ERROR, $e));
-            /** @var PersistenceException $exception */
-            $exception = $event->getException();
-            throw $exception;
+
+            throw $this->createEventException($event->getException());
         }
     }
 
@@ -160,61 +153,58 @@ class PersistService implements PersistServiceInterface
      * Schedule the entity for insertion.
      *
      * @param EntityInterface $entity
-     * @param array           $options
      *
      * @throws PersistenceException
      */
-    public function persist(EntityInterface $entity, array $options = []): void
+    public function persist(EntityInterface $entity): void
     {
-        $entityName = $this->getEntityName();
-
-        if (! $entity instanceof $entityName) {
-            throw new PersistenceException(
-                sprintf(
-                    'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
-                    $this->getEntityName(),
-                    get_class($entity),
-                    __METHOD__
-                )
+        if (!$entity instanceof $this->entityName) {
+            $errorMessage = sprintf(
+                'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                $this->entityName,
+                get_class($entity),
+                __METHOD__
             );
+
+            $this->logger->error($errorMessage);
+
+            throw new PersistenceException($errorMessage);
         }
 
         try {
             $this->entityManager->persist($entity);
         } catch (\Throwable $e) {
-            throw new PersistenceException(
-                sprintf(
-                    'The persist operation failed for entity \'%s\' : %s',
-                    $this->getEntityName(),
-                    $e->getMessage()
-                ),
-                $e->getCode(),
-                $e
+            $errorMessage = sprintf(
+                'The persist operation failed for entity \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
             );
+
+            $this->logger->error($errorMessage, ['exception' => $e]);
+
+            throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
     }
 
     /**
      * Perform a flush of the unit of work.
      *
-     * @param array $options
-     *
      * @throws PersistenceException
      */
-    public function flush(array $options = []): void
+    public function flush(): void
     {
         try {
             $this->entityManager->flush();
         } catch (\Throwable $e) {
-            throw new PersistenceException(
-                sprintf(
-                    'The flush operation failed for entity \'%s\' : %s',
-                    $this->getEntityName(),
-                    $e->getMessage()
-                ),
-                $e->getCode(),
-                $e
+            $errorMessage = sprintf(
+                'The flush operation failed for entity \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
             );
+
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
+
+            throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
     }
 
@@ -230,15 +220,15 @@ class PersistService implements PersistServiceInterface
         try {
             $this->entityManager->clear();
         } catch (\Throwable $e) {
-            throw new PersistenceException(
-                sprintf(
-                    'The flush operation failed for entity \'%s\' : %s',
-                    $this->getEntityName(),
-                    $e->getMessage()
-                ),
-                $e->getCode(),
-                $e
+            $errorMessage = sprintf(
+                'The clear operation failed for entity \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
             );
+
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
+
+            throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
     }
 
@@ -251,7 +241,7 @@ class PersistService implements PersistServiceInterface
     {
         $entityName = $this->getEntityName();
 
-        if (! $entity instanceof $entityName) {
+        if (!$entity instanceof $entityName) {
             throw new PersistenceException(
                 sprintf(
                     'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
@@ -371,7 +361,7 @@ class PersistService implements PersistServiceInterface
      *
      * @return EntityErrorEvent
      */
-    protected function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
+    private function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
     {
         return new EntityErrorEvent(
             $eventName,
@@ -380,5 +370,28 @@ class PersistService implements PersistServiceInterface
             $exception,
             $params
         );
+    }
+
+    /**
+     * @param \Throwable $exception
+     *
+     * @return PersistenceException
+     */
+    private function createEventException(\Throwable $exception): PersistenceException
+    {
+        $errorMessage = sprintf(
+            'The persistence operation for entity \'%s\' failed: %s',
+            $this->entityName,
+            $exception->getMessage()
+        );
+
+        /** @var PersistenceException $exception */
+        if (!$exception instanceof PersistenceException) {
+            $exception = new PersistenceException($errorMessage, $exception->getCode(), $exception);
+        }
+
+        $this->logger->error($errorMessage, compact('exception'));
+
+        return $exception;
     }
 }

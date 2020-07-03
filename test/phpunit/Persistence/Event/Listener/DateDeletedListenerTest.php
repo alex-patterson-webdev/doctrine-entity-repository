@@ -7,12 +7,12 @@ namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DateTime\DateTimeFactory;
 use Arp\DateTime\DateTimeFactoryInterface;
 use Arp\DateTime\Exception\DateTimeFactoryException;
-use Arp\DoctrineEntityRepository\Constant\DateCreateMode;
+use Arp\DoctrineEntityRepository\Constant\DateDeleteMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
-use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener;
+use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
-use Arp\Entity\DateCreatedAwareInterface;
+use Arp\Entity\DateDeletedAwareInterface;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -23,7 +23,7 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class DateCreatedListenerTest extends TestCase
+final class DateDeletedListenerTest extends TestCase
 {
     /**
      * @var DateTimeFactory|MockObject
@@ -47,11 +47,11 @@ final class DateCreatedListenerTest extends TestCase
     /**
      * Assert that the class is callable.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__construct
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__construct
      */
     public function testIsCallable(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         $this->assertIsCallable($listener);
     }
@@ -59,13 +59,13 @@ final class DateCreatedListenerTest extends TestCase
     /**
      * Assert that if the entity provided resolved to NULL that we log and exit early from the event listener.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     *
      * @throws PersistenceException
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__invoke
      */
     public function testNullEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -87,7 +87,7 @@ final class DateCreatedListenerTest extends TestCase
                 sprintf(
                     'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
-                    DateCreatedAwareInterface::class
+                    DateDeletedAwareInterface::class
                 )
             );
 
@@ -95,16 +95,16 @@ final class DateCreatedListenerTest extends TestCase
     }
 
     /**
-     * Assert that if the entity provided resolved to and object that does NOT implement DateCreatedListener that
+     * Assert that if the entity provided resolved to and object that does NOT implement DateDeletedAwareInterface that
      * the listener will log and return early.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     *
      * @throws PersistenceException
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__invoke
      */
     public function testNonDateTimeAwareEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -128,7 +128,7 @@ final class DateCreatedListenerTest extends TestCase
                 sprintf(
                     'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
-                    DateCreatedAwareInterface::class
+                    DateDeletedAwareInterface::class
                 )
             );
 
@@ -136,24 +136,25 @@ final class DateCreatedListenerTest extends TestCase
     }
 
     /**
-     * Assert that we can enabled/disable the date update if the configuration options include a DATE_CREATED_MODE of
+     * Assert that we can enabled/disable the date update if the configuration options include a DATE_UPDATED_MODE of
      * ENABLED/DISABLED.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__invoke
      *
      * @throws PersistenceException
      */
     public function testDateTimeModeSetToDisabledWillLogAndPreventDateUpdate(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
+        $entityId = 'ABC123';
 
-        /** @var DateCreatedAwareInterface|MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        /** @var DateDeletedAwareInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -172,17 +173,22 @@ final class DateCreatedListenerTest extends TestCase
 
         $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
-            ->willReturn(DateCreateMode::DISABLED); // Will cause use to exit early
+            ->with(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED)
+            ->willReturn(DateDeleteMode::DISABLED); // Will cause use to exit early
+
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
 
         $this->logger->expects($this->once())
             ->method('info')
             ->with(
                 sprintf(
-                    'The date time update of field \'dateCreated\' '
-                    . 'has been disabled for new entity \'%s\' using configuration option \'%s\'',
+                    'The date time update of field \'dateDeleted\' '
+                    . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
                     $entityName,
-                    EntityEventOption::DATE_CREATED_MODE
+                    $entityId,
+                    EntityEventOption::DATE_DELETED_MODE
                 )
             );
 
@@ -192,22 +198,23 @@ final class DateCreatedListenerTest extends TestCase
     /**
      * Assert that DateTimeFactoryException's are caught and rethrown as PersistenceException in __invoke().
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::createDateTime
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__invoke
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::createDateTime
      *
      * @throws PersistenceException
      */
     public function testDateTimeFactoryFailureWillBeLoggedAndRethrownAsAPersistenceException(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
+        $entityId = 'ABC123';
 
-        /** @var DateCreatedAwareInterface|MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        /** @var DateDeletedAwareInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -226,8 +233,12 @@ final class DateCreatedListenerTest extends TestCase
 
         $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
-            ->willReturn(DateCreateMode::ENABLED);
+            ->with(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED)
+            ->willReturn(DateDeleteMode::ENABLED);
+
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
 
         $exceptionMessage = 'This is a test exception message from DateTimeFactory';
         $exception = new DateTimeFactoryException($exceptionMessage);
@@ -253,25 +264,26 @@ final class DateCreatedListenerTest extends TestCase
     }
 
     /**
-     * Assert that a valid DateUpdatedAwareInterface instance, with update mode enabled, will correctly set a new
-     * \DateTime instance using setDateUpdated() method.
+     * Assert that a valid DateDeletedAwareInterface instance, with update mode enabled, will correctly set a new
+     * \DateTime instance using setDateDeleted() method.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::createDateTime
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::__invoke
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener::createDateTime
      *
      * @throws PersistenceException
      */
     public function testDateUpdatedSuccess(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
+        $entityId = 'ABC123';
 
-        /** @var DateCreatedAwareInterface|MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        /** @var DateDeletedAwareInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -290,8 +302,12 @@ final class DateCreatedListenerTest extends TestCase
 
         $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
-            ->willReturn(DateCreateMode::ENABLED);
+            ->with(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED)
+            ->willReturn(DateDeleteMode::ENABLED);
+
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($entityId);
 
         $dateUpdated = new \DateTime();
 
@@ -300,8 +316,9 @@ final class DateCreatedListenerTest extends TestCase
             ->willReturn($dateUpdated);
 
         $message = sprintf(
-            'The \'dateCreated\' property for entity \'%s\' has been updated with new date time \'%s\'',
+            'The \'dateDeleted\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
             $entityName,
+            $entityId,
             $dateUpdated->format(\DateTime::ATOM)
         );
 

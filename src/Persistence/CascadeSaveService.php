@@ -76,7 +76,7 @@ class CascadeSaveService extends AbstractCascadeService
                 $errorMessage = sprintf(
                     'The entity field \'%s::%s\' value could not be resolved',
                     $entityName,
-                    $mappings['fieldName']
+                    $mapping['fieldName']
                 );
 
                 $this->logger->error($errorMessage);
@@ -116,10 +116,10 @@ class CascadeSaveService extends AbstractCascadeService
         $entityOrCollection,
         array $options = []
     ): void {
-        if (is_iterable($entityOrCollection)) {
-            $this->getTargetRepository($entityManager, $entityName)->saveCollection($entityOrCollection, $options);
-        } elseif ($entityOrCollection instanceof EntityInterface) {
+        if ($entityOrCollection instanceof EntityInterface) {
             $this->getTargetRepository($entityManager, $entityName)->save($entityOrCollection, $options);
+        } elseif (is_iterable($entityOrCollection)) {
+            $this->getTargetRepository($entityManager, $entityName)->saveCollection($entityOrCollection, $options);
         } else {
             $errorMessage = sprintf(
                 'Unable to cascade save target entity \'%s\': The entity or collection is of an invalid type \'%s\'',

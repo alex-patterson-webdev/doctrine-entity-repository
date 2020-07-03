@@ -26,7 +26,7 @@ final class QueryServiceTest extends TestCase
     /**
      * @var string
      */
-    private $entityName;
+    private string $entityName;
 
     /**
      * @var EntityManagerInterface|MockObject
@@ -222,5 +222,100 @@ final class QueryServiceTest extends TestCase
                 ]
             ],
         ];
+    }
+
+    /**
+     * Assert that if an exception is raised when calling execute() that the exception is caught, logged and rethrown
+     * as a QueryServiceException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
+     *
+     * @throws QueryServiceException
+     */
+    public function testExecuteWillCatchAndThrowExceptionsASQueryServiceException(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var AbstractQuery|MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        $exceptionCode = 1234;
+        $exceptionMessage = 'This is a example exception message';
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf('Failed to execute query : %s', $exceptionMessage);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, compact('exception'));
+
+        $this->expectException(QueryServiceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $queryService->execute($query);
+    }
+
+    /**
+     * Assert that a valid query provided to execute() will be executed and the result set returned.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
+     *
+     * @throws QueryServiceException
+     */
+    public function testExecuteQueryWillReturnResultSet(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var AbstractQuery|MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        /** @var EntityInterface[]|MockObject[] $resultSet */
+        $resultSet = [
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+        ];
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertSame($resultSet, $queryService->execute($query));
+    }
+
+    /**
+     * Assert that a valid query provided to execute() will be executed and the result set returned.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
+     *
+     * @throws QueryServiceException
+     */
+    public function testExecuteQueryBuilderWillReturnResultSet(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var AbstractQuery|MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        /** @var EntityInterface[]|MockObject[] $resultSet */
+        $resultSet = [
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->getMockForAbstractClass(EntityInterface::class),
+        ];
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertSame($resultSet, $queryService->execute($query));
     }
 }

@@ -85,7 +85,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         } catch (\Throwable $e) {
             $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'id' => $id]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -107,7 +107,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         } catch (\Throwable $e) {
             $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'criteria' => $criteria]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -116,11 +116,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return all of the entities within the collection.
      *
-     * @return EntityInterface[]
+     * @return EntityInterface[]|iterable
      *
      * @throws EntityRepositoryException
      */
-    public function findAll(): array
+    public function findAll(): iterable
     {
         return $this->findBy([]);
     }
@@ -140,11 +140,19 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): iterable
     {
         try {
-            $options = [
-                QueryServiceOption::LIMIT    => $limit,
-                QueryServiceOption::OFFSET   => $offset,
-                QueryServiceOption::ORDER_BY => $orderBy,
-            ];
+            $options = [];
+
+            if (null !== $orderBy) {
+                $options[QueryServiceOption::ORDER_BY] = $orderBy;
+            }
+
+            if (null !== $limit) {
+                $options[QueryServiceOption::LIMIT] = $limit;
+            }
+
+            if (null !== $offset) {
+                $options[QueryServiceOption::OFFSET] = $offset;
+            }
 
             return $this->queryService->findMany($criteria, $options);
         } catch (\Throwable $e) {
@@ -154,7 +162,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
