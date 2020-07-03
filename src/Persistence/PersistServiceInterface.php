@@ -36,11 +36,10 @@ interface PersistServiceInterface extends TransactionServiceInterface
      * Schedule the entity for insertion.
      *
      * @param EntityInterface $entity
-     * @param array           $options
      *
      * @throws PersistenceException
      */
-    public function persist(EntityInterface $entity, array $options = []): void;
+    public function persist(EntityInterface $entity): void;
 
     /**
      * Delete an entity instance.
@@ -57,11 +56,9 @@ interface PersistServiceInterface extends TransactionServiceInterface
     /**
      * Perform a flush of the unit of work.
      *
-     * @param array $options
-     *
      * @throws PersistenceException
      */
-    public function flush(array $options = []): void;
+    public function flush(): void;
 
     /**
      * Release managed entities from the identity map.

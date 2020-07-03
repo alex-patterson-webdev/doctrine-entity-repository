@@ -116,7 +116,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return all of the entities within the collection.
      *
-     * @return EntityInterface[]
+     * @return EntityInterface[]|iterable
      *
      * @throws EntityRepositoryException
      */

@@ -232,4 +232,215 @@ final class PersistServiceTest extends TestCase
             ]
         ];
     }
+
+    /**
+     * Assert that a PersistenceException will be thrown by persist() if the provided entity instance is not an
+     * instance of the mapped entity class.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     */
+    public function testPersistWillThrowPersistenceExceptionIfProvidedEntityIsAnInvalidType(): void
+    {
+        $entityName = \stdClass::class;
+
+        $persistService = new PersistService(
+            $entityName, // Invalid entity class name...
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface|$entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $errorMessage = sprintf(
+            'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s::%s\'',
+            $entityName,
+            get_class($entity),
+            PersistService::class,
+            'persist'
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $persistService->persist($entity);
+    }
+
+    /**
+     * Assert that if the $entity provided to persist() cannot be persisted any raised exception is caught, logged
+     * and then rethrown as a PersistenceException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     */
+    public function testPersistWillThrowPersistenceExceptionIfTheEntityCannotBePersisted(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface|$entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $exceptionMessage = 'This is a test error message for persist()';
+        $exceptionCode = 456;
+        $exception = new \Error($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('persist')
+            ->with($entity)
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'The persist operation failed for entity \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, ['exception' => $exception]);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->persist($entity);
+    }
+
+    /**
+     * Assert that persist() will successfully proxy the provided $entity to the entity manager persist().
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     *
+     * @throws PersistenceException
+     */
+    public function testPersist(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $this->entityManager->expects($this->once())
+            ->method('persist')
+            ->with($entity);
+
+        $persistService->persist($entity);
+    }
+
+    /**
+     * Assert that exception raised from flush() are logged and rethrown as PersistenceException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::flush
+     *
+     * @throws PersistenceException
+     */
+    public function testFlushExceptionsAreLoggedAndRethrownAsPersistenceException(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $exceptionMessage = 'This is a test error message for flush()';
+        $exceptionCode = 999;
+        $exception = new \Error($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('flush')
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'The flush operation failed for entity \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->flush();
+    }
+
+    /**
+     * Assert that flush() will call the internal entity manager flush().
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::flush
+     *
+     * @throws PersistenceException
+     */
+    public function testFlush(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->once())->method('flush');
+
+        $persistService->flush();
+    }
+
+    /**
+     * Assert that exceptions raised in clear() are logged and rethrown as PersistenceException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::clear
+     *
+     * @throw PersistenceException
+     */
+    public function testClearExceptionsAreLoggedAndRethrownAsPersistenceExecption(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $exceptionMessage = 'This is a test exception message for clear()';
+        $exceptionCode = 888;
+        $exception = new \Error($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('clear')
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'The clear operation failed for entity \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->clear();
+    }
 }
