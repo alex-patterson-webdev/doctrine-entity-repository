@@ -122,7 +122,7 @@ class PersistService implements PersistServiceInterface
             return $event->getEntity();
         } catch (\Throwable $e) {
             /** @var EntityErrorEvent $event */
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
+            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
 
             throw $this->createEventException($event->getException());
         }

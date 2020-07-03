@@ -6,6 +6,7 @@ namespace ArpTest\DoctrineEntityRepository\Persistence;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Constant\PersistServiceOption;
+use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
@@ -94,6 +95,65 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
+     * If an exception is raised when calling save(), and our entity has an ID value, then the
+     * EntityEventName::UPDATE_ERROR event should be triggered and a new exception thrown.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::update
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createEventException
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createErrorEvent
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
+     *
+     * @throws PersistenceException
+     */
+    public function testSaveExceptionWillBeCaughtLoggedAndTheDispatchErrorEventTriggeredWhenEntityIdIsNotNull(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $entity->expects($this->once())
+            ->method('hasId')
+            ->willReturn(true);
+
+        $exceptionMessage = 'Test exception message for save() and update()';
+        $exceptionCode = 123;
+        $exception = new \Error($exceptionMessage, $exceptionCode);
+
+        $this->eventDispatcher->expects($this->exactly(2))
+            ->method('dispatch')
+            ->withConsecutive(
+                [$this->isInstanceOf(EntityEvent::class)],
+                [$this->isInstanceOf(EntityErrorEvent::class)],
+            )->willReturnOnConsecutiveCalls(
+                $this->throwException($exception),
+                $this->returnArgument(0)
+            );
+
+        $errorMessage = sprintf(
+            'The persistence operation for entity \'%s\' failed: %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, $this->arrayHasKey('exception'));
+
+        $persistService->save($entity);
+    }
+
+    /**
      * Assert that if we pass an entity with an id to save() that the entity will be updated and returned.
      *
      * @param array $options Optional save options that should be passed to the updated method.
@@ -165,6 +225,65 @@ final class PersistServiceTest extends TestCase
                 ]
             ]
         ];
+    }
+
+    /**
+     * If an exception is raised when calling save(), and our entity does NOT have an ID value, then the
+     * EntityEventName::CREATE_ERROR event should be triggered and a new exception thrown.
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createEventException
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createErrorEvent
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
+     *
+     * @throws PersistenceException
+     */
+    public function testSaveExceptionWillBeCaughtLoggedAndTheDispatchErrorEventTriggeredWhenEntityIdIsNull(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $entity->expects($this->once())
+            ->method('hasId')
+            ->willReturn(false);
+
+        $exceptionMessage = 'Test exception message for save() and insert()';
+        $exceptionCode = 456;
+        $exception = new \Error($exceptionMessage, $exceptionCode);
+
+        $this->eventDispatcher->expects($this->exactly(2))
+            ->method('dispatch')
+            ->withConsecutive(
+                [$this->isInstanceOf(EntityEvent::class)],
+                [$this->isInstanceOf(EntityErrorEvent::class)],
+            )->willReturnOnConsecutiveCalls(
+                $this->throwException($exception),
+                $this->returnArgument(0)
+            );
+
+        $errorMessage = sprintf(
+            'The persistence operation for entity \'%s\' failed: %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, $this->arrayHasKey('exception'));
+
+        $persistService->save($entity);
     }
 
     /**
@@ -410,7 +529,7 @@ final class PersistServiceTest extends TestCase
      *
      * @throw PersistenceException
      */
-    public function testClearExceptionsAreLoggedAndRethrownAsPersistenceExecption(): void
+    public function testClearExceptionsAreLoggedAndRethrownAsPersistenceException(): void
     {
         $persistService = new PersistService(
             $this->entityName,
@@ -440,6 +559,27 @@ final class PersistServiceTest extends TestCase
         $this->expectException(PersistenceException::class);
         $this->expectExceptionMessage($errorMessage);
         $this->expectExceptionCode($exceptionCode);
+
+        $persistService->clear();
+    }
+
+    /**
+     * Assert that calls to clear() will proxy to the internal entity manager clear().
+     *
+     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::clear
+     *
+     * @throws PersistenceException
+     */
+    public function testClear(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->once())->method('clear');
 
         $persistService->clear();
     }
