@@ -259,15 +259,18 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     public function delete($entity, array $options = []): bool
     {
         if (!is_string($entity) && !$entity instanceof EntityInterface) {
-            throw new EntityRepositoryException(
-                sprintf(
-                    'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
-                    . '\'%s\' provided in \'%s\'',
-                    EntityInterface::class,
-                    (is_object($entity) ? get_class($entity) : gettype($entity)),
-                    __METHOD__
-                )
+            $errorMessage = sprintf(
+                'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
+                . '\'%s\' provided in \'%s::%s\'',
+                EntityInterface::class,
+                (is_object($entity) ? get_class($entity) : gettype($entity)),
+                static::class,
+                __FUNCTION__
             );
+
+            $this->logger->error($errorMessage);
+
+            throw new EntityRepositoryException($errorMessage);
         }
 
         if (is_string($entity)) {
@@ -296,7 +299,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -354,7 +357,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -374,7 +377,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -396,7 +399,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }

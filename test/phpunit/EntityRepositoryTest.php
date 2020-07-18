@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ArpTest\DoctrineEntityRepository;
 
+use Arp\DoctrineEntityRepository\Constant\PersistServiceOption;
 use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\EntityRepository;
 use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
@@ -577,6 +578,203 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
+     * Assert that if we provide an incorrect data type for $entity to delete() an EntityRepositoryException
+     * will be thrown.
+     *
+     * @param mixed $entity
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     * @dataProvider getDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalidData
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalid($entity): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $errorMessage = sprintf(
+            'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
+            . '\'%s\' provided in \'%s::delete\'',
+            EntityInterface::class,
+            (is_object($entity) ? get_class($entity) : gettype($entity)),
+            EntityRepository::class
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $repository->delete($entity);
+    }
+
+    /**
+     * @return array
+     */
+    public function getDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalidData(): array
+    {
+        return [
+            [true],
+            [123],
+            [new \stdClass()],
+            [45.67],
+        ];
+    }
+
+    /**
+     * Assert that a EntityRepositoryException will be thrown from delete if providing an entity id that does not
+     * exist.
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testDeleteWillThrowEntityNotFoundExceptionIfEntityCannotBeFoundWithStringId(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $id = 'FOO123';
+
+        $errorMessage = sprintf(
+            'Unable to delete entity \'%s::%s\': The entity could not be found',
+            $this->entityName,
+            $id
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage);
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $repository->delete($id);
+    }
+
+    /**
+     * Assert that a EntityRepositoryException will be thrown if the call to delete() fails.
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testDeleteWillThrowEntityRepositoryExceptionIfEntityCannotDeleted(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $options = [
+            PersistServiceOption::FLUSH => true,
+        ];
+
+        $exceptionMessage = 'This is a test exception message';
+        $exceptionCode = 789;
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
+
+        $this->persistService->expects($this->once())
+            ->method('delete')
+            ->with($entity, $options)
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'Unable to delete entity of type \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, compact('exception'));
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $repository->delete($entity, $options);
+    }
+
+    /**
+     * Assert that we are able to delete an entity by it's id or instance
+     *
+     * @param EntityInterface|string $entity
+     * @param array                  $options
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     *
+     * @dataProvider getEntityDeleteData
+     * @throws EntityRepositoryException
+     */
+    public function testEntityDelete($entity, array $options = []): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        if (is_string($entity)) {
+            /** @var EntityInterface|MockObject $entityObject */
+            $entityObject = $this->getMockForAbstractClass(EntityInterface::class);
+
+            $this->queryService->expects($this->once())
+                ->method('findOneById')
+                ->with($entity)
+                ->willReturn($entityObject);
+        } else {
+            $entityObject = $entity;
+        }
+
+        $this->persistService->expects($this->once())
+            ->method('delete')
+            ->with($entityObject, $options)
+            ->willReturn(true);
+
+        $this->assertTrue($repository->delete($entity, $options));
+    }
+
+    /**
+     * @return array
+     */
+    public function getEntityDeleteData(): array
+    {
+        return [
+            [
+                'Foo123',
+                [
+                    'foo' => 'bar',
+                    'test' => 'Hello',
+                ],
+            ],
+            [
+                $this->getMockForAbstractClass(EntityInterface::class),
+                [
+                    'foo' => 'bar',
+                    'test' => 'Hello',
+                ],
+            ],
+        ];
+    }
+
+    /**
      * Assert that calls to clear that fail will be caught and rethrown as EntityRepositoryException.
      *
      * @covers \Arp\DoctrineEntityRepository\EntityRepository::clear
@@ -606,10 +804,106 @@ final class EntityRepositoryTest extends TestCase
             $exceptionMessage
         );
 
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, compact('exception'));
+
         $this->expectException(EntityRepositoryException::class);
         $this->expectExceptionMessage($errorMessage);
         $this->expectExceptionCode($exceptionCode);
 
         $repository->clear();
     }
+
+    /**
+     * Assert that calls to clear() will proxy to PersistService::clear().
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::clear
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testClearWillProxyToPersistServiceClear(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $this->persistService->expects($this->once())->method('clear');
+
+        $repository->clear();
+    }
+
+    /**
+     * Assert that calls to refresh that fail will be caught and rethrown as EntityRepositoryException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::refresh
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testRefreshWillThrowEntityRepositoryExceptionOnFailure(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $exceptionCode = 456;
+        $exceptionMessage = 'This is a test exception message';
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
+
+        $this->persistService->expects($this->once())
+            ->method('refresh')
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'Unable to refresh entity of type \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, compact('exception'));
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $repository->refresh($entity);
+    }
+
+    /**
+     * Assert that calls to refresh() will proxy to PersistService::refresh().
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::refresh
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testRefreshWillProxyToPersistServiceClear(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        /** @var EntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        $this->persistService->expects($this->once())
+            ->method('refresh')
+            ->with($entity);
+
+        $repository->refresh($entity);
+    }
+
 }
