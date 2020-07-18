@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace ArpTest\DoctrineEntityRepository;
 
-use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\EntityRepository;
 use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
@@ -21,7 +21,7 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository
  */
-class EntityRepositoryTest extends TestCase
+final class EntityRepositoryTest extends TestCase
 {
     /**
      * @var string
@@ -574,5 +574,42 @@ class EntityRepositoryTest extends TestCase
             ->willReturn($entity);
 
         $this->assertSame($entity, $repository->save($entity, $options));
+    }
+
+    /**
+     * Assert that calls to clear that fail will be caught and rethrown as EntityRepositoryException.
+     *
+     * @covers \Arp\DoctrineEntityRepository\EntityRepository::clear
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testClearWillThrowEntityRepositoryExceptionOnFailure(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $exceptionCode = 123;
+        $exceptionMessage = 'This is a test exception message';
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
+
+        $this->persistService->expects($this->once())
+            ->method('clear')
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'Unable to clear entity of type \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionMessage($errorMessage);
+        $this->expectExceptionCode($exceptionCode);
+
+        $repository->clear();
     }
 }
