@@ -19,8 +19,8 @@ class CascadeSaveService extends AbstractCascadeService
      * @param EntityManagerInterface $entityManager
      * @param string                 $entityName
      * @param EntityInterface        $entity
-     * @param array                  $saveOptions
-     * @param array                  $saveCollectionOptions
+     * @param array                  $options
+     * @param array                  $collectionOptions
      *
      * @throws PersistenceException
      * @throws EntityRepositoryException
@@ -29,11 +29,11 @@ class CascadeSaveService extends AbstractCascadeService
         EntityManagerInterface $entityManager,
         string $entityName,
         EntityInterface $entity,
-        array $saveOptions = [],
-        array $saveCollectionOptions = []
+        array $options = [],
+        array $collectionOptions = []
     ): void {
-        $saveOptions = array_replace_recursive($this->options, $saveOptions);
-        $saveCollectionOptions = array_replace_recursive($this->collectionOptions, $saveCollectionOptions);
+        $options = array_replace_recursive($this->options, $options);
+        $collectionOptions = array_replace_recursive($this->collectionOptions, $collectionOptions);
 
         $classMetadata = $this->getClassMetadata($entityManager, $entityName);
         $mappings = $classMetadata->getAssociationMappings();
@@ -96,7 +96,7 @@ class CascadeSaveService extends AbstractCascadeService
                 $entityManager,
                 $mapping['targetEntity'],
                 $targetEntityOrCollection,
-                (is_iterable($targetEntityOrCollection) ? $saveCollectionOptions : $saveOptions)
+                (is_iterable($targetEntityOrCollection) ? $collectionOptions : $options)
             );
         }
     }
