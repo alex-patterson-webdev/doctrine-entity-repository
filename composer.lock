@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c3660d988110525e48eb6c3d2b749102",
+    "content-hash": "4c101811b4feb342f4a96ca25dbe6cbd",
     "packages": [
         {
             "name": "alex-patterson-webdev/date-time",
@@ -50,11 +50,11 @@
         },
         {
             "name": "alex-patterson-webdev/entity",
-            "version": "0.1.1",
+            "version": "dev-feature/1.0.0",
             "source": {
                 "type": "git",
                 "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
-                "reference": "0ebcae099504f0aa44085c4dcd543253796af27c"
+                "reference": "da6efab042436a5157991533b411b694f782262c"
             },
             "require": {
                 "php": ">=7.4"
@@ -91,7 +91,7 @@
                 }
             ],
             "description": "Shared library of domain objects, traits and interfaces",
-            "time": "2020-07-18T21:54:23+00:00"
+            "time": "2020-07-18T17:22:46+00:00"
         },
         {
             "name": "alex-patterson-webdev/event-dispatcher",
@@ -4547,6 +4547,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "alex-patterson-webdev/entity": 20,
         "phpmd/phpmd": 0
     },
     "prefer-stable": true,
@@ -4554,5 +4555,6 @@
     "platform": {
         "php": ">=7.4"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
