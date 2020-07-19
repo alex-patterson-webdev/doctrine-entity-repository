@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c3c68c69d1dcd07b7807f70fdba3a42f",
+    "content-hash": "c3660d988110525e48eb6c3d2b749102",
     "packages": [
         {
             "name": "alex-patterson-webdev/date-time",
@@ -53,7 +53,7 @@
             "version": "0.1.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/alex-patterson-webdev/entity.git",
+                "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
                 "reference": "0ebcae099504f0aa44085c4dcd543253796af27c"
             },
             "dist": {
@@ -134,7 +134,7 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/alex-patterson-webdev/factory.git",
+                "url": "/home/alexp/www/git/alex-patterson-webdev/factory.git",
                 "reference": "59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0"
             },
             "dist": {
