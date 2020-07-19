@@ -11,8 +11,8 @@
   "require": {
     "php": ">=7.4",
     "alex-patterson-webdev/date-time": "^1",
+    "alex-patterson-webdev/entity": "^0.1.1",
     "alex-patterson-webdev/event-dispatcher": "^1",
-    "alex-patterson-webdev/entity": "^0.1",
     "alex-patterson-webdev/factory": "^1",
     "doctrine/orm": "^2.7",
     "psr/log": "^1.1"
