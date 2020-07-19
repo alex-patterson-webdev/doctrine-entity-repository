@@ -33,12 +33,6 @@
       "ArpTest\\DoctrineEntityRepository\\": "test/phpunit/"
     }
   },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "http://dev.satis.local"
-    }
-  ],
   "scripts": {
     "test": "php vendor/bin/phpunit --coverage-clover=coverage.xml"
   },
