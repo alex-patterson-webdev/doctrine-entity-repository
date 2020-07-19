@@ -15,7 +15,7 @@ class EntityEvent extends AbstractEntityEvent
     /**
      * @var EntityInterface|null
      */
-    private $entity;
+    private ?EntityInterface $entity;
 
     /**
      * @return bool

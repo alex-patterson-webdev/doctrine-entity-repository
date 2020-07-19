@@ -11,6 +11,7 @@ use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
+use Arp\Entity\AggregateEntityInterface;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -59,10 +60,14 @@ final class CascadeSaveListenerTest extends TestCase
     /**
      * Assert that a PersistenceException is thrown if the event cannot provided a valid entity instance.
      *
+     * @param mixed $entity The entity value that should be tested.
+     *
+     * @dataProvider getInvokeWillNotSaveAssociationsIfEntityDoesNotImplementAggregateEntityInterfaceData
+     *
      * @throws EntityRepositoryException
      * @throws PersistenceException
      */
-    public function testInvokeWillThrowPersistenceExceptionAndLogInvalidEntity(): void
+    public function testInvokeWillNotSaveAssociationsIfEntityDoesNotImplementAggregateEntityInterface($entity): void
     {
         /** @var CascadeSaveListener|MockObject $listener */
         $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
@@ -70,22 +75,24 @@ final class CascadeSaveListenerTest extends TestCase
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        $entity = null;
-
         $event->expects($this->once())
             ->method('getEntity')
             ->willReturn($entity);
 
-        $errorMessage = sprintf('Missing required entity in \'%s\'', CascadeSaveListener::class);
-
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($errorMessage);
-
-        $this->expectException(PersistenceException::class);
-        $this->expectExceptionMessage($errorMessage);
+        $this->cascadeSaveService->expects($this->never())->method('saveAssociations');
 
         $this->assertNull($listener($event));
+    }
+
+    /**
+     * @return array
+     */
+    public function getInvokeWillNotSaveAssociationsIfEntityDoesNotImplementAggregateEntityInterfaceData(): array
+    {
+        return [
+            [null],
+            [$this->getMockForAbstractClass(EntityInterface::class)],
+        ];
     }
 
     /**
@@ -107,8 +114,8 @@ final class CascadeSaveListenerTest extends TestCase
         /** @var EntityEvent|MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var EntityInterface|MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        /** @var AggregateEntityInterface|MockObject $entity */
+        $entity = $this->getMockForAbstractClass(AggregateEntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -177,7 +184,7 @@ final class CascadeSaveListenerTest extends TestCase
             );
         }
 
-        $entityName = EntityInterface::class;
+        $entityName = AggregateEntityInterface::class;
 
         $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
 
@@ -185,7 +192,7 @@ final class CascadeSaveListenerTest extends TestCase
         $event = $this->createMock(EntityEvent::class);
 
         /** @var EntityInterface|MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->getMockForAbstractClass(AggregateEntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')

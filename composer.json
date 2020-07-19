@@ -1,6 +1,5 @@
 {
   "name": "alex-patterson-webdev/doctrine-entity-repository",
-  "version": "1.0.0",
   "minimum-stability": "dev",
   "prefer-stable": true,
   "authors": [
@@ -11,10 +10,10 @@
   ],
   "require": {
     "php": ">=7.4",
-    "alex-patterson-webdev/date-time": "dev-feature/0.2.0",
-    "alex-patterson-webdev/event-dispatcher": "dev-feature/0.2.0",
-    "alex-patterson-webdev/entity": "dev-feature/1.0.0",
-    "alex-patterson-webdev/factory": "*",
+    "alex-patterson-webdev/date-time": "^1",
+    "alex-patterson-webdev/entity": "^0.1.1",
+    "alex-patterson-webdev/event-dispatcher": "^1",
+    "alex-patterson-webdev/factory": "^1",
     "doctrine/orm": "^2.7",
     "psr/log": "^1.1"
   },

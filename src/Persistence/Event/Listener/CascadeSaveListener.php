@@ -10,6 +10,7 @@ use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
+use Arp\Entity\AggregateEntityInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -30,7 +31,7 @@ final class CascadeSaveListener
 
     /**
      * @param CascadeSaveService $cascadeSaveService
-     * @param LoggerInterface      $logger
+     * @param LoggerInterface    $logger
      */
     public function __construct(CascadeSaveService $cascadeSaveService, LoggerInterface $logger)
     {
@@ -39,6 +40,8 @@ final class CascadeSaveListener
     }
 
     /**
+     * Perform the cascading save operations for the persisted entity.
+     *
      * @param EntityEvent $event
      *
      * @throws PersistenceException
@@ -48,11 +51,8 @@ final class CascadeSaveListener
     {
         $entity = $event->getEntity();
 
-        if (null === $entity) {
-            $errorMessage= sprintf('Missing required entity in \'%s\'', static::class);
-            $this->logger->error($errorMessage);
-
-            throw new PersistenceException($errorMessage);
+        if (null === $entity || !$entity instanceof AggregateEntityInterface) {
+            return;
         }
 
         $entityName = $event->getEntityName();
@@ -71,7 +71,9 @@ final class CascadeSaveListener
             return;
         }
 
-        $this->logger->info(sprintf('Performing cascade save operations for entity \'%s\'', $entityName));
+        $this->logger->info(
+            sprintf('Performing cascade save operations for entity \'%s\'', $entityName)
+        );
 
         $saveOptions = $parameters->getParam(EntityEventOption::CASCADE_SAVE_OPTIONS, []);
         $saveCollectionOptions = $parameters->getParam(EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, []);

@@ -13,15 +13,15 @@ interface TransactionServiceInterface
     /**
      * @return void
      */
-    public function beginTransaction() : void;
+    public function beginTransaction(): void;
 
     /**
      * @return void
      */
-    public function commitTransaction() : void;
+    public function commitTransaction(): void;
 
     /**
      * @return void
      */
-    public function rollbackTransaction() : void;
+    public function rollbackTransaction(): void;
 }
