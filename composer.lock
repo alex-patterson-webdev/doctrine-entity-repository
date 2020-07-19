@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4c101811b4feb342f4a96ca25dbe6cbd",
+    "content-hash": "c3c68c69d1dcd07b7807f70fdba3a42f",
     "packages": [
         {
             "name": "alex-patterson-webdev/date-time",
@@ -50,11 +50,17 @@
         },
         {
             "name": "alex-patterson-webdev/entity",
-            "version": "dev-feature/1.0.0",
+            "version": "0.1.1",
             "source": {
                 "type": "git",
-                "url": "/home/alexp/www/git/alex-patterson-webdev/entity.git",
-                "reference": "da6efab042436a5157991533b411b694f782262c"
+                "url": "https://github.com/alex-patterson-webdev/entity.git",
+                "reference": "0ebcae099504f0aa44085c4dcd543253796af27c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/entity/zipball/0ebcae099504f0aa44085c4dcd543253796af27c",
+                "reference": "0ebcae099504f0aa44085c4dcd543253796af27c",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.4"
@@ -71,16 +77,7 @@
                     "Arp\\Entity\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "ArpTest\\Entity\\": "test/phpunit/"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "php vendor/bin/phpunit --coverage-clover=coverage.xml"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -91,7 +88,7 @@
                 }
             ],
             "description": "Shared library of domain objects, traits and interfaces",
-            "time": "2020-07-18T17:22:46+00:00"
+            "time": "2020-07-18T21:54:23+00:00"
         },
         {
             "name": "alex-patterson-webdev/event-dispatcher",
@@ -137,7 +134,7 @@
             "version": "1.0.0",
             "source": {
                 "type": "git",
-                "url": "/home/alexp/www/git/alex-patterson-webdev/factory.git",
+                "url": "https://github.com/alex-patterson-webdev/factory.git",
                 "reference": "59815fc82ffe88e91e3ad45c93b6b3e0af9df1c0"
             },
             "dist": {
@@ -4547,7 +4544,6 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "alex-patterson-webdev/entity": 20,
         "phpmd/phpmd": 0
     },
     "prefer-stable": true,
