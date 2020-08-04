@@ -6,13 +6,17 @@ namespace Arp\DoctrineEntityRepository;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\HydrateMode;
 use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\Exception\EntityNotFoundException;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
+use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\QueryBuilder;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -214,7 +218,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             $entities = [];
             $saveOptions = [
                 EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
-                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
             ];
 
             foreach ($collection as $entity) {
@@ -403,5 +407,132 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Execute query builder or query instance and return the results.
+     *
+     * @param object $query
+     * @param array  $options
+     *
+     * @return EntityInterface[]|iterable
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function executeQuery(object $query, array $options = [])
+    {
+        if ($query instanceof QueryBuilder) {
+            $query = $query->getQuery();
+        }
+
+        if (!$query instanceof AbstractQuery) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'The \'query\' argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'',
+                    QueryBuilder::class,
+                    AbstractQuery::class,
+                    get_class($query),
+                    __METHOD__
+                )
+            );
+        }
+
+        try {
+            return $this->queryService->execute($query, $options);
+        } catch (QueryServiceException $e) {
+            $errorMessage = sprintf(
+                'Failed to perform query for entity type \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
+            );
+
+            $this->logger->error($errorMessage, ['exception' => $e]);
+
+            throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Return a single entity instance. NULL will be returned if the result set contains 0 or more than 1 result.
+     *
+     * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
+     *
+     * @param object $query
+     * @param array  $options
+     *
+     * @return EntityInterface|array|null
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function getSingleResultOrNull(object $query, array $options = [])
+    {
+        $query = $this->resolveQuery($query);
+
+        try {
+            return $this->queryService->execute($query, $options);
+        } catch (QueryServiceException $e) {
+            $errorMessage = sprintf(
+                'Failed to perform query for entity type \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
+            );
+
+            $this->logger->error($errorMessage, ['exception' => $e]);
+
+            throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Return a result set containing a single array result. NULL will be returned if the result set
+     * contains 0 or more than 1 result.
+     *
+     * @param object $query
+     * @param array  $options
+     *
+     * @return array|null
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function getSingleArrayResultOrNull(object $query, array $options = []): ?array
+    {
+        $options = array_replace_recursive(
+            $options,
+            [
+                QueryServiceOption::HYDRATION_MODE => HydrateMode::ARRAY,
+            ]
+        );
+
+        return $this->getSingleResultOrNull($query, $options);
+    }
+
+    /**
+     * Resolve the Doctrine query object from a possible QueryBuilder instance.
+     *
+     * @param object $query
+     *
+     * @return AbstractQuery
+     *
+     * @throws EntityRepositoryException
+     */
+    private function resolveQuery(object $query): AbstractQuery
+    {
+        if ($query instanceof QueryBuilder) {
+            $query = $query->getQuery();
+        }
+
+        if (!$query instanceof AbstractQuery) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'The \'query\' argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'',
+                    QueryBuilder::class,
+                    AbstractQuery::class,
+                    get_class($query),
+                    __METHOD__
+                )
+            );
+        }
+
+        return $query;
     }
 }
