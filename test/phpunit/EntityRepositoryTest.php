@@ -869,9 +869,14 @@ final class EntityRepositoryTest extends TestCase
             $exceptionMessage
         );
 
+        $id = 'HELLO123';
+        $entity->expects($this->once())
+            ->method('getId')
+            ->willReturn($id);
+
         $this->logger->expects($this->once())
             ->method('error')
-            ->with($errorMessage, compact('exception'));
+            ->with($errorMessage, compact('exception', 'id'));
 
         $this->expectException(EntityRepositoryException::class);
         $this->expectExceptionMessage($errorMessage);

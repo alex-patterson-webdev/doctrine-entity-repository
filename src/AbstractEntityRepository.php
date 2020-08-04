@@ -403,7 +403,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'id' => $entity->getId()]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -421,21 +421,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     protected function executeQuery(object $query, array $options = [])
     {
-        if ($query instanceof QueryBuilder) {
-            $query = $query->getQuery();
-        }
-
-        if (!$query instanceof AbstractQuery) {
-            throw new EntityRepositoryException(
-                sprintf(
-                    'The \'query\' argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'',
-                    QueryBuilder::class,
-                    AbstractQuery::class,
-                    get_class($query),
-                    __METHOD__
-                )
-            );
-        }
+        $query = $this->resolveQuery($query);
 
         try {
             return $this->queryService->execute($query, $options);
@@ -446,7 +432,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'sql' => $query->getSQL()]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -469,7 +455,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
         $query = $this->resolveQuery($query);
 
         try {
-            return $this->queryService->execute($query, $options);
+            return $this->queryService->getSingleResultOrNull($query, $options);
         } catch (QueryServiceException $e) {
             $errorMessage = sprintf(
                 'Failed to perform query for entity type \'%s\': %s',
@@ -477,7 +463,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'sql' => $query->getSQL()]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
