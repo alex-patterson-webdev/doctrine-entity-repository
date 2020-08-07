@@ -1,10 +1,14 @@
 build:
-  environment:
-    php:
-      - 7.4
-      - 8
   nodes:
+    php74:
+      environment:
+        php: 7.4
+    php8:
+      environment:
+        php: 8
     analysis:
+      environment:
+        php: 7.4
       project_setup:
         override:
           - 'true'
