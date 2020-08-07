@@ -1,6 +1,8 @@
 build:
+  cache:
+    disabled: true
   nodes:
-    foo:
+    php74:
       environment:
         php: 7.4
     analysis:
