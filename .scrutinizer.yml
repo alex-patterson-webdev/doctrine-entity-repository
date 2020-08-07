@@ -5,7 +5,7 @@ build:
         php: 7.4
     php8:
       environment:
-        php: 8
+        php: '8.0.0beta1'
     analysis:
       environment:
         php: 7.4
