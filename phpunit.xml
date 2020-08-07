@@ -8,10 +8,15 @@
         colors="true"
 >
     <testsuites>
-        <testsuite name="DoctrineEntityRepository">
-            <directory>./test/phpunit</directory>
+        <testsuite name="unit">
+            <directory>./test/unit</directory>
+        </testsuite>
+
+        <testsuite name="integration">
+            <directory>./test/integration/src/Feature</directory>
         </testsuite>
     </testsuites>
+
     <filter>
         <whitelist processUncoveredFilesFromWhitelist="false">
             <directory suffix=".php">src</directory>

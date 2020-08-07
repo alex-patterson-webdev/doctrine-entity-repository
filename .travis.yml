@@ -7,7 +7,8 @@ install:
   - travis_retry composer install -vvv --no-interaction --no-suggest
 
 script:
-  - composer test
+  - composer unit
+  - composer integration
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

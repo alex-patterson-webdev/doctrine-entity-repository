@@ -10,9 +10,10 @@
   ],
   "require": {
     "php": ">=7.4",
+    "alex-patterson-webdev/log": "dev-feature/0.1.0",
     "alex-patterson-webdev/date-time": "^1",
     "alex-patterson-webdev/entity": "^0.1.1",
-    "alex-patterson-webdev/event-dispatcher": "^1",
+    "alex-patterson-webdev/event-dispatcher": "dev-feature/1.1.0",
     "alex-patterson-webdev/factory": "^1",
     "doctrine/orm": "^2.7",
     "psr/log": "^1.1"
@@ -30,20 +31,15 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "ArpTest\\DoctrineEntityRepository\\": "test/phpunit/"
+      "ArpTest\\DoctrineEntityRepository\\": "test/unit/",
+      "ArpIntegrationTest\\DoctrineEntityRepository\\": "test/integration/src/"
     }
   },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "http://dev.satis.local"
-    }
-  ],
   "scripts": {
-    "test": "php vendor/bin/phpunit --coverage-clover=coverage.xml"
+    "unit test": "php vendor/bin/phpunit --testsuite=unit --coverage-clover=coverage.xml",
+    "integration test": "php vendor/bin/phpunit --testsuite=integration --coverage-clover=coverage.xml"
   },
   "config": {
-    "secure-http": false,
     "preferred-install": "dist",
     "optimize-autoloader": true,
     "sort-packages": true
