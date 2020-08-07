@@ -1,6 +1,6 @@
 build:
   nodes:
-    php74:
+    foo:
       environment:
         php: 7.4
     analysis:
