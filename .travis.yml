@@ -8,7 +8,6 @@ install:
 
 script:
   - composer unit
-  - composer integration
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
