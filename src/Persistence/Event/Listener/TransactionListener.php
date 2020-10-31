@@ -126,7 +126,10 @@ final class TransactionListener implements AggregateListenerInterface
      */
     private function isEnabled(AbstractEntityEvent $event, string $methodName): bool
     {
-        $transactionMode = $event->getParameters()->getParam(EntityEventOption::TRANSACTION_MODE);
+        $transactionMode = $event->getParameters()->getParam(
+            EntityEventOption::TRANSACTION_MODE,
+            TransactionMode::ENABLED
+        );
 
         if (TransactionMode::ENABLED === $transactionMode) {
             return true;

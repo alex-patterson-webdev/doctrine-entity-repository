@@ -20,12 +20,12 @@ class CollectionListener
     /**
      * @var callable[]
      */
-    private $listeners;
+    private array $listeners;
 
     /**
      * @var LoggerInterface
      */
-    private $logger;
+    private LoggerInterface $logger;
 
     /**
      * @param callable[]      $listeners
@@ -75,7 +75,7 @@ class CollectionListener
                 )
             );
 
-            $event = $listener($event);
+            $listener($event);
         }
     }
 }

@@ -212,6 +212,9 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
         try {
             if (TransactionMode::ENABLED === $transactionMode) {
+                $this->logger->info(
+                    sprintf('Starting collection transaction for entity type \'%s\'', $this->entityName)
+                );
                 $this->persistService->beginTransaction();
             }
 
@@ -225,16 +228,34 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $entities[] = $this->save($entity, $saveOptions);
             }
 
+            $this->logger->info(
+                sprintf(
+                    'Completed collection save of \'%d\' entities of type \'%s\'',
+                    count($entities),
+                    $this->entityName
+                )
+            );
+
             if (FlushMode::ENABLED === $flushMode) {
+                $this->logger->info(
+                    sprintf('Performing collection flush operation for entity type \'%s\'', $this->entityName)
+                );
                 $this->persistService->flush();
             }
+
             if (TransactionMode::ENABLED === $transactionMode) {
+                $this->logger->info(
+                    sprintf('Committing collection transaction for entity type \'%s\'', $this->entityName)
+                );
                 $this->persistService->commitTransaction();
             }
 
             return $entities;
         } catch (\Throwable $e) {
             if (TransactionMode::ENABLED === $transactionMode) {
+                $this->logger->info(
+                    sprintf('Rolling back collection transaction for entity type \'%s\'', $this->entityName)
+                );
                 $this->persistService->rollbackTransaction();
             }
 
@@ -476,11 +497,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * @param object $query
      * @param array  $options
      *
-     * @return array|null
+     * @return array|EntityInterface|null
      *
      * @throws EntityRepositoryException
      */
-    protected function getSingleArrayResultOrNull(object $query, array $options = []): ?array
+    protected function getSingleArrayResultOrNull(object $query, array $options = [])
     {
         $options = array_replace_recursive(
             $options,

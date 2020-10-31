@@ -11,7 +11,7 @@
   "require": {
     "php": ">=7.4",
     "alex-patterson-webdev/log": "dev-feature/0.1.0",
-    "alex-patterson-webdev/date-time": "^1",
+    "alex-patterson-webdev/date-time": "^2",
     "alex-patterson-webdev/entity": "^0.1.1",
     "alex-patterson-webdev/event-dispatcher": "dev-feature/1.1.0",
     "alex-patterson-webdev/factory": "^1",
@@ -19,10 +19,7 @@
     "psr/log": "^1.1"
   },
   "require-dev": {
-    "phpunit/phpunit": "^9.1",
-    "squizlabs/php_codesniffer": "3.*",
-    "phpmd/phpmd" : "@stable",
-    "friendsofphp/php-cs-fixer": "^2.16"
+    "phpunit/phpunit": "^9.1"
   },
   "autoload": {
     "psr-4": {
