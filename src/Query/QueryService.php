@@ -47,6 +47,14 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
+     * @return string
+     */
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+
+    /**
      * Return a new query builder instance.
      *
      * @param string|null $alias The optional query builder alias.
@@ -79,9 +87,11 @@ class QueryService implements QueryServiceInterface
         if (empty($result)) {
             return null;
         }
+
         if (!is_array($result)) {
             return $result;
         }
+
         if (count($result) > 1) {
             return null;
         }
@@ -265,7 +275,6 @@ class QueryService implements QueryServiceInterface
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @todo Reduce cyclomatic complexity
-     *
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
-use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;
@@ -16,6 +15,11 @@ use Doctrine\ORM\QueryBuilder;
 interface QueryServiceInterface
 {
     /**
+     * @return string
+     */
+    public function getEntityName(): string;
+
+    /**
      * Find a single entity matching the provided identity.
      *
      * @param int|string $id      The identity of the entity to match.
@@ -23,7 +27,7 @@ interface QueryServiceInterface
      *
      * @return EntityInterface|null
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
     public function findOneById($id, array $options = []): ?EntityInterface;
 
@@ -35,7 +39,7 @@ interface QueryServiceInterface
      *
      * @return EntityInterface|null
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
     public function findOne(array $criteria, array $options = []): ?EntityInterface;
 
@@ -47,7 +51,7 @@ interface QueryServiceInterface
      *
      * @return EntityInterface[]|iterable
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
     public function findMany(array $criteria, array $options = []): iterable;
 
@@ -57,7 +61,7 @@ interface QueryServiceInterface
      *
      * @return EntityInterface|null|array
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
     public function getSingleResultOrNull($queryOrBuilder, array $options = []);
 
@@ -78,7 +82,7 @@ interface QueryServiceInterface
      *
      * @return mixed
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
     public function execute($queryOrBuilder, array $options = []);
 

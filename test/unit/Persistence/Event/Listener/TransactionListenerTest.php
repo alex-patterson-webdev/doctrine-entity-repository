@@ -69,15 +69,13 @@ final class TransactionListenerTest extends TestCase
             ->method('addListenerForEvent')
             ->withConsecutive(
                 [EntityEventName::CREATE, [$listener, 'beginTransaction'], 900],
-                [EntityEventName::CREATE, [$listener, 'commitTransaction'], 1],
-                [EntityEventName::CREATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
-
                 [EntityEventName::UPDATE, [$listener, 'beginTransaction'], 900],
-                [EntityEventName::UPDATE, [$listener, 'commitTransaction'], 1],
-                [EntityEventName::UPDATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
-
                 [EntityEventName::DELETE, [$listener, 'beginTransaction'], 900],
+                [EntityEventName::CREATE, [$listener, 'commitTransaction'], 1],
+                [EntityEventName::UPDATE, [$listener, 'commitTransaction'], 1],
                 [EntityEventName::DELETE, [$listener, 'commitTransaction'], 1],
+                [EntityEventName::CREATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
+                [EntityEventName::UPDATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
                 [EntityEventName::DELETE_ERROR, [$listener, 'rollbackTransaction'], 1000],
             );
 
