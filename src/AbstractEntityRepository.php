@@ -81,6 +81,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * @return EntityInterface|null
      *
      * @throws EntityRepositoryException
+     *
+     * @noinspection PhpMissingParamTypeInspection
      */
     public function find($id): ?EntityInterface
     {

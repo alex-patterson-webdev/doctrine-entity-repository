@@ -42,15 +42,15 @@ final class TransactionListener implements AggregateListenerInterface
     public function addListeners(AddListenerAwareInterface $collection): void
     {
         $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'beginTransaction'], 900);
-        $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'commitTransaction'], 1);
-        $collection->addListenerForEvent(EntityEventName::CREATE_ERROR, [$this, 'rollbackTransaction'], 1000);
-
         $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'beginTransaction'], 900);
-        $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'commitTransaction'], 1);
-        $collection->addListenerForEvent(EntityEventName::UPDATE_ERROR, [$this, 'rollbackTransaction'], 1000);
-
         $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'beginTransaction'], 900);
+
+        $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'commitTransaction'], 1);
+        $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'commitTransaction'], 1);
         $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'commitTransaction'], 1);
+
+        $collection->addListenerForEvent(EntityEventName::CREATE_ERROR, [$this, 'rollbackTransaction'], 1000);
+        $collection->addListenerForEvent(EntityEventName::UPDATE_ERROR, [$this, 'rollbackTransaction'], 1000);
         $collection->addListenerForEvent(EntityEventName::DELETE_ERROR, [$this, 'rollbackTransaction'], 1000);
     }
 
