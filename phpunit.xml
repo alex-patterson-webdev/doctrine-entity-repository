@@ -10,17 +10,18 @@
         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
 >
     <testsuites>
-        <testsuite name="unit">
+        <testsuite name="DoctrineEntityRepository">
             <directory>./test/unit</directory>
         </testsuite>
     </testsuites>
+
     <coverage processUncoveredFiles="false">
         <include>
             <directory suffix=".php">src</directory>
         </include>
-        <report>
-            <clover outputFile="clover.xml"/>
-        </report>
     </coverage>
-    <logging/>
+
+    <logging>
+        <testdoxXml outputFile="./test/coverage/clover.xml"/>
+    </logging>
 </phpunit>
