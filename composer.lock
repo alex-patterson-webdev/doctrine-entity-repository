@@ -103,21 +103,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/alex-patterson-webdev/event-dispatcher.git",
-                "reference": "ac67c6557a67165966aba5dcf78d067b87188183"
+                "reference": "57db1d7812cef330a5acfcda3ad7c92c4f30890a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/alex-patterson-webdev/event-dispatcher/zipball/ac67c6557a67165966aba5dcf78d067b87188183",
-                "reference": "ac67c6557a67165966aba5dcf78d067b87188183",
+                "url": "https://api.github.com/repos/alex-patterson-webdev/event-dispatcher/zipball/57db1d7812cef330a5acfcda3ad7c92c4f30890a",
+                "reference": "57db1d7812cef330a5acfcda3ad7c92c4f30890a",
                 "shasum": ""
             },
             "require": {
                 "alex-patterson-webdev/factory": "dev-feature/2.0.0",
-                "php": ">=7.3 || >=8.0",
+                "php": ">=7.4 || >=8.0",
                 "psr/event-dispatcher": "^1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^9.1",
+                "phpunit/phpunit": "^9.5",
                 "squizlabs/php_codesniffer": "^3.5"
             },
             "type": "library",
@@ -141,7 +141,7 @@
                 "issues": "https://github.com/alex-patterson-webdev/event-dispatcher/issues",
                 "source": "https://github.com/alex-patterson-webdev/event-dispatcher/tree/feature/2.0.0"
             },
-            "time": "2021-03-06T22:53:55+00:00"
+            "time": "2021-03-07T13:24:23+00:00"
         },
         {
             "name": "alex-patterson-webdev/factory",
