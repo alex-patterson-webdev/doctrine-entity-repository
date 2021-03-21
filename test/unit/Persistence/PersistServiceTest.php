@@ -12,6 +12,7 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
+use Arp\Entity\EntityTrait;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -700,5 +701,254 @@ final class PersistServiceTest extends TestCase
         $this->entityManager->expects($this->once())->method('clear');
 
         $persistService->clear();
+    }
+
+    /**
+     * Assert a PersistenceException is thrown from refresh() if the provided Entity is not managed by this
+     * repository class
+     *
+     * @throws PersistenceException
+     */
+    public function testRefreshWillThrowPersistenceExceptionForInvalidEntity(): void
+    {
+        $entity = new class() implements EntityInterface {
+            use EntityTrait;
+        };
+
+        $entity2 = new class() implements EntityInterface {
+            use EntityTrait;
+        };
+
+        $this->entityName = get_class($entity2);
+
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->never())
+            ->method('refresh')
+            ->with($entity);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage(
+            sprintf(
+                'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
+                $this->entityName,
+                get_class($entity),
+                PersistService::class . '::refresh'
+            )
+        );
+
+        $persistService->refresh($entity);
+    }
+
+    /**
+     * Assert a PersistenceException is thrown from refresh() if the refresh() action fails
+     *
+     * @throws PersistenceException
+     */
+    public function testRefreshError(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface&MockObject $entity */
+        $entity = $this->createMock(EntityInterface::class);
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 987;
+        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('refresh')
+            ->with($entity)
+            ->willThrowException($exception);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionCode($exceptionCode);
+        $this->expectExceptionMessage(
+            sprintf(
+                'The refresh operation failed for entity \'%s\' : %s',
+                $this->entityName,
+                $exceptionMessage
+            )
+        );
+
+        $persistService->refresh($entity);
+    }
+
+    /**
+     * Assert calls to refresh() will result in the $entity being passed to EntityManager::refresh()
+     *
+     * @throws PersistenceException
+     */
+    public function testRefresh(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        /** @var EntityInterface&MockObject $entity */
+        $entity = $this->createMock(EntityInterface::class);
+
+        $this->entityManager->expects($this->once())
+            ->method('refresh')
+            ->with($entity);
+
+        $persistService->refresh($entity);
+    }
+
+    /**
+     * Assert calls to beginTransaction() will proxy to the managed EntityManager instance
+     *
+     * @throws PersistenceException
+     */
+    public function testBeginTransaction(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->once())->method('beginTransaction');
+
+        $persistService->beginTransaction();
+    }
+
+    /**
+     * Assert calls to beginTransaction() will throw a PersistenceException on error
+     *
+     * @throws PersistenceException
+     */
+    public function testBeginTransactionError(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('beginTransaction')
+            ->willThrowException($exception);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage(sprintf('Failed to start transaction : %s', $exceptionMessage));
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->beginTransaction();
+    }
+
+    /**
+     * Assert calls to commitTransaction() will proxy to the managed EntityManager instance
+     *
+     * @throws PersistenceException
+     */
+    public function testCommitTransaction(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->once())->method('commit');
+
+        $persistService->commitTransaction();
+    }
+
+    /**
+     * Assert calls to commitTransaction() will throw a PersistenceException on error
+     *
+     * @throws PersistenceException
+     */
+    public function testCommitTransactionError(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('commit')
+            ->willThrowException($exception);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage(sprintf('Failed to commit transaction : %s', $exceptionMessage));
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->commitTransaction();
+    }
+
+    /**
+     * Assert calls to rollbackTransaction() will proxy to the managed EntityManager instance
+     *
+     * @throws PersistenceException
+     */
+    public function testRollbackTransaction(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $this->entityManager->expects($this->once())->method('rollback');
+
+        $persistService->rollbackTransaction();
+    }
+
+    /**
+     * Assert calls to rollbackTransaction() will throw a PersistenceException on error
+     *
+     * @throws PersistenceException
+     */
+    public function testRollbackTransactionError(): void
+    {
+        $persistService = new PersistService(
+            $this->entityName,
+            $this->entityManager,
+            $this->eventDispatcher,
+            $this->logger
+        );
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+
+        $this->entityManager->expects($this->once())
+            ->method('rollback')
+            ->willThrowException($exception);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage(sprintf('Failed to rollback transaction : %s', $exceptionMessage));
+        $this->expectExceptionCode($exceptionCode);
+
+        $persistService->rollbackTransaction();
     }
 }

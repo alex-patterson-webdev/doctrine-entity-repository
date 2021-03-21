@@ -247,13 +247,13 @@ class PersistService implements PersistServiceInterface
      */
     public function refresh(EntityInterface $entity): void
     {
-        $entityName = $this->getEntityName();
+        $entityName = $this->entityName;
 
         if (!$entity instanceof $entityName) {
             throw new PersistenceException(
                 sprintf(
                     'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
-                    $this->getEntityName(),
+                    $entityName,
                     get_class($entity),
                     __METHOD__
                 )
@@ -266,7 +266,7 @@ class PersistService implements PersistServiceInterface
             throw new PersistenceException(
                 sprintf(
                     'The refresh operation failed for entity \'%s\' : %s',
-                    $this->getEntityName(),
+                    $entityName,
                     $e->getMessage()
                 ),
                 $e->getCode(),
