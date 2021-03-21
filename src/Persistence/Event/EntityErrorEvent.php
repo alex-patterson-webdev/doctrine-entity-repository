@@ -18,11 +18,11 @@ class EntityErrorEvent extends AbstractEntityEvent
     private \Throwable $exception;
 
     /**
-     * @param string                 $eventName
-     * @param string                 $entityName
-     * @param EntityManagerInterface $entityManager
-     * @param \Throwable             $exception
-     * @param array                  $params
+     * @param string                   $eventName
+     * @param string                   $entityName
+     * @param EntityManagerInterface   $entityManager
+     * @param \Throwable               $exception
+     * @param array<string|int, mixed> $params
      */
     public function __construct(
         string $eventName,

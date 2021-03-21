@@ -21,13 +21,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class TransactionListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -62,7 +64,7 @@ final class TransactionListenerTest extends TestCase
     {
         $listener = new TransactionListener($this->logger);
 
-        /** @var AddListenerAwareInterface|MockObject $collection */
+        /** @var AddListenerAwareInterface&MockObject $collection */
         $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
 
         $collection->expects($this->exactly(9))
@@ -95,10 +97,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -122,7 +124,7 @@ final class TransactionListenerTest extends TestCase
             ->method('getEventName')
             ->willReturn($eventName);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
         $entityId = 'ABC123';
 
@@ -164,10 +166,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -191,7 +193,7 @@ final class TransactionListenerTest extends TestCase
             ->method('getEventName')
             ->willReturn($eventName);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
         $entityId = 'ABC123';
 
@@ -233,10 +235,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var EntityErrorEvent|MockObject $errorEvent */
+        /** @var EntityErrorEvent&MockObject $errorEvent */
         $errorEvent = $this->createMock(EntityErrorEvent::class);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $errorEvent->expects($this->once())
@@ -291,10 +293,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
@@ -306,7 +308,7 @@ final class TransactionListenerTest extends TestCase
             ->with(EntityEventOption::TRANSACTION_MODE)
             ->willReturn($transactionMode);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -330,7 +332,7 @@ final class TransactionListenerTest extends TestCase
             ->method('getId')
             ->willReturn($entityId);
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $this->logger->expects($this->once())
@@ -366,10 +368,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
@@ -381,7 +383,7 @@ final class TransactionListenerTest extends TestCase
             ->with(EntityEventOption::TRANSACTION_MODE)
             ->willReturn($transactionMode);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -405,7 +407,7 @@ final class TransactionListenerTest extends TestCase
             ->method('getId')
             ->willReturn($entityId);
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $this->logger->expects($this->once())
@@ -441,10 +443,10 @@ final class TransactionListenerTest extends TestCase
 
         $listener = new TransactionListener($this->logger);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
-        /** @var EntityErrorEvent|MockObject $errorEvent */
+        /** @var EntityErrorEvent&MockObject $errorEvent */
         $errorEvent = $this->createMock(EntityErrorEvent::class);
 
         $errorEvent->expects($this->once())
@@ -468,7 +470,7 @@ final class TransactionListenerTest extends TestCase
             ->method('getEventName')
             ->willReturn($eventName);
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $this->logger->expects($this->once())

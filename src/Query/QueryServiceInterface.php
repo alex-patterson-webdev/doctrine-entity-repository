@@ -22,8 +22,8 @@ interface QueryServiceInterface
     /**
      * Find a single entity matching the provided identity.
      *
-     * @param int|string $id      The identity of the entity to match.
-     * @param array      $options The optional query options.
+     * @param int|string           $id      The identity of the entity to match.
+     * @param array<string, mixed> $options The optional query options.
      *
      * @return EntityInterface|null
      *
@@ -34,8 +34,8 @@ interface QueryServiceInterface
     /**
      * Find a single entity matching the provided criteria.
      *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
      *
      * @return EntityInterface|null
      *
@@ -46,8 +46,8 @@ interface QueryServiceInterface
     /**
      * Find a collection of entities that match the provided criteria.
      *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
      *
      * @return EntityInterface[]|iterable
      *
@@ -57,9 +57,9 @@ interface QueryServiceInterface
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
+     * @param array<string, mixed>                      $options
      *
-     * @return EntityInterface|null|array
+     * @return EntityInterface|array<mixed>|null
      *
      * @throws Exception\QueryServiceException
      */
@@ -78,7 +78,7 @@ interface QueryServiceInterface
      * Construct and execute the query.
      *
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
+     * @param array<string, mixed>                      $options
      *
      * @return mixed
      *
@@ -89,7 +89,7 @@ interface QueryServiceInterface
     /**
      * Return the result set count.
      *
-     * @param array $criteria
+     * @param array<string, mixed> $criteria
      *
      * @return mixed
      */

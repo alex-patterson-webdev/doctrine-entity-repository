@@ -74,9 +74,9 @@ class QueryService implements QueryServiceInterface
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
+     * @param array<string, mixed>       $options
      *
-     * @return EntityInterface|null|array
+     * @return EntityInterface|null|array<mixed>
      *
      * @throws QueryServiceException
      */
@@ -102,8 +102,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Construct and execute the query.
      *
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
+     * @param AbstractQuery|QueryBuilder|mixed $queryOrBuilder
+     * @param array<string, mixed>             $options
      *
      * @return mixed
      *
@@ -144,8 +144,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Find a single entity matching the provided identity.
      *
-     * @param mixed $id      The identity of the entity to match.
-     * @param array $options The optional query options.
+     * @param mixed                $id      The identity of the entity to match.
+     * @param array<string, mixed> $options The optional query options.
      *
      * @return EntityInterface|null
      *
@@ -159,8 +159,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Find a single entity matching the provided criteria.
      *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
      *
      * @return EntityInterface|null
      *
@@ -169,9 +169,9 @@ class QueryService implements QueryServiceInterface
     public function findOne(array $criteria, array $options = []): ?EntityInterface
     {
         try {
-            $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
+            $persist = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
 
-            $entity = $persister->load(
+            $entity = $persist->load(
                 $criteria,
                 $options[QueryServiceOption::ENTITY] ?? null,
                 $options[QueryServiceOption::ASSOCIATION] ?? null,
@@ -194,10 +194,10 @@ class QueryService implements QueryServiceInterface
     /**
      * Find a collection of entities that match the provided criteria.
      *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
      *
-     * @return EntityInterface[]|iterable
+     * @return iterable<EntityInterface>
      *
      * @throws QueryServiceException
      */
@@ -224,7 +224,7 @@ class QueryService implements QueryServiceInterface
     /**
      * Return the result set count.
      *
-     * @param array $criteria
+     * @param array<string, mixed> $criteria
      *
      * @return mixed
      */
@@ -238,8 +238,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Set the query builder options.
      *
-     * @param QueryBuilder $queryBuilder The query builder to update.
-     * @param array        $options      The query builder options to set.
+     * @param QueryBuilder         $queryBuilder The query builder to update.
+     * @param array<string, mixed> $options      The query builder options to set.
      *
      * @return QueryBuilder
      */
@@ -268,8 +268,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Prepare the provided query by setting the $options.
      *
-     * @param AbstractQuery $query
-     * @param array         $options
+     * @param AbstractQuery        $query
+     * @param array<string, mixed> $options
      *
      * @return AbstractQuery
      *

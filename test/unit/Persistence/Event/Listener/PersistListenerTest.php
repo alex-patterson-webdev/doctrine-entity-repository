@@ -17,13 +17,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\Listener\PersistListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class PersistListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -60,7 +62,7 @@ final class PersistListenerTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
@@ -100,21 +102,21 @@ final class PersistListenerTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -159,21 +161,21 @@ final class PersistListenerTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -198,7 +200,7 @@ final class PersistListenerTest extends TestCase
                 compact('entityName', 'persistMode')
             );
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $event->expects($this->once())

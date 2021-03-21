@@ -16,13 +16,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class SoftDeleteListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -55,7 +57,7 @@ final class SoftDeleteListenerTest extends TestCase
     {
         $listener = new SoftDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -76,7 +78,7 @@ final class SoftDeleteListenerTest extends TestCase
             )
         );
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -89,7 +91,7 @@ final class SoftDeleteListenerTest extends TestCase
     {
         $listener = new SoftDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -98,7 +100,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -113,7 +115,7 @@ final class SoftDeleteListenerTest extends TestCase
             )
         );
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -125,7 +127,7 @@ final class SoftDeleteListenerTest extends TestCase
     {
         $listener = new SoftDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -135,7 +137,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var DeleteAwareInterface|MockObject $entity */
+        /** @var DeleteAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
 
         $event->expects($this->once())
@@ -160,7 +162,7 @@ final class SoftDeleteListenerTest extends TestCase
 
         $entity->expects($this->never())->method('setDeleted');
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -175,7 +177,7 @@ final class SoftDeleteListenerTest extends TestCase
 
         $listener = new SoftDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -184,7 +186,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var DeleteAwareInterface|MockObject $entity */
+        /** @var DeleteAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
 
         $event->expects($this->once())
@@ -195,7 +197,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('isDeleted')
             ->willReturn(false);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -217,7 +219,7 @@ final class SoftDeleteListenerTest extends TestCase
 
         $entity->expects($this->never())->method('setDeleted');
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -225,14 +227,14 @@ final class SoftDeleteListenerTest extends TestCase
      *
      * @param string|null $deleteMode
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
      * @dataProvider getSoftDeleteData
      */
     public function testSoftDelete(?string $deleteMode = null): void
     {
         $listener = new SoftDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -242,7 +244,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var DeleteAwareInterface|MockObject $entity */
+        /** @var DeleteAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
 
         $event->expects($this->once())
@@ -253,7 +255,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('isDeleted')
             ->willReturn(false);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -278,11 +280,11 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('setDeleted')
             ->with(true);
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getSoftDeleteData(): array
     {

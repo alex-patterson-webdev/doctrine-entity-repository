@@ -18,6 +18,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers  \Arp\DoctrineEntityRepository\Query\QueryService
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Query
  */
@@ -29,12 +31,12 @@ final class QueryServiceTest extends TestCase
     private string $entityName;
 
     /**
-     * @var EntityManagerInterface|MockObject
+     * @var EntityManagerInterface&MockObject
      */
     private $entityManager;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -71,7 +73,7 @@ final class QueryServiceTest extends TestCase
     {
         $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
 
-        /** @var QueryBuilder|MockObject $queryBuilder */
+        /** @var QueryBuilder&MockObject $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilder::class);
 
         $this->entityManager->expects($this->once())
@@ -81,7 +83,7 @@ final class QueryServiceTest extends TestCase
         $queryBuilder->expects($this->never())->method('select');
         $queryBuilder->expects($this->never())->method('from');
 
-        $this->assertInstanceOf(QueryBuilder::class, $queryService->createQueryBuilder());
+        $queryService->createQueryBuilder();
     }
 
     /**
@@ -95,7 +97,7 @@ final class QueryServiceTest extends TestCase
 
         $alias = 'foo';
 
-        /** @var QueryBuilder|MockObject $queryBuilder */
+        /** @var QueryBuilder&MockObject $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilder::class);
 
         $this->entityManager->expects($this->once())
@@ -111,7 +113,7 @@ final class QueryServiceTest extends TestCase
             ->method('from')
             ->with($this->entityName, $alias);
 
-        $this->assertInstanceOf(QueryBuilder::class, $queryService->createQueryBuilder($alias));
+        $queryService->createQueryBuilder($alias);
     }
 
     /**
@@ -132,7 +134,7 @@ final class QueryServiceTest extends TestCase
             sprintf(
                 'Query provided must be of type \'%s\'; \'%s\' provided in \'%s::%s\'.',
                 AbstractQuery::class,
-                (is_object($invalidQuery) ? get_class($invalidQuery) : gettype($invalidQuery)),
+                get_class($invalidQuery),
                 QueryService::class,
                 'execute'
             )
@@ -144,10 +146,10 @@ final class QueryServiceTest extends TestCase
     /**
      * Assert that a query object provided to execute will be prepared with the provided options and then executed.
      *
-     * @param array $options  The optional query options to assert get set on the query when being prepared.
+     * @param array<mixed> $options The optional query options to assert get set on the query when being prepared.
      *
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
+     * @covers       \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @covers       \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
      *
      * @dataProvider getExecuteWillPrepareAndExecuteQueryData
      * @throws QueryServiceException
@@ -156,7 +158,7 @@ final class QueryServiceTest extends TestCase
     {
         $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
 
-        /** @var AbstractQuery|MockObject $query */
+        /** @var AbstractQuery&MockObject $query */
         $query = $this->createMock(AbstractQuery::class);
 
         if (array_key_exists('params', $options)) {
@@ -183,7 +185,7 @@ final class QueryServiceTest extends TestCase
                 ->with($options['result_set_mapping']);
         }
 
-        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
+        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof AbstractQuery) {
             $query->expects($this->once())
                 ->method('setDQL')
                 ->with($options[QueryServiceOption::DQL]);
@@ -195,7 +197,7 @@ final class QueryServiceTest extends TestCase
     }
 
     /**
-     * @return array|\array[][]
+     * @return array<mixed>
      */
     public function getExecuteWillPrepareAndExecuteQueryData(): array
     {
@@ -211,7 +213,7 @@ final class QueryServiceTest extends TestCase
                     'params' => [
                         'foo' => 'bar',
                         'baz' => 123,
-                    ]
+                    ],
                 ],
             ],
 
@@ -219,7 +221,7 @@ final class QueryServiceTest extends TestCase
             [
                 [
                     QueryServiceOption::HYDRATION_MODE => Query::HYDRATE_ARRAY,
-                ]
+                ],
             ],
         ];
     }
@@ -237,7 +239,7 @@ final class QueryServiceTest extends TestCase
     {
         $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
 
-        /** @var AbstractQuery|MockObject $query */
+        /** @var AbstractQuery&MockObject $query */
         $query = $this->createMock(AbstractQuery::class);
 
         $exceptionCode = 1234;
@@ -273,10 +275,10 @@ final class QueryServiceTest extends TestCase
     {
         $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
 
-        /** @var AbstractQuery|MockObject $query */
+        /** @var AbstractQuery&MockObject $query */
         $query = $this->createMock(AbstractQuery::class);
 
-        /** @var EntityInterface[]|MockObject[] $resultSet */
+        /** @var EntityInterface[]&MockObject[] $resultSet */
         $resultSet = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),
@@ -302,10 +304,10 @@ final class QueryServiceTest extends TestCase
     {
         $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
 
-        /** @var AbstractQuery|MockObject $query */
+        /** @var AbstractQuery&MockObject $query */
         $query = $this->createMock(AbstractQuery::class);
 
-        /** @var EntityInterface[]|MockObject[] $resultSet */
+        /** @var EntityInterface[]&MockObject[] $resultSet */
         $resultSet = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),

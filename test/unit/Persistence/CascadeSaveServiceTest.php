@@ -12,6 +12,7 @@ use Arp\Entity\EntityInterface;
 use Arp\Entity\EntityTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\ClassMetadataFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -23,22 +24,22 @@ use Psr\Log\LoggerInterface;
 final class CascadeSaveServiceTest extends TestCase
 {
     /**
-     * @var EntityManagerInterface|MockObject
+     * @var EntityManagerInterface&MockObject
      */
     private $entityManager;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
     /**
-     * @var array
+     * @var array<string|int, mixed>
      */
     private array $options = [];
 
     /**
-     * @var array
+     * @var array<int|string, mixed>
      */
     private array $collectionOptions = [];
 
@@ -60,6 +61,44 @@ final class CascadeSaveServiceTest extends TestCase
      * @throws PersistenceException
      * @throws EntityRepositoryException
      */
+    public function testSaveAssociationWillThrowAPersistenceExceptionIfTheTargetEntityNameIsInvalid(): void
+    {
+        $cascadeService = new CascadeSaveService($this->logger, $this->options, $this->collectionOptions);
+
+        $entityName = EntityInterface::class;
+
+        /** @var EntityInterface $entity */
+        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+
+        /** @var ClassMetadataFactory&MockObject $metadataFactory */
+        $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+
+        $this->entityManager->expects($this->once())
+            ->method('getMetadataFactory')
+            ->willReturn($metadataFactory);
+
+        $metadataFactory->expects($this->once())
+            ->method('hasMetadataFor')
+            ->with($entityName)
+            ->willReturn(false);
+
+        $errorMessage = sprintf('The target repository class \'%s\' could not be found', $entityName);
+        $this->logger->expects($this->once())->method('error')->with($errorMessage);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($errorMessage);
+
+        $cascadeService->saveAssociation($this->entityManager, $entityName, $entity);
+    }
+
+    /**
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::__construct
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociation
+     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::getTargetRepository
+     *
+     * @throws PersistenceException
+     * @throws EntityRepositoryException
+     */
     public function testSaveAssociationWillThrowAPersistenceExceptionIfTheTargetEntityRepositoryCannotBeLoaded(): void
     {
         $cascadeService = new CascadeSaveService($this->logger, $this->options, $this->collectionOptions);
@@ -71,6 +110,20 @@ final class CascadeSaveServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message';
         $exception = new \Exception($exceptionMessage, 123);
+
+        if (!class_exists($entityName, true)) {
+            /** @var ClassMetadataFactory&MockObject $metadataFactory */
+            $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+
+            $this->entityManager->expects($this->once())
+                ->method('getMetadataFactory')
+                ->willReturn($metadataFactory);
+
+            $metadataFactory->expects($this->once())
+                ->method('hasMetadataFor')
+                ->with($entityName)
+                ->willReturn(true);
+        }
 
         $this->entityManager->expects($this->once())
             ->method('getRepository')
@@ -113,6 +166,20 @@ final class CascadeSaveServiceTest extends TestCase
 
         $entityRepository = new \stdClass();
 
+        if (!class_exists($entityName, true)) {
+            /** @var ClassMetadataFactory&MockObject $metadataFactory */
+            $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+
+            $this->entityManager->expects($this->once())
+                ->method('getMetadataFactory')
+                ->willReturn($metadataFactory);
+
+            $metadataFactory->expects($this->once())
+                ->method('hasMetadataFor')
+                ->with($entityName)
+                ->willReturn(true);
+        }
+
         $this->entityManager->expects($this->once())
             ->method('getRepository')
             ->with($entityName)
@@ -121,7 +188,7 @@ final class CascadeSaveServiceTest extends TestCase
         $errorMessage = sprintf(
             'The entity repository must be an object of type \'%s\'; \'%s\' returned in \'%s::%s\'',
             EntityRepositoryInterface::class,
-            (is_object($entityRepository) ? get_class($entityRepository) : gettype($entityRepository)),
+            get_class($entityRepository),
             CascadeSaveService::class,
             'getTargetRepository'
         );
@@ -169,7 +236,7 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @param array $options
+     * @param array<string|int, mixed> $options
      *
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::__construct
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociation
@@ -184,11 +251,25 @@ final class CascadeSaveServiceTest extends TestCase
 
         $targetEntityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entityOrCollection */
+        /** @var EntityInterface&MockObject $entityOrCollection */
         $entityOrCollection = $this->getMockForAbstractClass(EntityInterface::class);
 
-        /** @var EntityRepositoryInterface|MockObject $entityRepository */
+        /** @var EntityRepositoryInterface&MockObject $entityRepository */
         $entityRepository = $this->getMockForAbstractClass(EntityRepositoryInterface::class);
+
+        if (!class_exists($targetEntityName, true)) {
+            /** @var ClassMetadataFactory&MockObject $metadataFactory */
+            $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+
+            $this->entityManager->expects($this->once())
+                ->method('getMetadataFactory')
+                ->willReturn($metadataFactory);
+
+            $metadataFactory->expects($this->once())
+                ->method('hasMetadataFor')
+                ->with($targetEntityName)
+                ->willReturn(true);
+        }
 
         $this->entityManager->expects($this->once())
             ->method('getRepository')
@@ -203,7 +284,7 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @param array $options
+     * @param array<int|string, mixed> $options
      *
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::__construct
      * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociation
@@ -218,14 +299,28 @@ final class CascadeSaveServiceTest extends TestCase
 
         $targetEntityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entityOrCollection */
+        /** @var EntityInterface&MockObject $entityOrCollection */
         $entityOrCollection = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),
-            $this->getMockForAbstractClass(EntityInterface::class)
+            $this->getMockForAbstractClass(EntityInterface::class),
         ];
 
-        /** @var EntityRepositoryInterface|MockObject $entityRepository */
+        if (!class_exists($targetEntityName, true)) {
+            /** @var ClassMetadataFactory&MockObject $metadataFactory */
+            $metadataFactory = $this->createMock(ClassMetadataFactory::class);
+
+            $this->entityManager->expects($this->once())
+                ->method('getMetadataFactory')
+                ->willReturn($metadataFactory);
+
+            $metadataFactory->expects($this->once())
+                ->method('hasMetadataFor')
+                ->with($targetEntityName)
+                ->willReturn(true);
+        }
+
+        /** @var EntityRepositoryInterface&MockObject $entityRepository */
         $entityRepository = $this->getMockForAbstractClass(EntityRepositoryInterface::class);
 
         $this->entityManager->expects($this->once())
@@ -254,7 +349,7 @@ final class CascadeSaveServiceTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $exceptionMessage = 'This is a test exception message';
@@ -295,20 +390,19 @@ final class CascadeSaveServiceTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
-        /**
-         * @var ClassMetadata|MockObject $classMetadata
-         * @var ClassMetadata|MockObject $targetMetadata
-         */
+        /** @var ClassMetadata&MockObject $classMetadata */
         $classMetadata = $this->createMock(ClassMetadata::class);
+
+        /** @var ClassMetadata&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $mapping = [
-            'targetEntity' => EntityInterface::class,
-            'fieldName' => 'test',
-            'type' => 'string',
+            'targetEntity'     => EntityInterface::class,
+            'fieldName'        => 'test',
+            'type'             => 'string',
             'isCascadePersist' => true,
         ];
 
@@ -333,7 +427,7 @@ final class CascadeSaveServiceTest extends TestCase
             ->method('info')
             ->withConsecutive(
                 [
-                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName)
+                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName),
                 ],
                 [
                     sprintf(
@@ -341,7 +435,7 @@ final class CascadeSaveServiceTest extends TestCase
                         $entityName,
                         $mapping['fieldName'],
                         $mapping['targetEntity']
-                    )
+                    ),
                 ]
             );
 
@@ -385,8 +479,8 @@ final class CascadeSaveServiceTest extends TestCase
         $exceptionMessage = 'This is a test exception message';
         $exception = new \Error($exceptionMessage);
 
-        /** @var EntityInterface|MockObject $entity */
-        $entity = new class ($exception) implements EntityInterface {
+        /** @var EntityInterface&MockObject $entity */
+        $entity = new class($exception) implements EntityInterface {
             use EntityTrait;
 
             public \Throwable $exception;
@@ -403,16 +497,16 @@ final class CascadeSaveServiceTest extends TestCase
         };
 
         /**
-         * @var ClassMetadata|MockObject $classMetadata
-         * @var ClassMetadata|MockObject $targetMetadata
+         * @var ClassMetadata&MockObject $classMetadata
+         * @var ClassMetadata&MockObject $targetMetadata
          */
         $classMetadata = $this->createMock(ClassMetadata::class);
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $mapping = [
-            'targetEntity' => EntityInterface::class,
-            'fieldName' => 'foo',
-            'type' => 'string',
+            'targetEntity'     => EntityInterface::class,
+            'fieldName'        => 'foo',
+            'type'             => 'string',
             'isCascadePersist' => true,
         ];
 
@@ -440,7 +534,7 @@ final class CascadeSaveServiceTest extends TestCase
                     sprintf(
                         'Processing cascade save operations for for entity class \'%s\'',
                         $entityName
-                    )
+                    ),
                 ],
                 [
                     sprintf(
@@ -448,7 +542,7 @@ final class CascadeSaveServiceTest extends TestCase
                         $entityName,
                         $mapping['fieldName'],
                         $mapping['targetEntity']
-                    )
+                    ),
                 ]
             );
 
@@ -479,7 +573,7 @@ final class CascadeSaveServiceTest extends TestCase
      * Assert that calls to saveAssociations() when mapping data contains associations that are either incorrectly
      * configured (missing required keys) or are not cascade persist.
      *
-     * @param array $mappingData The association mapping data for a single field to test
+     * @param array<int|string, mixed> $mappingData The association mapping data for a single field to test
      *
      * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
      *
@@ -490,7 +584,7 @@ final class CascadeSaveServiceTest extends TestCase
      */
     public function testSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingData(array $mappingData): void
     {
-        /** @var CascadeSaveService|MockObject $cascadeService */
+        /** @var CascadeSaveService&MockObject $cascadeService */
         $cascadeService = $this->getMockBuilder(CascadeSaveService::class)
             ->setConstructorArgs([$this->logger, $this->options, $this->collectionOptions])
             ->onlyMethods(['saveAssociation'])
@@ -498,10 +592,10 @@ final class CascadeSaveServiceTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
-        /** @var ClassMetadata|MockObject $classMetadata */
+        /** @var ClassMetadata&MockObject $classMetadata */
         $classMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->once())
@@ -517,7 +611,7 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getSaveAssociationsWillSkipAssociationsWithNonCascadePersistMappingDataData(): array
     {
@@ -537,15 +631,15 @@ final class CascadeSaveServiceTest extends TestCase
             [
                 [
                     'targetEntity' => EntityInterface::class,
-                    'fieldName' => 'foo',
+                    'fieldName'    => 'foo',
                 ],
             ],
 
             [
                 [
                     'targetEntity' => EntityInterface::class,
-                    'fieldName' => 'foo',
-                    'type' => 1
+                    'fieldName'    => 'foo',
+                    'type'         => 1,
                 ],
             ],
 
@@ -556,17 +650,17 @@ final class CascadeSaveServiceTest extends TestCase
                     'type'             => 1,
                     'isCascadePersist' => false,
                 ],
-            ]
+            ],
         ];
     }
 
     /**
-     * @param array $mappingData
-     * @param mixed $returnValue
+     * @param array<int|string, mixed> $mappingData
+     * @param mixed                    $returnValue
      *
      * @dataProvider getSaveAssociationsThrowPersistenceExceptionIfTheAssocValueIsInvalidData
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::isValidAssociation
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::isValidAssociation
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -582,8 +676,8 @@ final class CascadeSaveServiceTest extends TestCase
         $targetEntityName = $mappingData['targetEntity'] = $mappingData['targetEntity'] ?? EntityInterface::class;
         $mappingData['fieldName'] = 'foo';
 
-        /** @var EntityInterface|MockObject $entity */
-        $entity = new class ($returnValue) implements EntityInterface {
+        /** @var EntityInterface&MockObject $entity */
+        $entity = new class($returnValue) implements EntityInterface {
             use EntityTrait;
 
             /**
@@ -591,21 +685,27 @@ final class CascadeSaveServiceTest extends TestCase
              */
             private $returnValue;
 
+            /**
+             * @param mixed $returnValue
+             */
             public function __construct($returnValue)
             {
                 $this->returnValue = $returnValue;
             }
 
+            /**
+             * @return mixed
+             */
             public function getFoo()
             {
                 return $this->returnValue;
             }
         };
 
-        /** @var ClassMetadata|MockObject $metadata */
+        /** @var ClassMetadata&MockObject $metadata */
         $metadata = $this->createMock(ClassMetadata::class);
 
-        /** @var ClassMetadata|MockObject $targetMetadata */
+        /** @var ClassMetadata&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->exactly(2))
@@ -619,7 +719,7 @@ final class CascadeSaveServiceTest extends TestCase
             );
 
         $mappings = [
-            $mappingData
+            $mappingData,
         ];
 
         $metadata->expects($this->once())
@@ -630,7 +730,7 @@ final class CascadeSaveServiceTest extends TestCase
             ->method('info')
             ->withConsecutive(
                 [
-                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName)
+                    sprintf('Processing cascade save operations for for entity class \'%s\'', $entityName),
                 ],
                 [
                     sprintf(
@@ -638,7 +738,7 @@ final class CascadeSaveServiceTest extends TestCase
                         $entityName,
                         $fieldName,
                         $targetEntityName
-                    )
+                    ),
                 ]
             );
 
@@ -655,7 +755,7 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @return array|\array[][]
+     * @return array<mixed>
      */
     public function getSaveAssociationsThrowPersistenceExceptionIfTheAssocValueIsInvalidData(): array
     {
@@ -671,7 +771,7 @@ final class CascadeSaveServiceTest extends TestCase
                         ],
                     ],
                 ],
-                null
+                null,
             ],
 
             // The return value of the assoc is not a EntityInterface or iterable collection
@@ -692,12 +792,12 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @param array                               $mappingData
-     * @param iterable|EntityInterface|MockObject $returnValue
+     * @param array<mixed> $mappingData
+     * @param mixed        $returnValue
      *
      * @dataProvider getSaveAssociationsData
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
-     * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::resolveTargetEntityOrCollection
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::saveAssociations
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService::resolveTargetEntityOrCollection
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -712,13 +812,11 @@ final class CascadeSaveServiceTest extends TestCase
             'bar' => 2,
         ];
 
-        if ($returnValue instanceof EntityInterface) {
-            $saveOptions = $this->options;
-        } else {
-            $saveOptions = $this->collectionOptions;
-        }
+        $saveOptions = ($returnValue instanceof EntityInterface)
+            ? $this->options
+            : $this->collectionOptions;
 
-        /** @var CascadeSaveService|MockObject $cascadeSaveService */
+        /** @var CascadeSaveService&MockObject $cascadeSaveService */
         $cascadeSaveService = $this->getMockBuilder(CascadeSaveService::class)
             ->setConstructorArgs([$this->logger, $this->options, $this->collectionOptions])
             ->onlyMethods(['saveAssociation'])
@@ -729,8 +827,8 @@ final class CascadeSaveServiceTest extends TestCase
         $targetEntityName = $mappingData['targetEntity'] = $mappingData['targetEntity'] ?? EntityInterface::class;
         $mappingData['fieldName'] = 'foo';
 
-        /** @var EntityInterface|MockObject $entity */
-        $entity = new class ($returnValue) implements EntityInterface {
+        /** @var EntityInterface&MockObject $entity */
+        $entity = new class($returnValue) implements EntityInterface {
             use EntityTrait;
 
             /**
@@ -738,21 +836,27 @@ final class CascadeSaveServiceTest extends TestCase
              */
             private $returnValue;
 
+            /**
+             * @param mixed $returnValue
+             */
             public function __construct($returnValue)
             {
                 $this->returnValue = $returnValue;
             }
 
+            /**
+             * @return mixed
+             */
             public function getFoo()
             {
                 return $this->returnValue;
             }
         };
 
-        /** @var ClassMetadata|MockObject $metadata */
+        /** @var ClassMetadata&MockObject $metadata */
         $metadata = $this->createMock(ClassMetadata::class);
 
-        /** @var ClassMetadata|MockObject $targetMetadata */
+        /** @var ClassMetadata&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->exactly(2))
@@ -788,7 +892,7 @@ final class CascadeSaveServiceTest extends TestCase
                     ),
                 ],
                 [
-                    sprintf('Performing cascading save operations for field \'%s::%s\'', $entityName, $fieldName)
+                    sprintf('Performing cascading save operations for field \'%s::%s\'', $entityName, $fieldName),
                 ]
             );
 
@@ -800,11 +904,11 @@ final class CascadeSaveServiceTest extends TestCase
     }
 
     /**
-     * @return array|\array[][]
+     * @return array<mixed>
      */
     public function getSaveAssociationsData(): array
     {
-        /** @var EntityInterface[]|MockObject[] $collection */
+        /** @var EntityInterface[]&MockObject[] $collection */
         $collection = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),
@@ -824,7 +928,7 @@ final class CascadeSaveServiceTest extends TestCase
                         ],
                     ],
                 ],
-                $this->getMockForAbstractClass(EntityInterface::class)
+                $this->getMockForAbstractClass(EntityInterface::class),
             ],
 
             // Save a collection association
@@ -833,7 +937,7 @@ final class CascadeSaveServiceTest extends TestCase
                     'type'             => ClassMetadata::ONE_TO_MANY,
                     'isCascadePersist' => true,
                 ],
-                $collection
+                $collection,
             ],
 
             // Save an iterable collection association
@@ -842,7 +946,7 @@ final class CascadeSaveServiceTest extends TestCase
                     'type'             => ClassMetadata::MANY_TO_MANY,
                     'isCascadePersist' => true,
                 ],
-                $iteratorCollection
+                $iteratorCollection,
             ],
         ];
     }

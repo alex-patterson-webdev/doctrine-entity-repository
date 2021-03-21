@@ -16,13 +16,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\FlushListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class FlushListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -58,14 +60,14 @@ final class FlushListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $flushMode = FlushMode::DISABLED;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -105,14 +107,14 @@ final class FlushListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $flushMode = FlushMode::ENABLED;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -128,7 +130,7 @@ final class FlushListenerTest extends TestCase
             ->method('info')
             ->with(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $event->expects($this->once())

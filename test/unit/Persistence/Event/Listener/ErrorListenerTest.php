@@ -17,13 +17,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class ErrorListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -59,7 +61,7 @@ final class ErrorListenerTest extends TestCase
     {
         $listener = new ErrorListener($this->logger);
 
-        /** @var AddListenerAwareInterface|MockObject $collection */
+        /** @var AddListenerAwareInterface&MockObject $collection */
         $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
 
         $collection->expects($this->exactly(3))
@@ -86,7 +88,7 @@ final class ErrorListenerTest extends TestCase
 
         $listener = new ErrorListener($this->logger);
 
-        /** @var EntityErrorEvent|MockObject $event */
+        /** @var EntityErrorEvent&MockObject $event */
         $event = $this->createMock(EntityErrorEvent::class);
 
         $exceptionMessage = 'This is a test exception message!';

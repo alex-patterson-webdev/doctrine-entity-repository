@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 
-use Arp\DateTime\DateTimeFactory;
 use Arp\DateTime\DateTimeFactoryInterface;
 use Arp\DateTime\Exception\DateTimeFactoryException;
 use Arp\DoctrineEntityRepository\Constant\DateDeleteMode;
@@ -20,18 +19,20 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateDeletedListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class DateDeletedListenerTest extends TestCase
 {
     /**
-     * @var DateTimeFactory|MockObject
+     * @var DateTimeFactoryInterface&MockObject
      */
     private $dateTimeFactory;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -67,7 +68,7 @@ final class DateDeletedListenerTest extends TestCase
     {
         $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
@@ -106,12 +107,12 @@ final class DateDeletedListenerTest extends TestCase
     {
         $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -147,13 +148,13 @@ final class DateDeletedListenerTest extends TestCase
     {
         $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
         $entityId = 'ABC123';
 
-        /** @var DateDeletedAwareInterface|MockObject $entity */
+        /** @var DateDeletedAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
@@ -164,7 +165,7 @@ final class DateDeletedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -207,13 +208,13 @@ final class DateDeletedListenerTest extends TestCase
     {
         $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
         $entityId = 'ABC123';
 
-        /** @var DateDeletedAwareInterface|MockObject $entity */
+        /** @var DateDeletedAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
@@ -224,7 +225,7 @@ final class DateDeletedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -276,13 +277,13 @@ final class DateDeletedListenerTest extends TestCase
     {
         $listener = new DateDeletedListener($this->dateTimeFactory, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
         $entityId = 'ABC123';
 
-        /** @var DateDeletedAwareInterface|MockObject $entity */
+        /** @var DateDeletedAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DateDeletedAwareInterface::class);
 
         $event->expects($this->once())
@@ -293,7 +294,7 @@ final class DateDeletedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())

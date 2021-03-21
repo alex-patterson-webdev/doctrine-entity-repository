@@ -17,13 +17,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class EntityValidationListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -58,7 +60,7 @@ final class EntityValidationListenerTest extends TestCase
     {
         $listener = new EntityValidationListener($this->logger);
 
-        /** @var AddListenerAwareInterface|MockObject $collection */
+        /** @var AddListenerAwareInterface&MockObject $collection */
         $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
 
         $collection->expects($this->exactly(3))
@@ -84,7 +86,7 @@ final class EntityValidationListenerTest extends TestCase
     {
         $listener = new EntityValidationListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $eventName = EntityEventName::UPDATE;
@@ -132,12 +134,12 @@ final class EntityValidationListenerTest extends TestCase
     {
         $listener = new EntityValidationListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $eventName = EntityEventName::UPDATE;
 
-        /** @var EntityInterface $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
         $entityName = 'Foo';
 
@@ -155,7 +157,7 @@ final class EntityValidationListenerTest extends TestCase
 
         $errorMessage = sprintf(
             'The entity class of type \'%s\' does not match the expected \'%s\' for event \'%s\'',
-            (is_object($entity) ? get_class($entity) : gettype($entity)),
+            get_class($entity),
             $entityName,
             $eventName
         );
@@ -181,7 +183,7 @@ final class EntityValidationListenerTest extends TestCase
     {
         $listener = new EntityValidationListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $eventName = EntityEventName::UPDATE;

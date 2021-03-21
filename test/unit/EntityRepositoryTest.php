@@ -30,17 +30,17 @@ final class EntityRepositoryTest extends TestCase
     private string $entityName;
 
     /**
-     * @var QueryServiceInterface|MockObject
+     * @var QueryServiceInterface&MockObject
      */
     private $queryService;
 
     /**
-     * @var PersistServiceInterface|MockObject
+     * @var PersistServiceInterface&MockObject
      */
     private $persistService;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -190,7 +190,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
         $entityId = 'FOO123';
 
@@ -295,7 +295,7 @@ final class EntityRepositoryTest extends TestCase
             'bob'  => 123,
         ];
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $this->queryService->expects($this->once())
@@ -315,7 +315,7 @@ final class EntityRepositoryTest extends TestCase
      */
     public function testFindAllWillProxyAnEmptyArrayToFindBy(): void
     {
-        /** @var EntityRepository|MockObject $repository */
+        /** @var EntityRepository&MockObject $repository */
         $repository = $this->getMockBuilder(EntityRepository::class)
             ->setConstructorArgs(
                 [
@@ -328,7 +328,7 @@ final class EntityRepositoryTest extends TestCase
             ->onlyMethods(['findBy'])
             ->getMock();
 
-        /** @var EntityInterface[]|MockObject[] $entities */
+        /** @var EntityInterface[]&MockObject[] $entities */
         $entities = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),
@@ -353,7 +353,7 @@ final class EntityRepositoryTest extends TestCase
      */
     public function testFindByWillCatchAndRethrowEntityRepositoryExceptionOnFailure(): void
     {
-        /** @var EntityRepository|MockObject $repository */
+        /** @var EntityRepository&MockObject $repository */
         $repository = new EntityRepository(
             $this->entityName,
             $this->queryService,
@@ -392,9 +392,9 @@ final class EntityRepositoryTest extends TestCase
     /**
      * Assert the required search arguments are passed to findMany().
      *
-     * @param array $data
+     * @param array<mixed> $data
      *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::findBy
+     * @covers       \Arp\DoctrineEntityRepository\EntityRepository::findBy
      *
      * @dataProvider getFindByWithSearchArgumentsData
      *
@@ -402,7 +402,7 @@ final class EntityRepositoryTest extends TestCase
      */
     public function testFindByWillPassValidSearchArguments(array $data): void
     {
-        /** @var EntityRepository|MockObject $repository */
+        /** @var EntityRepository&MockObject $repository */
         $repository = new EntityRepository(
             $this->entityName,
             $this->queryService,
@@ -425,7 +425,7 @@ final class EntityRepositoryTest extends TestCase
             $options[QueryServiceOption::OFFSET] = $data['offset'];
         }
 
-        /** @var EntityInterface[]|MockObject[] $collection */
+        /** @var EntityInterface[]&MockObject[] $collection */
         $collection = [
             $this->getMockForAbstractClass(EntityInterface::class),
             $this->getMockForAbstractClass(EntityInterface::class),
@@ -448,7 +448,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getFindByWithSearchArgumentsData(): array
     {
@@ -463,42 +463,42 @@ final class EntityRepositoryTest extends TestCase
             [
                 [
                     'criteria' => [
-                        'name' => 'test',
+                        'name'  => 'test',
                         'hello' => 'foo',
                     ],
-                ]
+                ],
             ],
 
             [
                 [
                     'limit' => 100,
-                ]
+                ],
             ],
 
             [
                 [
                     'offset' => 10,
-                ]
+                ],
             ],
 
             [
                 [
                     'order_by' => [
                         'name' => 'desc',
-                        'foo' => 'asc',
+                        'foo'  => 'asc',
                     ],
-                ]
+                ],
             ],
 
             [
                 [
                     'criteria' => [
-                        'name' => 'test',
+                        'name'  => 'test',
                         'hello' => 'foo',
-                        'foo' => 123
+                        'foo'   => 123,
                     ],
-                    'offset' => 7,
-                    'limit' => 1000,
+                    'offset'   => 7,
+                    'limit'    => 1000,
                     'order_by' => [
                         'hello' => 'asc',
                     ],
@@ -517,7 +517,7 @@ final class EntityRepositoryTest extends TestCase
      */
     public function testSaveWillCatchThrowableAndRethrowEntityRepositoryException(): void
     {
-        /** @var EntityRepository|MockObject $repository */
+        /** @var EntityRepository&MockObject $repository */
         $repository = new EntityRepository(
             $this->entityName,
             $this->queryService,
@@ -525,7 +525,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $exceptionMessage = 'This is a test exception message for save()';
@@ -566,7 +566,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $this->persistService->expects($this->once())
@@ -583,7 +583,7 @@ final class EntityRepositoryTest extends TestCase
      *
      * @param mixed $entity
      *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     * @covers       \Arp\DoctrineEntityRepository\EntityRepository::delete
      * @dataProvider getDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalidData
      *
      * @throws EntityRepositoryException
@@ -616,13 +616,12 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalidData(): array
     {
         return [
             [true],
-            [123],
             [new \stdClass()],
             [45.67],
         ];
@@ -679,7 +678,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $options = [
@@ -715,9 +714,9 @@ final class EntityRepositoryTest extends TestCase
      * Assert that we are able to delete an entity by it's id or instance
      *
      * @param EntityInterface|string $entity
-     * @param array                  $options
+     * @param array<mixed>           $options
      *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     * @covers       \Arp\DoctrineEntityRepository\EntityRepository::delete
      *
      * @dataProvider getEntityDeleteData
      * @throws EntityRepositoryException
@@ -732,7 +731,7 @@ final class EntityRepositoryTest extends TestCase
         );
 
         if (is_string($entity)) {
-            /** @var EntityInterface|MockObject $entityObject */
+            /** @var EntityInterface&MockObject $entityObject */
             $entityObject = $this->getMockForAbstractClass(EntityInterface::class);
 
             $this->queryService->expects($this->once())
@@ -752,7 +751,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getEntityDeleteData(): array
     {
@@ -760,14 +759,14 @@ final class EntityRepositoryTest extends TestCase
             [
                 'Foo123',
                 [
-                    'foo' => 'bar',
+                    'foo'  => 'bar',
                     'test' => 'Hello',
                 ],
             ],
             [
                 $this->getMockForAbstractClass(EntityInterface::class),
                 [
-                    'foo' => 'bar',
+                    'foo'  => 'bar',
                     'test' => 'Hello',
                 ],
             ],
@@ -852,7 +851,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $exceptionCode = 456;
@@ -901,7 +900,7 @@ final class EntityRepositoryTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $this->persistService->expects($this->once())
@@ -910,5 +909,4 @@ final class EntityRepositoryTest extends TestCase
 
         $repository->refresh($entity);
     }
-
 }

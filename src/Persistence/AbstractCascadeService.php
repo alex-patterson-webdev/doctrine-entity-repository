@@ -23,19 +23,19 @@ abstract class AbstractCascadeService
     protected LoggerInterface $logger;
 
     /**
-     * @var array
+     * @var array<string|int, mixed>
      */
     protected array $options;
 
     /**
-     * @var array
+     * @var array<string|int, mixed>
      */
     protected array $collectionOptions;
 
     /**
-     * @param LoggerInterface $logger
-     * @param array           $options
-     * @param array           $collectionOptions
+     * @param LoggerInterface          $logger
+     * @param array<string|int, mixed> $options
+     * @param array<string|int, mixed> $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
@@ -46,20 +46,27 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string                 $entityName
+     * @param class-string           $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
      * @todo We should implement a way to decorate the call the getRepository() with a concrete implementation
      *       of the EntityRepositoryProviderInterface
-     *
      */
     protected function getTargetRepository(
         EntityManagerInterface $entityManager,
         string $entityName
     ): EntityRepositoryInterface {
+        if (!class_exists($entityName, true) && !$entityManager->getMetadataFactory()->hasMetadataFor($entityName)) {
+            $errorMessage = sprintf('The target repository class \'%s\' could not be found', $entityName);
+
+            $this->logger->error($errorMessage);
+
+            throw new PersistenceException($errorMessage);
+        }
+
         try {
-            /** @var EntityRepositoryInterface $targetRepository */
+            /** @var EntityRepositoryInterface|object|null $targetRepository */
             $targetRepository = $entityManager->getRepository($entityName);
         } catch (\Throwable $e) {
             $errorMessage = sprintf(
@@ -72,7 +79,7 @@ abstract class AbstractCascadeService
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
 
-        if (null === $targetRepository || !($targetRepository instanceof EntityRepositoryInterface)) {
+        if (!isset($targetRepository) || !($targetRepository instanceof EntityRepositoryInterface)) {
             $errorMessage = sprintf(
                 'The entity repository must be an object of type \'%s\'; \'%s\' returned in \'%s::%s\'',
                 EntityRepositoryInterface::class,
@@ -80,6 +87,7 @@ abstract class AbstractCascadeService
                 static::class,
                 __FUNCTION__
             );
+
             $this->logger->error($errorMessage);
 
             throw new PersistenceException($errorMessage);
@@ -140,8 +148,8 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @param EntityInterface|EntityInterface[]|iterable $entityOrCollection
-     * @param array                                      $mapping
+     * @param iterable<EntityInterface>|EntityInterface|mixed|null $entityOrCollection
+     * @param array<string, mixed>                                 $mapping
      *
      * @return bool
      */

@@ -68,8 +68,8 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string, mixed> $options
      *
      * @return EntityInterface
      *
@@ -85,8 +85,8 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string, mixed> $options
      *
      * @return EntityInterface
      *
@@ -95,9 +95,11 @@ class PersistService implements PersistServiceInterface
     protected function update(EntityInterface $entity, array $options = []): EntityInterface
     {
         try {
+            /** @var EntityEvent $event */
             $event = $this->dispatchEvent($this->createEvent(EntityEventName::UPDATE, $entity, $options));
-
-            return $event->getEntity();
+            /** @var EntityInterface $entity */
+            $entity = $event->getEntity();
+            return $entity;
         } catch (\Throwable $e) {
             /** @var EntityErrorEvent $event */
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
@@ -107,8 +109,8 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string, mixed> $options
      *
      * @return EntityInterface
      *
@@ -117,9 +119,12 @@ class PersistService implements PersistServiceInterface
     protected function insert(EntityInterface $entity, array $options = []): EntityInterface
     {
         try {
+            /** @var EntityEvent $event */
             $event = $this->dispatchEvent($this->createEvent(EntityEventName::CREATE, $entity, $options));
 
-            return $event->getEntity();
+            /** @var EntityInterface $entity */
+            $entity = $event->getEntity();
+            return $entity;
         } catch (\Throwable $e) {
             /** @var EntityErrorEvent $event */
             $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
@@ -129,8 +134,8 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string, mixed> $options
      *
      * @return bool
      *
@@ -139,13 +144,16 @@ class PersistService implements PersistServiceInterface
     public function delete(EntityInterface $entity, array $options = []): bool
     {
         try {
-            $this->dispatchEvent($this->createEvent(EntityEventName::DELETE, $entity, $options));
-
+            $event = $this->createEvent(EntityEventName::DELETE, $entity, $options);
+            $this->dispatchEvent($event);
             return true;
         } catch (\Throwable $e) {
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_ERROR, $e));
+            /** @var EntityErrorEvent $errorEvent */
+            $errorEvent = $this->dispatchEvent(
+                $this->createErrorEvent(EntityEventName::DELETE_ERROR, $e)
+            );
 
-            throw $this->createEventException($event->getException());
+            throw $this->createEventException($errorEvent->getException());
         }
     }
 
@@ -332,7 +340,7 @@ class PersistService implements PersistServiceInterface
      *
      * @param string               $eventName
      * @param EntityInterface|null $entity
-     * @param array                $params
+     * @param array<string, mixed> $params
      *
      * @return EntityEvent
      */
@@ -355,9 +363,9 @@ class PersistService implements PersistServiceInterface
     /**
      * Create a new PersistErrorEvent.
      *
-     * @param string     $eventName
-     * @param \Throwable $exception
-     * @param array      $params
+     * @param string               $eventName
+     * @param \Throwable           $exception
+     * @param array<string, mixed> $params
      *
      * @return EntityErrorEvent
      */

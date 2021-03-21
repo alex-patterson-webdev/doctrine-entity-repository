@@ -12,8 +12,6 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\EventDispatcher;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -21,6 +19,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence
  */
@@ -32,17 +32,17 @@ final class PersistServiceTest extends TestCase
     private string $entityName;
 
     /**
-     * @var EntityManager|MockObject
+     * @var EntityManagerInterface&MockObject
      */
     private $entityManager;
 
     /**
-     * @var EventDispatcher|MockObject
+     * @var EventDispatcherInterface&MockObject
      */
     private $eventDispatcher;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -115,7 +115,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entity->expects($this->once())
@@ -156,7 +156,7 @@ final class PersistServiceTest extends TestCase
     /**
      * Assert that if we pass an entity with an id to save() that the entity will be updated and returned.
      *
-     * @param array $options Optional save options that should be passed to the updated method.
+     * @param array<mixed> $options Optional save options that should be passed to the updated method.
      *
      * @dataProvider getSaveWillUpdateAndReturnEntityWithIdData
      *
@@ -168,7 +168,7 @@ final class PersistServiceTest extends TestCase
      */
     public function testSaveWillUpdateAndReturnEntityWithId(array $options = []): void
     {
-        /** @var PersistService|MockObject $persistService */
+        /** @var PersistService&MockObject $persistService */
         $persistService = $this->getMockBuilder(PersistService::class)
             ->setConstructorArgs(
                 [
@@ -180,14 +180,14 @@ final class PersistServiceTest extends TestCase
             )->onlyMethods(['createEvent'])
             ->getMock();
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
             ->willReturn(true);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $persistService->expects($this->once())
@@ -208,7 +208,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getSaveWillUpdateAndReturnEntityWithIdData(): array
     {
@@ -248,7 +248,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entity->expects($this->once())
@@ -289,7 +289,7 @@ final class PersistServiceTest extends TestCase
     /**
      * Assert that an entity provided to save() that does not have an identity will be proxies to insert().
      *
-     * @param array $options
+     * @param array<mixed> $options
      *
      * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
      * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
@@ -301,7 +301,7 @@ final class PersistServiceTest extends TestCase
      */
     public function testSaveWillInsertAndReturnEntityWithNoId(array $options = []): void
     {
-        /** @var PersistService|MockObject $persistService */
+        /** @var PersistService&MockObject $persistService */
         $persistService = $this->getMockBuilder(PersistService::class)
             ->setConstructorArgs(
                 [
@@ -313,14 +313,14 @@ final class PersistServiceTest extends TestCase
             )->onlyMethods(['createEvent'])
             ->getMock();
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
             ->willReturn(false);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $persistService->expects($this->once())
@@ -341,7 +341,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * @return array
+     * @return array<mixed>
      */
     public function getSaveWillInsertAndReturnEntityWithNoIdData(): array
     {
@@ -369,7 +369,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|$entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $errorMessage = sprintf(
@@ -405,7 +405,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|$entity */
+        /** @var EntityInterface|MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $exceptionMessage = 'This is a test error message for persist()';
@@ -450,7 +450,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $this->entityManager->expects($this->once())

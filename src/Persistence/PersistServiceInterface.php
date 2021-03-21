@@ -23,8 +23,8 @@ interface PersistServiceInterface extends TransactionServiceInterface
     /**
      * Create or update a entity instance.
      *
-     * @param EntityInterface $entity  The entity instance that should be saved.
-     * @param array           $options The optional save options.
+     * @param EntityInterface      $entity  The entity instance that should be saved.
+     * @param array<string, mixed> $options The optional save options.
      *
      * @return EntityInterface
      *
@@ -44,8 +44,8 @@ interface PersistServiceInterface extends TransactionServiceInterface
     /**
      * Delete an entity instance.
      *
-     * @param EntityInterface $entity  The entity that should be deleted.
-     * @param array           $options The optional deletion options.
+     * @param EntityInterface      $entity  The entity that should be deleted.
+     * @param array<string, mixed> $options The optional deletion options.
      *
      * @return boolean
      *

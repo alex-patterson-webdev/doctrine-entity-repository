@@ -18,13 +18,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\HardDeleteListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class HardDeleteListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -59,7 +61,7 @@ final class HardDeleteListenerTest extends TestCase
     {
         $listener = new HardDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
@@ -82,10 +84,10 @@ final class HardDeleteListenerTest extends TestCase
     {
         $listener = new HardDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var DeleteAwareInterface|MockObject $entity */
+        /** @var DeleteAwareInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
 
         $event->expects($this->once())
@@ -106,7 +108,7 @@ final class HardDeleteListenerTest extends TestCase
 
         $deleteMode = DeleteMode::SOFT;
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -147,10 +149,10 @@ final class HardDeleteListenerTest extends TestCase
     {
         $listener = new HardDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -171,7 +173,7 @@ final class HardDeleteListenerTest extends TestCase
 
         $deleteMode = DeleteMode::HARD;
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -183,7 +185,7 @@ final class HardDeleteListenerTest extends TestCase
             ->with(EntityEventOption::DELETE_MODE, DeleteMode::HARD)
             ->willReturn($deleteMode);
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $event->expects($this->once())
@@ -227,10 +229,10 @@ final class HardDeleteListenerTest extends TestCase
     {
         $listener = new HardDeleteListener($this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -251,7 +253,7 @@ final class HardDeleteListenerTest extends TestCase
 
         $deleteMode = DeleteMode::HARD;
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -263,7 +265,7 @@ final class HardDeleteListenerTest extends TestCase
             ->with(EntityEventOption::DELETE_MODE, DeleteMode::HARD)
             ->willReturn($deleteMode);
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $event->expects($this->once())

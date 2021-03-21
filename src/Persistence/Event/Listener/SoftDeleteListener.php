@@ -32,7 +32,7 @@ final class SoftDeleteListener
     /**
      * @param EntityEvent $event
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();

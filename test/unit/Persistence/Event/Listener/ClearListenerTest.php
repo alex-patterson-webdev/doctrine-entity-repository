@@ -16,13 +16,15 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class ClearListenerTest extends TestCase
 {
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -58,10 +60,10 @@ final class ClearListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $clearMode = ClearMode::DISABLED;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface|MockObject $parameters */
+        /** @var ParametersInterface<mixed>&MockObject $parameters */
         $parameters = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -103,10 +105,10 @@ final class ClearListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $clearMode = ClearMode::ENABLED;
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface|MockObject $parameters */
+        /** @var ParametersInterface<mixed>&MockObject $parameters */
         $parameters = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -131,7 +133,7 @@ final class ClearListenerTest extends TestCase
                 )
             );
 
-        /** @var EntityManager|MockObject $entityManager */
+        /** @var EntityManager&MockObject $entityManager */
         $entityManager = $this->createMock(EntityManager::class);
 
         $event->expects($this->once())->method('getEntityManager')->willReturn($entityManager);
@@ -139,5 +141,4 @@ final class ClearListenerTest extends TestCase
 
         $listener($event);
     }
-
 }

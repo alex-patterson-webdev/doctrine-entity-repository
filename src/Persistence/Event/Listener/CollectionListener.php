@@ -61,7 +61,7 @@ class CollectionListener
                     sprintf(
                         'The listener provided at index \'%d\' of collection listener \'%s\' is not callable',
                         $index,
-                        is_object($listener) ? get_class($listener) : gettype($listener)
+                        gettype($listener)
                     )
                 );
             }

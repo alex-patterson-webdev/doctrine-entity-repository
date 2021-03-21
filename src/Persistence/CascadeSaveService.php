@@ -16,11 +16,11 @@ use Doctrine\ORM\EntityManagerInterface;
 class CascadeSaveService extends AbstractCascadeService
 {
     /**
-     * @param EntityManagerInterface $entityManager
-     * @param string                 $entityName
-     * @param EntityInterface        $entity
-     * @param array                  $options
-     * @param array                  $collectionOptions
+     * @param EntityManagerInterface   $entityManager
+     * @param string                   $entityName
+     * @param EntityInterface          $entity
+     * @param array<string|int, mixed> $options
+     * @param array<string|int, mixed> $collectionOptions
      *
      * @throws PersistenceException
      * @throws EntityRepositoryException
@@ -102,10 +102,10 @@ class CascadeSaveService extends AbstractCascadeService
     }
 
     /**
-     * @param EntityManagerInterface                     $entityManager
-     * @param string                                     $entityName
-     * @param EntityInterface|EntityInterface[]|iterable $entityOrCollection
-     * @param array                                      $options
+     * @param EntityManagerInterface                          $entityManager
+     * @param class-string                                    $entityName
+     * @param EntityInterface|iterable<EntityInterface>|mixed $entityOrCollection
+     * @param array<string|int, mixed>                        $options
      *
      * @throws PersistenceException
      * @throws EntityRepositoryException

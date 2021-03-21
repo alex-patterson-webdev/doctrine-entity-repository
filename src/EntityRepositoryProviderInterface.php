@@ -18,8 +18,8 @@ interface EntityRepositoryProviderInterface
     public function hasRepository(string $entityName): bool;
 
     /**
-     * @param string $entityName
-     * @param array  $options
+     * @param string               $entityName
+     * @param array<string, mixed> $options
      *
      * @return EntityRepositoryInterface
      *

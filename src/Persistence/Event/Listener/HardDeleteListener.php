@@ -37,7 +37,7 @@ final class HardDeleteListener
      *
      * @throws PersistenceException
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
         $entity = $event->getEntity();
 

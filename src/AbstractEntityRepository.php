@@ -76,13 +76,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a single entity instance matching the provided $id.
      *
-     * @param string $id
+     * @param string|int $id
      *
      * @return EntityInterface|null
      *
      * @throws EntityRepositoryException
-     *
-     * @noinspection PhpMissingParamTypeInspection
      */
     public function find($id): ?EntityInterface
     {
@@ -100,7 +98,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a single entity instance matching the provided $criteria.
      *
-     * @param array $criteria The entity filter criteria.
+     * @param array<mixed> $criteria The entity filter criteria.
      *
      * @return EntityInterface|null
      *
@@ -134,10 +132,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a collection of entities that match the provided $criteria.
      *
-     * @param array      $criteria
-     * @param array|null $orderBy
-     * @param int|null   $limit
-     * @param int|null   $offset
+     * @param array<string, mixed>       $criteria
+     * @param array<string, string>|null $orderBy
+     * @param int|null                   $limit
+     * @param int|null                   $offset
      *
      * @return EntityInterface[]|iterable
      *
@@ -145,9 +143,9 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): iterable
     {
-        try {
-            $options = [];
+        $options = [];
 
+        try {
             if (null !== $orderBy) {
                 $options[QueryServiceOption::ORDER_BY] = $orderBy;
             }
@@ -168,7 +166,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+            $this->logger->error(
+                $errorMessage,
+                ['exception' => $e, 'criteria' => $criteria, 'options' => $options]
+            );
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -177,8 +178,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Save a single entity instance.
      *
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string, mixed> $options
      *
      * @return EntityInterface
      *
@@ -200,10 +201,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Save a collection of entities in a single transaction.
      *
-     * @param iterable|EntityInterface[] $collection The collection of entities that should be saved.
-     * @param array                      $options    the optional save options.
+     * @param iterable<EntityInterface> $collection The collection of entities that should be saved.
+     * @param array<string, mixed>      $options    the optional save options.
      *
-     * @return iterable
+     * @return iterable<EntityInterface>
      *
      * @throws EntityRepositoryException If the save cannot be completed
      */
@@ -276,8 +277,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Delete an entity.
      *
-     * @param EntityInterface|string $entity
-     * @param array                  $options
+     * @param EntityInterface|string|int|mixed $entity
+     * @param array<string, mixed>             $options
      *
      * @return bool
      *
@@ -285,22 +286,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function delete($entity, array $options = []): bool
     {
-        if (!is_string($entity) && !$entity instanceof EntityInterface) {
-            $errorMessage = sprintf(
-                'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
-                . '\'%s\' provided in \'%s::%s\'',
-                EntityInterface::class,
-                (is_object($entity) ? get_class($entity) : gettype($entity)),
-                static::class,
-                __FUNCTION__
-            );
-
-            $this->logger->error($errorMessage);
-
-            throw new EntityRepositoryException($errorMessage);
-        }
-
-        if (is_string($entity)) {
+        if (is_string($entity) || is_int($entity)) {
             $id = $entity;
             $entity = $this->find($id);
 
@@ -315,7 +301,21 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
                 throw new EntityNotFoundException($errorMessage);
             }
+        } elseif (!$entity instanceof EntityInterface) {
+            $errorMessage = sprintf(
+                'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
+                . '\'%s\' provided in \'%s::%s\'',
+                EntityInterface::class,
+                (is_object($entity) ? get_class($entity) : gettype($entity)),
+                static::class,
+                __FUNCTION__
+            );
+
+            $this->logger->error($errorMessage);
+
+            throw new EntityRepositoryException($errorMessage);
         }
+
 
         try {
             return $this->persistService->delete($entity, $options);
@@ -335,8 +335,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Perform a deletion of a collection of entities.
      *
-     * @param iterable|EntityInterface $collection
-     * @param array                    $options
+     * @param iterable<EntityInterface> $collection
+     * @param array<string, mixed>      $options
      *
      * @return int
      *
@@ -435,8 +435,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Execute query builder or query instance and return the results.
      *
-     * @param object $query
-     * @param array  $options
+     * @param object               $query
+     * @param array<string, mixed> $options
      *
      * @return EntityInterface[]|iterable
      *
@@ -466,10 +466,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      *
      * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
      *
-     * @param object $query
-     * @param array  $options
+     * @param object               $query
+     * @param array<string, mixed> $options
      *
-     * @return EntityInterface|array|null
+     * @return array<mixed>|EntityInterface|null
      *
      * @throws EntityRepositoryException
      */
@@ -496,14 +496,14 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * Return a result set containing a single array result. NULL will be returned if the result set
      * contains 0 or more than 1 result.
      *
-     * @param object $query
-     * @param array  $options
+     * @param object               $query
+     * @param array<string, mixed> $options
      *
-     * @return array|EntityInterface|null
+     * @return array<mixed>|null
      *
      * @throws EntityRepositoryException
      */
-    protected function getSingleArrayResultOrNull(object $query, array $options = [])
+    protected function getSingleArrayResultOrNull(object $query, array $options = []): ?array
     {
         $options = array_replace_recursive(
             $options,
@@ -512,7 +512,9 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             ]
         );
 
-        return $this->getSingleResultOrNull($query, $options);
+        $result = $this->getSingleResultOrNull($query, $options);
+
+        return is_array($result) ? $result : null;
     }
 
     /**

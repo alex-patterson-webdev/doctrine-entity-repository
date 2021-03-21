@@ -15,23 +15,25 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateTimeListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class DateTimeListenerTest extends TestCase
 {
     /**
-     * @var DateCreatedListener|MockObject
+     * @var DateCreatedListener&MockObject
      */
     private $dateCreatedListener;
 
     /**
-     * @var DateUpdatedListener|MockObject
+     * @var DateUpdatedListener&MockObject
      */
     private $dateUpdateListener;
 
     /**
-     * @var DateDeletedListener|MockObject
+     * @var DateDeletedListener&MockObject
      */
     private $dateDeletedListener;
 
@@ -62,7 +64,7 @@ final class DateTimeListenerTest extends TestCase
             $this->dateDeletedListener
         );
 
-        /** @var AddListenerAwareInterface|MockObject $collection */
+        /** @var AddListenerAwareInterface&MockObject $collection */
         $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
 
         $collection->expects($this->exactly(3))

@@ -10,7 +10,6 @@ use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\CascadeDeleteService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener;
-use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
@@ -20,18 +19,20 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
 final class CascadeDeleteListenerTest extends TestCase
 {
     /**
-     * @var CascadeDeleteService|MockObject
+     * @var CascadeDeleteService&MockObject
      */
     private $cascadeDeleteService;
 
     /**
-     * @var LoggerInterface|MockObject
+     * @var LoggerInterface&MockObject
      */
     private $logger;
 
@@ -65,10 +66,9 @@ final class CascadeDeleteListenerTest extends TestCase
      */
     public function testInvokeWillThrowPersistenceExceptionAndLogInvalidEntity(): void
     {
-        /** @var CascadeSaveListener|MockObject $listener */
         $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entity = null;
@@ -86,7 +86,7 @@ final class CascadeDeleteListenerTest extends TestCase
         $this->expectException(PersistenceException::class);
         $this->expectExceptionMessage($errorMessage);
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -105,10 +105,10 @@ final class CascadeDeleteListenerTest extends TestCase
 
         $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -119,8 +119,8 @@ final class CascadeDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface|MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        /** @var ParametersInterface<mixed>&MockObject $params */
+        $params = $this->createMock(ParametersInterface::class);
 
         $event->expects($this->once())
             ->method('getParameters')
@@ -143,19 +143,19 @@ final class CascadeDeleteListenerTest extends TestCase
 
         $event->expects($this->never())->method('getEntityManager');
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
      * Assert that the event listener will execute the cascade delete services deleteAssociations() method with a valid
      * cascade mode provided.
      *
-     * @param string|null $cascadeMode
-     * @param array       $options
-     * @param array       $collectionOptions
+     * @param string|null  $cascadeMode
+     * @param array<mixed> $options
+     * @param array<mixed> $collectionOptions
      *
      * @dataProvider getCascadeDeleteData
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener::__invoke
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener::__invoke
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -182,10 +182,10 @@ final class CascadeDeleteListenerTest extends TestCase
 
         $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
 
-        /** @var EntityEvent|MockObject $event */
+        /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $event->expects($this->once())
@@ -196,7 +196,7 @@ final class CascadeDeleteListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface|MockObject $params */
+        /** @var ParametersInterface<mixed>&MockObject $params */
         $params = $this->getMockForAbstractClass(ParametersInterface::class);
 
         $event->expects($this->once())
@@ -215,7 +215,7 @@ final class CascadeDeleteListenerTest extends TestCase
                 $collectionOptions
             );
 
-        /** @var EntityManagerInterface|MockObject $entityManager */
+        /** @var EntityManagerInterface&MockObject $entityManager */
         $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
 
         $event->expects($this->once())
@@ -230,7 +230,7 @@ final class CascadeDeleteListenerTest extends TestCase
             ->method('deleteAssociations')
             ->with($entityManager, $entityName, $entity, $options, $collectionOptions);
 
-        $this->assertNull($listener($event));
+        $listener($event);
     }
 
     /**
@@ -250,5 +250,4 @@ final class CascadeDeleteListenerTest extends TestCase
             ],
         ];
     }
-
 }

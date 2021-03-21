@@ -14,6 +14,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event
  */
@@ -30,7 +32,7 @@ class EntityEventTest extends TestCase
     private string $eventName;
 
     /**
-     * @var EntityManagerInterface|MockObject
+     * @var EntityManagerInterface&MockObject
      */
     private $entityManager;
 
@@ -127,7 +129,7 @@ class EntityEventTest extends TestCase
     {
         $entityEvent = new EntityEvent($this->eventName, $this->entityName, $this->entityManager);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entityEvent->setEntity($entity);
@@ -145,7 +147,7 @@ class EntityEventTest extends TestCase
     {
         $entityEvent = new EntityEvent($this->eventName, $this->entityName, $this->entityManager);
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $entityEvent->setEntity($entity);

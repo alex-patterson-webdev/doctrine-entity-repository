@@ -24,10 +24,10 @@ abstract class AbstractEntityEvent extends NamedEvent
     private EntityManagerInterface $entityManager;
 
     /**
-     * @param string                 $eventName
-     * @param string                 $entityName
-     * @param EntityManagerInterface $entityManager
-     * @param array                  $params
+     * @param string                   $eventName
+     * @param string                   $entityName
+     * @param EntityManagerInterface   $entityManager
+     * @param array<string|int, mixed> $params
      */
     public function __construct(
         string $eventName,
