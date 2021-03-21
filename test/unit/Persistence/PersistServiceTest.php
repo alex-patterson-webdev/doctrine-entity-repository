@@ -12,6 +12,7 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
+use Arp\EventDispatcher\Listener\Exception\EventListenerException;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -19,7 +20,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService
+ * @covers  \Arp\DoctrineEntityRepository\Persistence\PersistService
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence
@@ -160,9 +161,9 @@ final class PersistServiceTest extends TestCase
      *
      * @dataProvider getSaveWillUpdateAndReturnEntityWithIdData
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::update
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::save
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::update
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
      *
      * @throws PersistenceException
      */
@@ -175,7 +176,7 @@ final class PersistServiceTest extends TestCase
                     $this->entityName,
                     $this->entityManager,
                     $this->eventDispatcher,
-                    $this->logger
+                    $this->logger,
                 ]
             )->onlyMethods(['createEvent'])
             ->getMock();
@@ -222,8 +223,8 @@ final class PersistServiceTest extends TestCase
                 ],
                 [
                     PersistServiceOption::FLUSH => false,
-                ]
-            ]
+                ],
+            ],
         ];
     }
 
@@ -291,9 +292,9 @@ final class PersistServiceTest extends TestCase
      *
      * @param array<mixed> $options
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::save
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
+     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
      *
      * @dataProvider getSaveWillInsertAndReturnEntityWithNoIdData
      *
@@ -308,7 +309,7 @@ final class PersistServiceTest extends TestCase
                     $this->entityName,
                     $this->entityManager,
                     $this->eventDispatcher,
-                    $this->logger
+                    $this->logger,
                 ]
             )->onlyMethods(['createEvent'])
             ->getMock();
@@ -348,8 +349,125 @@ final class PersistServiceTest extends TestCase
         return [
             [
 
-            ]
+            ],
         ];
+    }
+
+    /**
+     * Assert that if an exception occurs during the dispatch of the delete event, the delete_error event will be
+     * dispatched with the entity error event containing the caught exception
+     *
+     * @throws PersistenceException
+     */
+    public function testDeleteWillTriggerDeleteErrorEventOnError(): void
+    {
+        $entityName = EntityInterface::class;
+
+        /** @var PersistService&MockObject $persistService */
+        $persistService = $this->getMockBuilder(PersistService::class)
+            ->setConstructorArgs([
+                $entityName,
+                $this->entityManager,
+                $this->eventDispatcher,
+                $this->logger,
+            ])->onlyMethods(['createEvent', 'createErrorEvent'])
+            ->getMock();
+
+        /** @var EntityInterface&MockObject $entity */
+        $entity = $this->createMock(EntityInterface::class);
+        $options = [];
+
+        /** @var EntityEvent&MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        $persistService->expects($this->once())
+            ->method('createEvent')
+            ->with(EntityEventName::DELETE, $entity, $options)
+            ->willReturn($event);
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new EventListenerException($exceptionMessage, $exceptionCode);
+
+        /** @var EntityErrorEvent&MockObject $errorEvent */
+        $errorEvent = $this->createMock(EntityErrorEvent::class);
+
+        $this->eventDispatcher->expects($this->exactly(2))
+            ->method('dispatch')
+            ->withConsecutive([$event], [$errorEvent])
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException($exception),
+                $errorEvent
+            );
+
+        $persistService->expects($this->once())
+            ->method('createErrorEvent')
+            ->with(EntityEventName::DELETE_ERROR, $exception)
+            ->willReturn($errorEvent);
+
+        $errorEvent->expects($this->once())
+            ->method('getException')
+            ->willReturn($exception);
+
+        $errorMessage = sprintf(
+            'The persistence operation for entity \'%s\' failed: %s',
+            $entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, $this->arrayHasKey('exception'));
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage(
+            sprintf(
+                'The persistence operation for entity \'%s\' failed: %s',
+                $this->entityName,
+                $exceptionMessage
+            )
+        );
+
+        $persistService->delete($entity, $options);
+    }
+
+    /**
+     * Assert that the delete event is dispatched when
+     *
+     * @throws PersistenceException
+     */
+    public function testDeleteWillDispatchDeleteEventAndReturnTrue(): void
+    {
+        $entityName = EntityInterface::class;
+
+        /** @var PersistService&MockObject $persistService */
+        $persistService = $this->getMockBuilder(PersistService::class)
+            ->setConstructorArgs([
+                $entityName,
+                $this->entityManager,
+                $this->eventDispatcher,
+                $this->logger,
+            ])->onlyMethods(['createEvent'])
+            ->getMock();
+
+        /** @var EntityInterface&MockObject $entity */
+        $entity = $this->createMock(EntityInterface::class);
+        $options = [];
+
+        /** @var EntityEvent&MockObject $event */
+        $event = $this->createMock(EntityEvent::class);
+
+        $persistService->expects($this->once())
+            ->method('createEvent')
+            ->with(EntityEventName::DELETE, $entity, $options)
+            ->willReturn($event);
+
+        $this->eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with($event)
+            ->willReturn($event);
+
+        $this->assertTrue($persistService->delete($entity, $options));
     }
 
     /**
@@ -405,7 +523,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        /** @var EntityInterface|MockObject $entity */
+        /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
         $exceptionMessage = 'This is a test error message for persist()';
@@ -527,7 +645,7 @@ final class PersistServiceTest extends TestCase
      *
      * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::clear
      *
-     * @throw PersistenceException
+     * @throw  PersistenceException
      */
     public function testClearExceptionsAreLoggedAndRethrownAsPersistenceException(): void
     {

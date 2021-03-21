@@ -369,7 +369,7 @@ class PersistService implements PersistServiceInterface
      *
      * @return EntityErrorEvent
      */
-    private function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
+    protected function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
     {
         return new EntityErrorEvent(
             $eventName,
