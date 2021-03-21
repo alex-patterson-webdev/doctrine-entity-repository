@@ -13,7 +13,7 @@ build:
         override:
           - php-scrutinizer-run
           - command: phpcs-run
-          - command: composer test
+          - command: composer arp:test
             coverage:
               file: test/coverage/clover.xml
               format: clover
