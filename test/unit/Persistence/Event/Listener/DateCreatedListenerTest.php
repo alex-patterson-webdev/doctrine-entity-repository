@@ -52,21 +52,19 @@ final class DateCreatedListenerTest extends TestCase
      */
     public function testIsCallable(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         $this->assertIsCallable($listener);
     }
 
     /**
-     * Assert that if the entity provided resolved to NULL that we log and exit early from the event listener.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
+     * Assert that if the entity provided resolved to NULL that we log and exit early from the event listener
      *
      * @throws PersistenceException
      */
     public function testNullEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -105,7 +103,7 @@ final class DateCreatedListenerTest extends TestCase
      */
     public function testNonDateTimeAwareEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -146,7 +144,7 @@ final class DateCreatedListenerTest extends TestCase
      */
     public function testDateTimeModeSetToDisabledWillLogAndPreventDateUpdate(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -200,7 +198,7 @@ final class DateCreatedListenerTest extends TestCase
      */
     public function testDateTimeFactoryFailureWillBeLoggedAndRethrownAsAPersistenceException(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -264,7 +262,7 @@ final class DateCreatedListenerTest extends TestCase
      */
     public function testDateUpdatedSuccess(): void
     {
-        $listener = new DateCreatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateCreatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);

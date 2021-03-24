@@ -15,7 +15,7 @@ build:
           - command: phpcs-run
           - command: composer arp:test
             coverage:
-              file: test/coverage/clover.xml
+              file: ./test/coverage/clover.xml
               format: clover
 checks:
   php: true

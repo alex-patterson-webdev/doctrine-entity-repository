@@ -76,7 +76,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        $this->assertInstanceOf(PersistServiceInterface::class, $persistService);
+        $this->assertInstanceOf(EntityManagerInterface::class, $persistService);
     }
 
     /**
@@ -110,7 +110,7 @@ final class PersistServiceTest extends TestCase
      */
     public function testSaveExceptionWillBeCaughtLoggedAndTheDispatchErrorEventTriggeredWhenEntityIdIsNotNull(): void
     {
-        $persistService = new PersistService(
+        $persistService = new EntityManager(
             $this->entityName,
             $this->entityManager,
             $this->eventDispatcher,

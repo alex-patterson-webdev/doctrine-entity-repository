@@ -30,11 +30,9 @@ final class PersistListener
     }
 
     /**
-     * Register the entity for persistence.
-     *
      * @param EntityEvent $event
      *
-     * @throws PersistenceException If the entity cannot be found or persisted.
+     * @throws PersistenceException
      */
     public function __invoke(EntityEvent $event): void
     {

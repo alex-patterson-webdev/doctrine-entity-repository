@@ -8,6 +8,7 @@ use Arp\DoctrineEntityRepository\Constant\ClearMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
 use Doctrine\ORM\EntityManager;
@@ -38,12 +39,10 @@ final class ClearListenerTest extends TestCase
 
     /**
      * Assert that the listener is callable
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener
      */
     public function testIsCallable(): void
     {
-        $listener = new ClearListener($this->logger);
+        $listener = new ClearListener();
 
         $this->assertIsCallable($listener);
     }
@@ -51,11 +50,11 @@ final class ClearListenerTest extends TestCase
     /**
      * Assert that the entity manager will not be cleared if the clear mode is set to DISABLED.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener::__invoke
+     * @throws PersistenceException
      */
     public function testDisabledClearModeWillNotCallEntityManagerClear(): void
     {
-        $listener = new ClearListener($this->logger);
+        $listener = new ClearListener();
 
         $entityName = EntityInterface::class;
         $clearMode = ClearMode::DISABLED;
@@ -96,11 +95,11 @@ final class ClearListenerTest extends TestCase
     /**
      * Assert that the entity manager clear will be called when providing clear mode ENABLED to __invoke().
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener::__invoke
+     * @throws PersistenceException
      */
     public function testEnabledClearModeWillClearEntityManager(): void
     {
-        $listener = new ClearListener($this->logger);
+        $listener = new ClearListener();
 
         $entityName = EntityInterface::class;
         $clearMode = ClearMode::ENABLED;

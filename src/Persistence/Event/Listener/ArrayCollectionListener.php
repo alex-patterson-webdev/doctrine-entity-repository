@@ -6,7 +6,6 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
-use Psr\Log\LoggerInterface;
 
 /**
  * Wraps multiple listeners in a collection which can then be registered as one listener. You should use this
@@ -15,7 +14,7 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-class CollectionListener
+class ArrayCollectionListener
 {
     /**
      * @var callable[]
@@ -23,18 +22,11 @@ class CollectionListener
     private array $listeners;
 
     /**
-     * @var LoggerInterface
+     * @param callable[] $listeners
      */
-    private LoggerInterface $logger;
-
-    /**
-     * @param callable[]      $listeners
-     * @param LoggerInterface $logger
-     */
-    public function __construct(array $listeners, LoggerInterface $logger)
+    public function __construct(array $listeners)
     {
         $this->listeners = $listeners;
-        $this->logger = $logger;
     }
 
     /**
@@ -46,7 +38,9 @@ class CollectionListener
      */
     public function __invoke(EntityEvent $event): void
     {
-        $this->logger->info(
+        $logger = $event->getLogger();
+
+        $logger->info(
             sprintf(
                 'Performing execution of collection listener \'%s\' for event \'%s\' with entity \'%s\'',
                 get_class($this),
@@ -66,7 +60,7 @@ class CollectionListener
                 );
             }
 
-            $this->logger->info(
+            $logger->info(
                 sprintf(
                     'Executing listener \'%s\' for event \'%s\' with entity \'%s\'',
                     is_object($listener) ? get_class($listener) : gettype($listener),
@@ -76,6 +70,24 @@ class CollectionListener
             );
 
             $listener($event);
+        }
+    }
+
+    /**
+     * @param callable $listener
+     */
+    public function addListener(callable $listener): void
+    {
+        $this->listeners[] = $listener;
+    }
+
+    /**
+     * @param array<callable> $listeners
+     */
+    public function addListeners(array $listeners = []): void
+    {
+        foreach ($listeners as $listener) {
+            $this->listeners[] = $listener;
         }
     }
 }

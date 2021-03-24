@@ -10,7 +10,6 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\InvalidArgumentException;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -18,19 +17,6 @@ use Psr\Log\LoggerInterface;
  */
 final class EntityValidationListener implements AggregateListenerInterface
 {
-    /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
     /**
      * @param AddListenerAwareInterface $collection
      *
@@ -52,6 +38,7 @@ final class EntityValidationListener implements AggregateListenerInterface
      */
     public function validateEntity(EntityEvent $event): void
     {
+        $logger = $event->getLogger();
         $eventName = $event->getEventName();
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
@@ -63,7 +50,7 @@ final class EntityValidationListener implements AggregateListenerInterface
                 $eventName
             );
 
-            $this->logger->error($errorMessage);
+            $logger->error($errorMessage, ['entity_name' => $entityName, 'event_name' => $eventName]);
 
             throw new InvalidArgumentException($errorMessage);
         }
@@ -76,12 +63,12 @@ final class EntityValidationListener implements AggregateListenerInterface
                 $eventName
             );
 
-            $this->logger->error($errorMessage);
+            $logger->error($errorMessage, ['entity_name' => $entityName, 'event_name' => $eventName]);
 
             throw new InvalidArgumentException($errorMessage);
         }
 
-        $this->logger->info(
+        $logger->debug(
             sprintf(
                 'Successfully completed validation of \'%s\' for event \'%s\'',
                 $entityName,

@@ -26,13 +26,14 @@ class DateCreatedListener extends AbstractDateTimeListener
      */
     public function __invoke(EntityEvent $event): void
     {
+        $logger = $event->getLogger();
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
         if (null === $entity || !$entity instanceof DateCreatedAwareInterface) {
-            $this->logger->debug(
+            $logger->debug(
                 sprintf(
-                    'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
+                    'Ignoring the date time update for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
                     DateCreatedAwareInterface::class
                 )
@@ -42,7 +43,7 @@ class DateCreatedListener extends AbstractDateTimeListener
 
         $createMode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED);
         if (DateCreateMode::ENABLED !== $createMode) {
-            $this->logger->info(
+            $logger->info(
                 sprintf(
                     'The date time update of field \'dateCreated\' '
                     . 'has been disabled for new entity \'%s\' using configuration option \'%s\'',
@@ -53,10 +54,10 @@ class DateCreatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $dateCreated = $this->createDateTime($entityName);
+        $dateCreated = $this->createDateTime($entityName, $logger);
         $entity->setDateCreated($dateCreated);
 
-        $this->logger->info(
+        $logger->info(
             sprintf(
                 'The \'dateCreated\' property for entity \'%s\' has been updated with new date time \'%s\'',
                 $entityName,

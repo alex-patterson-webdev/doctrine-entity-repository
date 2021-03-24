@@ -13,7 +13,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -21,19 +20,6 @@ use Psr\Log\LoggerInterface;
  */
 final class TransactionListener implements AggregateListenerInterface
 {
-    /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
     /**
      * @param AddListenerAwareInterface $collection
      *
@@ -45,9 +31,9 @@ final class TransactionListener implements AggregateListenerInterface
         $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'beginTransaction'], 900);
         $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'beginTransaction'], 900);
 
-        $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'commitTransaction'], 1);
-        $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'commitTransaction'], 1);
-        $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'commitTransaction'], 1);
+        $collection->addListenerForEvent(EntityEventName::CREATE, [$this, 'commitTransaction']);
+        $collection->addListenerForEvent(EntityEventName::UPDATE, [$this, 'commitTransaction']);
+        $collection->addListenerForEvent(EntityEventName::DELETE, [$this, 'commitTransaction']);
 
         $collection->addListenerForEvent(EntityEventName::CREATE_ERROR, [$this, 'rollbackTransaction'], 1000);
         $collection->addListenerForEvent(EntityEventName::UPDATE_ERROR, [$this, 'rollbackTransaction'], 1000);
@@ -59,21 +45,19 @@ final class TransactionListener implements AggregateListenerInterface
      */
     public function beginTransaction(EntityEvent $event): void
     {
-        if (!$this->isEnabled($event, __FUNCTION__)) {
+        if (!$this->isEnabled($event)) {
             return;
         }
-        $entity = $event->getEntity();
 
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf(
-                'Starting a new \'%s\' transaction for entity \'%s::%s\'',
+                'Starting a new \'%s\' transaction for entity \'%s\'',
                 $event->getEventName(),
-                $event->getEntityName(),
-                (isset($entity) ? $entity->getId() : '0')
+                $event->getEntityName()
             )
         );
 
-        $event->getEntityManager()->beginTransaction();
+        $event->getPersistService()->beginTransaction();
     }
 
     /**
@@ -81,21 +65,19 @@ final class TransactionListener implements AggregateListenerInterface
      */
     public function commitTransaction(EntityEvent $event): void
     {
-        if (!$this->isEnabled($event, __FUNCTION__)) {
+        if (!$this->isEnabled($event)) {
             return;
         }
-        $entity = $event->getEntity();
 
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf(
-                'Committing \'%s\' transaction for entity \'%s::%s\'',
+                'Committing \'%s\' transaction for entity \'%s\'',
                 $event->getEventName(),
-                $event->getEntityName(),
-                (isset($entity) ? $entity->getId() : '0')
+                $event->getEntityName()
             )
         );
 
-        $event->getEntityManager()->commit();
+        $event->getPersistService()->commitTransaction();
     }
 
     /**
@@ -103,11 +85,11 @@ final class TransactionListener implements AggregateListenerInterface
      */
     public function rollbackTransaction(EntityErrorEvent $event): void
     {
-        if (!$this->isEnabled($event, __FUNCTION__)) {
+        if (!$this->isEnabled($event)) {
             return;
         }
 
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf(
                 'Rolling back \'%s\' transaction for entity class \'%s\'',
                 $event->getEventName(),
@@ -115,40 +97,46 @@ final class TransactionListener implements AggregateListenerInterface
             )
         );
 
-        $event->getEntityManager()->rollback();
+        $event->getPersistService()->rollbackTransaction();
     }
 
     /**
      * @param AbstractEntityEvent $event
-     * @param string              $methodName
      *
      * @return bool
      */
-    private function isEnabled(AbstractEntityEvent $event, string $methodName): bool
+    private function isEnabled(AbstractEntityEvent $event): bool
     {
-        $transactionMode = $event->getParameters()->getParam(
-            EntityEventOption::TRANSACTION_MODE,
-            TransactionMode::ENABLED
-        );
+        $transactionMode = $event->getParam(EntityEventOption::TRANSACTION_MODE, TransactionMode::ENABLED);
+        $entityName = $event->getEntityName();
 
         if (TransactionMode::ENABLED === $transactionMode) {
+            $event->getLogger()->debug(
+                sprintf(
+                    'Transactions are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                    $entityName,
+                    TransactionMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE
+                ),
+                [
+                    'entity_name' => $entityName,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+                ]
+            );
             return true;
         }
 
-        $entityName = $event->getEntityName();
-        $eventName = $event->getEventName();
-        $entity = ($event instanceof EntityEvent) ? $event->getEntity() : null;
-
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf(
-                'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
-                $eventName,
-                $methodName,
+                'Transactions are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                 $entityName,
-                (isset($entity) ? $entity->getId() : '0'),
-                $transactionMode
+                TransactionMode::DISABLED,
+                EntityEventOption::TRANSACTION_MODE
             ),
-            compact('eventName', 'entityName', 'transactionMode')
+            [
+                'entity_name' => $entityName,
+                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+            ]
         );
 
         return false;

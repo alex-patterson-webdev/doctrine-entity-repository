@@ -18,4 +18,10 @@ final class EntityEventName
 
     public const DELETE = 'delete';
     public const DELETE_ERROR = 'delete.error';
+
+    public const SAVE_COLLECTION = 'save.collection';
+    public const SAVE_COLLECTION_ERROR = 'save.collection.error';
+
+    public const DELETE_COLLECTION = 'delete.collection';
+    public const DELETE_COLLECTION_ERROR = 'delete.collection.error';
 }

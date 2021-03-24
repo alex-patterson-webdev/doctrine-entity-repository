@@ -16,7 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 class CascadeSaveService extends AbstractCascadeService
 {
     /**
-     * @param EntityManagerInterface   $entityManager
+     * @param EntityManagerInterface  $entityManager
      * @param string                   $entityName
      * @param EntityInterface          $entity
      * @param array<string|int, mixed> $options
@@ -102,7 +102,7 @@ class CascadeSaveService extends AbstractCascadeService
     }
 
     /**
-     * @param EntityManagerInterface                          $entityManager
+     * @param EntityManagerInterface                         $entityManager
      * @param class-string                                    $entityName
      * @param EntityInterface|iterable<EntityInterface>|mixed $entityOrCollection
      * @param array<string|int, mixed>                        $options

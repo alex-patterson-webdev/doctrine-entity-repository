@@ -53,7 +53,7 @@ final class CascadeDeleteListenerTest extends TestCase
      */
     public function testIsCallable(): void
     {
-        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService);
 
         $this->assertIsCallable($listener);
     }
@@ -66,7 +66,7 @@ final class CascadeDeleteListenerTest extends TestCase
      */
     public function testInvokeWillThrowPersistenceExceptionAndLogInvalidEntity(): void
     {
-        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -103,7 +103,7 @@ final class CascadeDeleteListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $cascadeMode = CascadeMode::NONE;
 
-        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -180,7 +180,7 @@ final class CascadeDeleteListenerTest extends TestCase
 
         $entityName = EntityInterface::class;
 
-        $listener = new CascadeDeleteListener($this->cascadeDeleteService, $this->logger);
+        $listener = new CascadeDeleteListener($this->cascadeDeleteService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);

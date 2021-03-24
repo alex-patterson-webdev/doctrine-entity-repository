@@ -7,7 +7,6 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\ClearMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -16,45 +15,41 @@ use Psr\Log\LoggerInterface;
 final class ClearListener
 {
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * Perform a clear of the current unit of work's identity map.
+     * Perform a clear of the current unit of works managed entities
      *
      * @param EntityEvent $event
      */
     public function __invoke(EntityEvent $event): void
     {
-        $clearMode = $event->getParameters()->getParam(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED);
+        $entityName = $event->getEventName();
+        $logger = $event->getLogger();
 
+        $clearMode = $event->getParam(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED);
         if (ClearMode::ENABLED !== $clearMode) {
-            $this->logger->info(
+            $logger->debug(
                 sprintf(
-                    'Clear mode is disabled for entity \'%s\'; skipping entity manager clear operations',
-                    $event->getEntityName()
-                )
+                    'Clearing operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                    $entityName,
+                    ClearMode::DISABLED,
+                    EntityEventOption::CLEAR_MODE
+                ),
+                ['entity_name' => $entityName, EntityEventOption::CLEAR_MODE => ClearMode::DISABLED]
             );
             return;
         }
 
-        $this->logger->info(
+        $logger->debug(
             sprintf(
-                'Performing entity manager clear operations for entity class \'%s\'',
-                $event->getEntityName()
-            )
+                'Clearing operations are enabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                $entityName,
+                ClearMode::ENABLED,
+                EntityEventOption::CLEAR_MODE
+            ),
+            ['entity_name' => $entityName, EntityEventOption::CLEAR_MODE => ClearMode::ENABLED]
         );
 
-        $entityManager = $event->getEntityManager();
-        $entityManager->clear();
+        $event->getEntityManager()->clear();
+
+        $logger->debug(sprintf('Clear operation completed successfully for entity \'%s\'', $entityName));
     }
 }

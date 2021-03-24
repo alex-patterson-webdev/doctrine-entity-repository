@@ -46,7 +46,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param class-string           $entityName
+     * @param class-string            $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
@@ -60,7 +60,7 @@ abstract class AbstractCascadeService
         if (!class_exists($entityName, true) && !$entityManager->getMetadataFactory()->hasMetadataFor($entityName)) {
             $errorMessage = sprintf('The target repository class \'%s\' could not be found', $entityName);
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage);
         }
@@ -88,7 +88,7 @@ abstract class AbstractCascadeService
                 __FUNCTION__
             );
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage);
         }
@@ -139,7 +139,7 @@ abstract class AbstractCascadeService
                 $methodName,
                 $e->getMessage()
             );
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
@@ -172,7 +172,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string                 $entityName
+     * @param string                  $entityName
      *
      * @return ClassMetadata
      *
@@ -188,7 +188,7 @@ abstract class AbstractCascadeService
                 $entityName,
                 $e->getMessage()
             );
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }

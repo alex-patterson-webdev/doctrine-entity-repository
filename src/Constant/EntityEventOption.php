@@ -23,4 +23,6 @@ final class EntityEventOption
     public const DATE_CREATED_MODE = 'date_created_mode';
     public const DATE_UPDATED_MODE = 'date_updated_mode';
     public const DATE_DELETED_MODE = 'date_deleted_mode';
+    public const THROW_EXCEPTIONS = 'throw_exceptions';
+    public const LOG_ERRORS = 'log_errors';
 }

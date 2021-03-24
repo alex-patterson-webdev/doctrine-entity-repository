@@ -6,7 +6,7 @@ namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
-use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener;
+use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
@@ -40,11 +40,11 @@ final class ErrorListenerTest extends TestCase
     /**
      * Assert that the class implements AggregateListenerInterface/
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener
      */
     public function testImplementsAggregateListenerInterface(): void
     {
-        $listener = new ErrorListener($this->logger);
+        $listener = new ExceptionListener($this->logger);
 
         $this->assertInstanceOf(AggregateListenerInterface::class, $listener);
     }
@@ -53,13 +53,13 @@ final class ErrorListenerTest extends TestCase
      * Assert that the addListeners() method will register the onError() event listener with the
      * Create, Update and Delete events.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener::addListeners
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener::addListeners
      *
      * @throws EventListenerException
      */
     public function testAddListenersWillRegisterTheOnErrorEventWithCreateUpdateAndDeleteEvents(): void
     {
-        $listener = new ErrorListener($this->logger);
+        $listener = new ExceptionListener($this->logger);
 
         /** @var AddListenerAwareInterface&MockObject $collection */
         $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
@@ -79,14 +79,14 @@ final class ErrorListenerTest extends TestCase
      * Assert that the onError() method will overwrite any exception that is not of type PersistenceException
      * and reset the exception on the provided event.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ErrorListener::onError
+     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener::onError
      */
     public function testOnErrorWillOverwriteSetExceptionWithNewPersistenceException(): void
     {
         $entityName = EntityInterface::class;
         $eventName = EntityEventName::UPDATE;
 
-        $listener = new ErrorListener($this->logger);
+        $listener = new ExceptionListener($this->logger);
 
         /** @var EntityErrorEvent&MockObject $event */
         $event = $this->createMock(EntityErrorEvent::class);
