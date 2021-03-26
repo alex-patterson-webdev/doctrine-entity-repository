@@ -10,6 +10,7 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
+use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
 use Arp\Entity\EntityTrait;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
@@ -54,11 +55,11 @@ final class PersistServiceTest extends TestCase
     {
         $this->entityName = EntityInterface::class;
 
-        $this->entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+        $this->entityManager = $this->createMock(EntityManagerInterface::class);
 
-        $this->eventDispatcher = $this->getMockForAbstractClass(EventDispatcherInterface::class);
+        $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
@@ -73,7 +74,7 @@ final class PersistServiceTest extends TestCase
             $this->logger
         );
 
-        $this->assertInstanceOf(EntityManagerInterface::class, $persistService);
+        $this->assertInstanceOf(PersistServiceInterface::class, $persistService);
     }
 
     /**
@@ -97,7 +98,7 @@ final class PersistServiceTest extends TestCase
      *
      * @throws PersistenceException
      */
-    public function testSaveExceptionWillBeCaughtLoggedAndTheDispatchErrorEventTriggeredWhenEntityIdIsNotNull(): void
+    public function testSaveExceptionWillBeCaughtLoggedAndZeroReturnedIfTheEntityIdIsNotNull(): void
     {
         $persistService = new PersistService(
             $this->entityName,
@@ -107,7 +108,7 @@ final class PersistServiceTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
@@ -115,7 +116,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'Test exception message for save() and update()';
         $exceptionCode = 123;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->eventDispatcher->expects($this->exactly(2))
             ->method('dispatch')
@@ -127,21 +128,7 @@ final class PersistServiceTest extends TestCase
                 $this->returnArgument(0)
             );
 
-        $errorMessage = sprintf(
-            'The persistence operation for entity \'%s\' failed: %s',
-            $this->entityName,
-            $exceptionMessage
-        );
-
-        $this->expectException(PersistenceException::class);
-        $this->expectExceptionMessage($errorMessage);
-        $this->expectExceptionCode($exceptionCode);
-
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($errorMessage, $this->arrayHasKey('exception'));
-
-        $persistService->save($entity);
+        $this->assertSame($entity, $persistService->save($entity));
     }
 
     /**
@@ -168,7 +155,7 @@ final class PersistServiceTest extends TestCase
             ->getMock();
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
@@ -230,13 +217,13 @@ final class PersistServiceTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
             ->willReturn(false);
 
-        $exceptionMessage = 'Test exception message for save() and insert()';
+        $exceptionMessage = 'Test exception message for ' . __FUNCTION__;
         $exceptionCode = 456;
         $exception = new \Error($exceptionMessage, $exceptionCode);
 
@@ -250,21 +237,7 @@ final class PersistServiceTest extends TestCase
                 $this->returnArgument(0)
             );
 
-        $errorMessage = sprintf(
-            'The persistence operation for entity \'%s\' failed: %s',
-            $this->entityName,
-            $exceptionMessage
-        );
-
-        $this->expectException(PersistenceException::class);
-        $this->expectExceptionMessage($errorMessage);
-        $this->expectExceptionCode($exceptionCode);
-
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($errorMessage, $this->arrayHasKey('exception'));
-
-        $persistService->save($entity);
+        $this->assertSame($entity, $persistService->save($entity));
     }
 
     /**
@@ -291,7 +264,7 @@ final class PersistServiceTest extends TestCase
             ->getMock();
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $entity->expects($this->once())
             ->method('hasId')
@@ -381,30 +354,7 @@ final class PersistServiceTest extends TestCase
             ->with(EntityEventName::DELETE_ERROR, $exception)
             ->willReturn($errorEvent);
 
-        $errorEvent->expects($this->once())
-            ->method('getException')
-            ->willReturn($exception);
-
-        $errorMessage = sprintf(
-            'The persistence operation for entity \'%s\' failed: %s',
-            $entityName,
-            $exceptionMessage
-        );
-
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($errorMessage, $this->arrayHasKey('exception'));
-
-        $this->expectException(PersistenceException::class);
-        $this->expectExceptionMessage(
-            sprintf(
-                'The persistence operation for entity \'%s\' failed: %s',
-                $this->entityName,
-                $exceptionMessage
-            )
-        );
-
-        $persistService->delete($entity, $options);
+        $this->assertFalse($persistService->delete($entity, $options));
     }
 
     /**
@@ -462,7 +412,7 @@ final class PersistServiceTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $errorMessage = sprintf(
             'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s::%s\'',
@@ -496,7 +446,7 @@ final class PersistServiceTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $exceptionMessage = 'This is a test error message for persist()';
         $exceptionCode = 456;
@@ -539,7 +489,7 @@ final class PersistServiceTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $this->entityManager->expects($this->once())
             ->method('persist')

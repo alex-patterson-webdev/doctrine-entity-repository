@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ArpTest\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
@@ -83,15 +84,14 @@ final class ExceptionListenerTest extends TestCase
     public function testOnErrorWillOverwriteSetExceptionWithNewPersistenceException(): void
     {
         $entityName = EntityInterface::class;
-        $eventName = EntityEventName::UPDATE;
 
         $listener = new ExceptionListener();
 
         /** @var EntityErrorEvent&MockObject $event */
         $event = $this->createMock(EntityErrorEvent::class);
 
-        $exceptionMessage = 'This is a test exception message!';
-        $exception = new \Exception($exceptionMessage);
+        $internalExceptionMessage = 'This is a test exception message!';
+        $exception = new \Exception($internalExceptionMessage);
 
         $event->expects($this->once())
             ->method('getException')
@@ -101,28 +101,36 @@ final class ExceptionListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        $event->expects($this->once())
-            ->method('getEventName')
-            ->willReturn($eventName);
+        $event->expects($this->exactly(2))
+            ->method('getParam')
+            ->withConsecutive(
+                [EntityEventOption::LOG_ERRORS, true],
+                [EntityEventOption::THROW_EXCEPTIONS, true]
+            )->willReturnOnConsecutiveCalls(
+                true,
+                true
+            );
 
         $event->expects($this->once())
             ->method('getLogger')
             ->willReturn($this->logger);
 
         $exceptionMessage = sprintf(
-            'An error occurred while performing the \'%s\' event for entity class \'%s\': %s',
-            $eventName,
+            'A persistence error occurred for entity class \'%s\': %s',
             $entityName,
-            $exceptionMessage
+            $internalExceptionMessage
         );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($internalExceptionMessage, $this->arrayHasKey('exception'));
 
         $event->expects($this->once())
             ->method('setException')
             ->with($this->isInstanceOf(PersistenceException::class));
 
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($exceptionMessage, $this->arrayHasKey('exception'));
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage($exceptionMessage);
 
         $listener->onError($event);
     }
