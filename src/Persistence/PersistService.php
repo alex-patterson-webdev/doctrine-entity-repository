@@ -348,7 +348,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->rollback();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to rollback transaction : %s', $e->getMessage()),
                 $e->getCode(),
@@ -368,6 +368,7 @@ class PersistService implements PersistServiceInterface
     protected function dispatchEvent(AbstractEntityEvent $event): AbstractEntityEvent
     {
         $result = $this->eventDispatcher->dispatch($event);
+
         if (!$result instanceof AbstractEntityEvent) {
             throw new PersistenceException(
                 sprintf(

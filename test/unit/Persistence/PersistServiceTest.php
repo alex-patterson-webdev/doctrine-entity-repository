@@ -10,7 +10,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistService;
-use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
 use Arp\Entity\EntityTrait;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
@@ -63,9 +62,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that the class implements PersistServiceInterface.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::__construct
+     * Assert that the class implements PersistServiceInterface
      */
     public function testImplementsPersistServiceInterface(): void
     {
@@ -80,9 +77,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that getEntityName() will return the fully qualified class name of the managed entity.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::getEntityName
+     * Assert that getEntityName() will return the fully qualified class name of the managed entity
      */
     public function testGetEntityNameWillReturnFQCNOfEntity(): void
     {
@@ -100,17 +95,11 @@ final class PersistServiceTest extends TestCase
      * If an exception is raised when calling save(), and our entity has an ID value, then the
      * EntityEventName::UPDATE_ERROR event should be triggered and a new exception thrown.
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::update
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createEventException
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createErrorEvent
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
-     *
      * @throws PersistenceException
      */
     public function testSaveExceptionWillBeCaughtLoggedAndTheDispatchErrorEventTriggeredWhenEntityIdIsNotNull(): void
     {
-        $persistService = new EntityManager(
+        $persistService = new PersistService(
             $this->entityName,
             $this->entityManager,
             $this->eventDispatcher,
@@ -161,10 +150,6 @@ final class PersistServiceTest extends TestCase
      * @param array<mixed> $options Optional save options that should be passed to the updated method.
      *
      * @dataProvider getSaveWillUpdateAndReturnEntityWithIdData
-     *
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::update
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
      *
      * @throws PersistenceException
      */
@@ -231,13 +216,7 @@ final class PersistServiceTest extends TestCase
 
     /**
      * If an exception is raised when calling save(), and our entity does NOT have an ID value, then the
-     * EntityEventName::CREATE_ERROR event should be triggered and a new exception thrown.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createEventException
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::createErrorEvent
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
+     * EntityEventName::CREATE_ERROR event should be triggered and a new exception thrown
      *
      * @throws PersistenceException
      */
@@ -289,13 +268,9 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that an entity provided to save() that does not have an identity will be proxies to insert().
+     * Assert that an entity provided to save() that does not have an identity will be proxies to insert()
      *
      * @param array<mixed> $options
-     *
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::save
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::insert
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\PersistService::dispatchEvent
      *
      * @dataProvider getSaveWillInsertAndReturnEntityWithNoIdData
      *
@@ -473,9 +448,7 @@ final class PersistServiceTest extends TestCase
 
     /**
      * Assert that a PersistenceException will be thrown by persist() if the provided entity instance is not an
-     * instance of the mapped entity class.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     * instance of the mapped entity class
      */
     public function testPersistWillThrowPersistenceExceptionIfProvidedEntityIsAnInvalidType(): void
     {
@@ -511,9 +484,7 @@ final class PersistServiceTest extends TestCase
 
     /**
      * Assert that if the $entity provided to persist() cannot be persisted any raised exception is caught, logged
-     * and then rethrown as a PersistenceException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     * and then rethrown as a PersistenceException
      */
     public function testPersistWillThrowPersistenceExceptionIfTheEntityCannotBePersisted(): void
     {
@@ -554,9 +525,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that persist() will successfully proxy the provided $entity to the entity manager persist().
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::persist
+     * Assert that persist() will successfully proxy the provided $entity to the entity manager persist()
      *
      * @throws PersistenceException
      */
@@ -580,9 +549,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that exception raised from flush() are logged and rethrown as PersistenceException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::flush
+     * Assert that exception raised from flush() are logged and rethrown as PersistenceException
      *
      * @throws PersistenceException
      */
@@ -621,9 +588,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that flush() will call the internal entity manager flush().
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::flush
+     * Assert that flush() will call the internal entity manager flush()
      *
      * @throws PersistenceException
      */
@@ -642,9 +607,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that exceptions raised in clear() are logged and rethrown as PersistenceException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::clear
+     * Assert that exceptions raised in clear() are logged and rethrown as PersistenceException
      *
      * @throw  PersistenceException
      */
@@ -683,9 +646,7 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
-     * Assert that calls to clear() will proxy to the internal entity manager clear().
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\PersistService::clear
+     * Assert that calls to clear() will proxy to the internal entity manager clear()
      *
      * @throws PersistenceException
      */

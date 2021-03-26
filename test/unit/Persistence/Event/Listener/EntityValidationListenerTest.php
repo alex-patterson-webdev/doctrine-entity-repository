@@ -34,34 +34,30 @@ final class EntityValidationListenerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
      * Assert that the class implements AggregateListenerInterface
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener
      */
     public function testImplementsAggregateListenerInterface(): void
     {
-        $listener = new EntityValidationListener($this->logger);
+        $listener = new EntityValidationListener();
 
         $this->assertInstanceOf(AggregateListenerInterface::class, $listener);
     }
 
     /**
-     * Assert that the listener will register the correct event listeners in addListeners() method.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener::addListeners
+     * Assert that the listener will register the correct event listeners in addListeners() method
      *
      * @throws EventListenerException
      */
     public function testAddListeners(): void
     {
-        $listener = new EntityValidationListener($this->logger);
+        $listener = new EntityValidationListener();
 
         /** @var AddListenerAwareInterface&MockObject $collection */
-        $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
+        $collection = $this->createMock(AddListenerAwareInterface::class);
 
         $collection->expects($this->exactly(3))
             ->method('addListenerForEvent')
@@ -78,13 +74,11 @@ final class EntityValidationListenerTest extends TestCase
      * Assert that if the entity event contains a NULL entity reference we will throw and log
      * a InvalidArgumentException
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener::validateEntity
-     *
      * @throws InvalidArgumentException
      */
     public function testValidateEntityWillThrowInvalidArgumentExceptionAndLogTheErrorIfTheEntityIsNull(): void
     {
-        $listener = new EntityValidationListener($this->logger);
+        $listener = new EntityValidationListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -93,6 +87,10 @@ final class EntityValidationListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         $entity = null;
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEventName')
@@ -124,15 +122,13 @@ final class EntityValidationListenerTest extends TestCase
 
     /**
      * Assert that a InvalidArgumentException will be thrown if the entity instance, provided by the event is
-     * of an invalid type.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener::validateEntity
+     * of an invalid type
      *
      * @throws InvalidArgumentException
      */
     public function testValidateEntityWillThrowInvalidArgumentExceptionAndLogTheErrorIfTheEntityIsInvalid(): void
     {
-        $listener = new EntityValidationListener($this->logger);
+        $listener = new EntityValidationListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -140,8 +136,12 @@ final class EntityValidationListenerTest extends TestCase
         $eventName = EntityEventName::UPDATE;
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
         $entityName = 'Foo';
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEventName')
@@ -173,15 +173,13 @@ final class EntityValidationListenerTest extends TestCase
     }
 
     /**
-     * Assert that the validateEntity() method will log and exit without errors with a valid entity instance.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\EntityValidationListener::validateEntity
+     * Assert that the validateEntity() method will log and exit without errors with a valid entity instance
      *
      * @throws InvalidArgumentException
      */
     public function testValidateEntityIsSuccessful(): void
     {
-        $listener = new EntityValidationListener($this->logger);
+        $listener = new EntityValidationListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -189,8 +187,12 @@ final class EntityValidationListenerTest extends TestCase
         $eventName = EntityEventName::UPDATE;
 
         /** @var EntityInterface $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
         $entityName = get_class($entity);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEventName')
@@ -211,7 +213,7 @@ final class EntityValidationListenerTest extends TestCase
         );
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with($message);
 
         $listener->validateEntity($event);

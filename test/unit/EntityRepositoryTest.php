@@ -11,6 +11,7 @@ use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
 use Doctrine\Persistence\ObjectRepository;
@@ -19,6 +20,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\AbstractEntityRepository
+ * @covers \Arp\DoctrineEntityRepository\EntityRepository
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository
  */
@@ -60,8 +64,6 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert the EntityRepository implements the EntityRepositoryInterface
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::__construct
      */
     public function testImplementsEntityRepositoryInterface(): void
     {
@@ -77,8 +79,6 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert the EntityRepository implements the ObjectRepository
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::__construct
      */
     public function testImplementsObjectRepository(): void
     {
@@ -93,9 +93,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that method getClassName() will return the FQCN of the managed entity.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::getClassName
+     * Assert that method getClassName() will return the FQCN of the managed entity
      */
     public function testGetClassNameWillReturnTheFullyQualifiedEntityClassName(): void
     {
@@ -111,9 +109,7 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert that if find() cannot load/fails then any thrown exception/throwable will be caught and rethrown as
-     * a EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::find
+     * a EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -128,30 +124,34 @@ final class EntityRepositoryTest extends TestCase
 
         $entityId = 'FOO123';
 
-        $exceptionMessage = 'This is a test exception message for find()';
-        $exception = new \Exception($exceptionMessage);
+        $exceptionMessage = 'This is a test exception message for '  . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new QueryServiceException($exceptionMessage, $exceptionCode);
 
         $this->queryService->expects($this->once())
             ->method('findOneById')
             ->with($entityId)
             ->willThrowException($exception);
 
-        $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $exceptionMessage);
+        $errorMessage = sprintf(
+            'Unable to find entity of type \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
 
         $this->logger->expects($this->once())
             ->method('error')
             ->with($errorMessage, ['exception' => $exception, 'id' => $entityId]);
 
         $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionCode($exceptionCode);
         $this->expectExceptionMessage($errorMessage);
 
         $repository->find($entityId);
     }
 
     /**
-     * Assert that find() will return NULL if the entity cannot be found by it's $id.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::find
+     * Assert that find() will return NULL if the entity cannot be found by it's $id
      *
      * @throws EntityRepositoryException
      */
@@ -175,9 +175,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that find() will the found entity by it's $id.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::find
+     * Assert that find() will the found entity by it's $id
      *
      * @throws EntityRepositoryException
      */
@@ -203,9 +201,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that if the findOneBy() will catch and rethrow exception messages as EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::findOneBy
+     * Assert that if the findOneBy() will catch and rethrow exception messages as EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -224,10 +220,10 @@ final class EntityRepositoryTest extends TestCase
             'test'  => 123,
         ];
 
-        $exceptionMessage = 'This is a test exception message for findOneById()';
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 456;
 
-        $exception = new \Exception($exceptionMessage, $exceptionCode);
+        $exception = new QueryServiceException($exceptionMessage, $exceptionCode);
 
         $this->queryService->expects($this->once())
             ->method('findOne')
@@ -246,9 +242,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that findOneBy() will return NULL if the provided criteria doesn't match any existing entities.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::findOneBy
+     * Assert that findOneBy() will return NULL if the provided criteria doesn't match any existing entities
      *
      * @throws EntityRepositoryException
      */
@@ -275,9 +269,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert findOneBy() will return a single matched entity instance.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::findOneBy
+     * Assert findOneBy() will return a single matched entity instance
      *
      * @throws EntityRepositoryException
      */
@@ -296,7 +288,7 @@ final class EntityRepositoryTest extends TestCase
         ];
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $this->queryService->expects($this->once())
             ->method('findOne')
@@ -330,9 +322,9 @@ final class EntityRepositoryTest extends TestCase
 
         /** @var EntityInterface[]&MockObject[] $entities */
         $entities = [
-            $this->getMockForAbstractClass(EntityInterface::class),
-            $this->getMockForAbstractClass(EntityInterface::class),
-            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
         ];
 
         $repository->expects($this->once())
@@ -345,9 +337,7 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert that the findBy() method will catch \Throwable exceptions, log the exception data and rethrow as a
-     * EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::findBy
+     * EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -364,9 +354,9 @@ final class EntityRepositoryTest extends TestCase
         $criteria = [];
         $options = [];
 
-        $exceptionMessage = 'This is a foo test exception';
+        $exceptionMessage = 'This is a foo test exception for ' . __FUNCTION__;
         $exceptionCode = 456;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new QueryServiceException($exceptionMessage, $exceptionCode);
 
         $this->queryService->expects($this->once())
             ->method('findMany')
@@ -427,9 +417,9 @@ final class EntityRepositoryTest extends TestCase
 
         /** @var EntityInterface[]&MockObject[] $collection */
         $collection = [
-            $this->getMockForAbstractClass(EntityInterface::class),
-            $this->getMockForAbstractClass(EntityInterface::class),
-            $this->getMockForAbstractClass(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
         ];
 
         $this->queryService->expects($this->once())
@@ -509,9 +499,7 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert that errors during save that throw a \Throwable exception are caught, logged and rethrown as a
-     * EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::save
+     * EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -526,11 +514,11 @@ final class EntityRepositoryTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $exceptionMessage = 'This is a test exception message for save()';
         $exceptionCode = 999;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
 
         $errorMessage = sprintf('Unable to save entity of type \'%s\': %s', $this->entityName, $exceptionMessage);
 
@@ -547,9 +535,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that calls to save() will result in the entity being passed to the persist service.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::save
+     * Assert that calls to save() will result in the entity being passed to the persist service
      *
      * @throws EntityRepositoryException
      */
@@ -567,7 +553,7 @@ final class EntityRepositoryTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $this->persistService->expects($this->once())
             ->method('save')
@@ -579,11 +565,10 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert that if we provide an incorrect data type for $entity to delete() an EntityRepositoryException
-     * will be thrown.
+     * will be thrown
      *
      * @param mixed $entity
      *
-     * @covers       \Arp\DoctrineEntityRepository\EntityRepository::delete
      * @dataProvider getDeleteWillThrowEntityRepositoryExceptionIfProvidedEntityIsInvalidData
      *
      * @throws EntityRepositoryException
@@ -629,9 +614,7 @@ final class EntityRepositoryTest extends TestCase
 
     /**
      * Assert that a EntityRepositoryException will be thrown from delete if providing an entity id that does not
-     * exist.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
+     * exist
      *
      * @throws EntityRepositoryException
      */
@@ -665,8 +648,6 @@ final class EntityRepositoryTest extends TestCase
     /**
      * Assert that a EntityRepositoryException will be thrown if the call to delete() fails.
      *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::delete
-     *
      * @throws EntityRepositoryException
      */
     public function testDeleteWillThrowEntityRepositoryExceptionIfEntityCannotDeleted(): void
@@ -679,7 +660,7 @@ final class EntityRepositoryTest extends TestCase
         );
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $options = [
             PersistServiceOption::FLUSH => true,
@@ -702,7 +683,7 @@ final class EntityRepositoryTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('error')
-            ->with($errorMessage, compact('exception'));
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
 
         $this->expectException(EntityRepositoryException::class);
         $this->expectExceptionMessage($errorMessage);
@@ -715,8 +696,6 @@ final class EntityRepositoryTest extends TestCase
      *
      * @param EntityInterface|string $entity
      * @param array<mixed>           $options
-     *
-     * @covers       \Arp\DoctrineEntityRepository\EntityRepository::delete
      *
      * @dataProvider getEntityDeleteData
      * @throws EntityRepositoryException
@@ -732,7 +711,7 @@ final class EntityRepositoryTest extends TestCase
 
         if (is_string($entity)) {
             /** @var EntityInterface&MockObject $entityObject */
-            $entityObject = $this->getMockForAbstractClass(EntityInterface::class);
+            $entityObject = $this->createMock(EntityInterface::class);
 
             $this->queryService->expects($this->once())
                 ->method('findOneById')
@@ -764,7 +743,7 @@ final class EntityRepositoryTest extends TestCase
                 ],
             ],
             [
-                $this->getMockForAbstractClass(EntityInterface::class),
+                $this->createMock(EntityInterface::class),
                 [
                     'foo'  => 'bar',
                     'test' => 'Hello',
@@ -774,9 +753,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that calls to clear that fail will be caught and rethrown as EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::clear
+     * Assert that calls to clear that fail will be caught and rethrown as EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -805,7 +782,7 @@ final class EntityRepositoryTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('error')
-            ->with($errorMessage, compact('exception'));
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
 
         $this->expectException(EntityRepositoryException::class);
         $this->expectExceptionMessage($errorMessage);
@@ -815,9 +792,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that calls to clear() will proxy to PersistService::clear().
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::clear
+     * Assert that calls to clear() will proxy to PersistService::clear()
      *
      * @throws EntityRepositoryException
      */
@@ -836,9 +811,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that calls to refresh that fail will be caught and rethrown as EntityRepositoryException.
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::refresh
+     * Assert that calls to refresh that fail will be caught and rethrown as EntityRepositoryException
      *
      * @throws EntityRepositoryException
      */
@@ -875,7 +848,10 @@ final class EntityRepositoryTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('error')
-            ->with($errorMessage, compact('exception', 'id'));
+            ->with(
+                $errorMessage,
+                ['exception' => $exception, 'entity_name' => $this->entityName, 'id' => $id]
+            );
 
         $this->expectException(EntityRepositoryException::class);
         $this->expectExceptionMessage($errorMessage);
@@ -885,9 +861,7 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
-     * Assert that calls to refresh() will proxy to PersistService::refresh().
-     *
-     * @covers \Arp\DoctrineEntityRepository\EntityRepository::refresh
+     * Assert that calls to refresh() will proxy to PersistService::refresh()
      *
      * @throws EntityRepositoryException
      */

@@ -9,9 +9,8 @@ use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\ClearListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
+use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
-use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -48,7 +47,7 @@ final class ClearListenerTest extends TestCase
     }
 
     /**
-     * Assert that the entity manager will not be cleared if the clear mode is set to DISABLED.
+     * Assert that the entity manager will not be cleared if the clear mode is set to DISABLED
      *
      * @throws PersistenceException
      */
@@ -62,14 +61,7 @@ final class ClearListenerTest extends TestCase
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface<mixed>&MockObject $parameters */
-        $parameters = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($parameters);
-
-        $parameters->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED)
             ->willReturn($clearMode);
@@ -78,13 +70,20 @@ final class ClearListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
+
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
-                    'Clear mode is disabled for entity \'%s\'; skipping entity manager clear operations',
-                    $entityName
-                )
+                    'Clearing operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                    $entityName,
+                    $clearMode,
+                    EntityEventOption::CLEAR_MODE
+                ),
+                ['entity_name' => $entityName, EntityEventOption::CLEAR_MODE => ClearMode::DISABLED]
             );
 
         $event->expects($this->never())->method('getEntityManager');
@@ -93,7 +92,7 @@ final class ClearListenerTest extends TestCase
     }
 
     /**
-     * Assert that the entity manager clear will be called when providing clear mode ENABLED to __invoke().
+     * Assert that the entity manager clear will be called when providing clear mode ENABLED to __invoke()
      *
      * @throws PersistenceException
      */
@@ -107,36 +106,31 @@ final class ClearListenerTest extends TestCase
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface<mixed>&MockObject $parameters */
-        $parameters = $this->getMockForAbstractClass(ParametersInterface::class);
-
-        $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($parameters);
-
-        $parameters->expects($this->once())
-            ->method('getParam')
-            ->with(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED)
-            ->willReturn($clearMode);
-
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
+
+        $event->expects($this->once())
+            ->method('getParam')
+            ->with(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED)
+            ->willReturn($clearMode);
+
         $this->logger->expects($this->once())
-            ->method('info')
-            ->with(
-                sprintf(
-                    'Performing entity manager clear operations for entity class \'%s\'',
-                    $entityName
-                )
-            );
+            ->method('debug')
+            ->with(sprintf('Clear operation completed successfully for entity \'%s\'', $entityName));
 
-        /** @var EntityManager&MockObject $entityManager */
-        $entityManager = $this->createMock(EntityManager::class);
+        /** @var PersistServiceInterface&MockObject $persistService */
+        $persistService = $this->createMock(PersistServiceInterface::class);
 
-        $event->expects($this->once())->method('getEntityManager')->willReturn($entityManager);
-        $entityManager->expects($this->once())->method('clear');
+        $event->expects($this->once())
+            ->method('getPersistService')
+            ->willReturn($persistService);
+
+        $persistService->expects($this->once())->method('clear');
 
         $listener($event);
     }

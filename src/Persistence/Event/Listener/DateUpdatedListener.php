@@ -53,9 +53,9 @@ class DateUpdatedListener extends AbstractDateTimeListener
             );
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
+        $mode = $event->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
         if (DateUpdateMode::ENABLED !== $mode) {
-            $logger->info(
+            $logger->debug(
                 sprintf(
                     'The date time update of field \'dateUpdated\' '
                     . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
@@ -70,7 +70,7 @@ class DateUpdatedListener extends AbstractDateTimeListener
         $dateUpdated = $this->createDateTime($entityName, $logger);
         $entity->setDateUpdated($dateUpdated);
 
-        $logger->info(
+        $logger->debug(
             sprintf(
                 'The \'dateUpdated\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
                 $entityName,

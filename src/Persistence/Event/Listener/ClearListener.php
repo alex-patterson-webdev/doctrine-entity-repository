@@ -7,6 +7,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\ClearMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -18,10 +19,12 @@ final class ClearListener
      * Perform a clear of the current unit of works managed entities
      *
      * @param EntityEvent $event
+     *
+     * @throws PersistenceException
      */
     public function __invoke(EntityEvent $event): void
     {
-        $entityName = $event->getEventName();
+        $entityName = $event->getEntityName();
         $logger = $event->getLogger();
 
         $clearMode = $event->getParam(EntityEventOption::CLEAR_MODE, ClearMode::DISABLED);
@@ -38,17 +41,7 @@ final class ClearListener
             return;
         }
 
-        $logger->debug(
-            sprintf(
-                'Clearing operations are enabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
-                $entityName,
-                ClearMode::ENABLED,
-                EntityEventOption::CLEAR_MODE
-            ),
-            ['entity_name' => $entityName, EntityEventOption::CLEAR_MODE => ClearMode::ENABLED]
-        );
-
-        $event->getEntityManager()->clear();
+        $event->getPersistService()->clear();
 
         $logger->debug(sprintf('Clear operation completed successfully for entity \'%s\'', $entityName));
     }

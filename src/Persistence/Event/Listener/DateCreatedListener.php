@@ -41,9 +41,9 @@ class DateCreatedListener extends AbstractDateTimeListener
             return;
         }
 
-        $createMode = $event->getParameters()->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED);
+        $createMode = $event->getParam(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED);
         if (DateCreateMode::ENABLED !== $createMode) {
-            $logger->info(
+            $logger->debug(
                 sprintf(
                     'The date time update of field \'dateCreated\' '
                     . 'has been disabled for new entity \'%s\' using configuration option \'%s\'',
@@ -57,7 +57,7 @@ class DateCreatedListener extends AbstractDateTimeListener
         $dateCreated = $this->createDateTime($entityName, $logger);
         $entity->setDateCreated($dateCreated);
 
-        $logger->info(
+        $logger->debug(
             sprintf(
                 'The \'dateCreated\' property for entity \'%s\' has been updated with new date time \'%s\'',
                 $entityName,

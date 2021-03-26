@@ -13,7 +13,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\AggregateEntityInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -44,17 +43,15 @@ final class CascadeSaveListenerTest extends TestCase
     {
         $this->cascadeSaveService = $this->createMock(CascadeSaveService::class);
 
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the listener is a callable class.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener
+     * Assert that the listener is a callable class
      */
     public function testIsCallable(): void
     {
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeSaveListener($this->cascadeSaveService);
 
         $this->assertIsCallable($listener);
     }
@@ -71,7 +68,7 @@ final class CascadeSaveListenerTest extends TestCase
      */
     public function testInvokeWillNotSaveAssociationsIfEntityDoesNotImplementAggregateEntityInterface($entity): void
     {
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeSaveListener($this->cascadeSaveService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -98,9 +95,7 @@ final class CascadeSaveListenerTest extends TestCase
 
     /**
      * Assert that __invoke() will NOT execute the cascade save operations if the provided cascade mode
-     * has been set to NONE.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener::__invoke
+     * has been set to NONE
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -110,13 +105,13 @@ final class CascadeSaveListenerTest extends TestCase
         $entityName = EntityInterface::class;
         $cascadeMode = CascadeMode::NONE;
 
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeSaveListener($this->cascadeSaveService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         /** @var AggregateEntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(AggregateEntityInterface::class);
+        $entity = $this->createMock(AggregateEntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -126,20 +121,17 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::CASCADE_MODE, CascadeMode::ALL)
             ->willReturn($cascadeMode);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
                     'Ignoring cascade save operations with mode \'%s\' for entity \'%s\'',
@@ -162,7 +154,6 @@ final class CascadeSaveListenerTest extends TestCase
      * @param array<mixed> $collectionOptions
      *
      * @dataProvider getCascadeSaveData
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeSaveListener::__invoke
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -187,13 +178,13 @@ final class CascadeSaveListenerTest extends TestCase
 
         $entityName = AggregateEntityInterface::class;
 
-        $listener = new CascadeSaveListener($this->cascadeSaveService, $this->logger);
+        $listener = new CascadeSaveListener($this->cascadeSaveService);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(AggregateEntityInterface::class);
+        $entity = $this->createMock(AggregateEntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -203,14 +194,11 @@ final class CascadeSaveListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
-        $params->expects($this->exactly(3))
+        $event->expects($this->exactly(3))
             ->method('getParam')
             ->withConsecutive(
                 [EntityEventOption::CASCADE_MODE, CascadeMode::ALL],
@@ -223,14 +211,14 @@ final class CascadeSaveListenerTest extends TestCase
             );
 
         /** @var EntityManagerInterface&MockObject $entityManager */
-        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
 
         $event->expects($this->once())
             ->method('getEntityManager')
             ->willReturn($entityManager);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(sprintf('Performing cascade save operations for entity \'%s\'', $entityName));
 
         $this->cascadeSaveService->expects($this->once())

@@ -22,7 +22,7 @@ use Psr\Log\LoggerInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class ErrorListenerTest extends TestCase
+final class ExceptionListenerTest extends TestCase
 {
     /**
      * @var LoggerInterface&MockObject
@@ -34,42 +34,40 @@ final class ErrorListenerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the class implements AggregateListenerInterface/
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener
+     * Assert that the class implements AggregateListenerInterface
      */
     public function testImplementsAggregateListenerInterface(): void
     {
-        $listener = new ExceptionListener($this->logger);
+        $listener = new ExceptionListener();
 
         $this->assertInstanceOf(AggregateListenerInterface::class, $listener);
     }
 
     /**
      * Assert that the addListeners() method will register the onError() event listener with the
-     * Create, Update and Delete events.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener::addListeners
+     * Create, Update and Delete events
      *
      * @throws EventListenerException
      */
     public function testAddListenersWillRegisterTheOnErrorEventWithCreateUpdateAndDeleteEvents(): void
     {
-        $listener = new ExceptionListener($this->logger);
+        $listener = new ExceptionListener();
 
         /** @var AddListenerAwareInterface&MockObject $collection */
-        $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
+        $collection = $this->createMock(AddListenerAwareInterface::class);
 
-        $collection->expects($this->exactly(3))
+        $collection->expects($this->exactly(5))
             ->method('addListenerForEvent')
             ->withConsecutive(
                 [EntityEventName::CREATE_ERROR, [$listener, 'onError'], -1000],
                 [EntityEventName::UPDATE_ERROR, [$listener, 'onError'], -1000],
-                [EntityEventName::DELETE_ERROR, [$listener, 'onError'], -1000]
+                [EntityEventName::DELETE_ERROR, [$listener, 'onError'], -1000],
+                [EntityEventName::SAVE_COLLECTION_ERROR, [$listener, 'onError'], -1000],
+                [EntityEventName::DELETE_COLLECTION_ERROR, [$listener, 'onError'], -1000]
             );
 
         $listener->addListeners($collection);
@@ -77,16 +75,17 @@ final class ErrorListenerTest extends TestCase
 
     /**
      * Assert that the onError() method will overwrite any exception that is not of type PersistenceException
-     * and reset the exception on the provided event.
+     * and reset the exception on the provided event
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\ExceptionListener::onError
+     * @throws PersistenceException
+     * @throws \Throwable
      */
     public function testOnErrorWillOverwriteSetExceptionWithNewPersistenceException(): void
     {
         $entityName = EntityInterface::class;
         $eventName = EntityEventName::UPDATE;
 
-        $listener = new ExceptionListener($this->logger);
+        $listener = new ExceptionListener();
 
         /** @var EntityErrorEvent&MockObject $event */
         $event = $this->createMock(EntityErrorEvent::class);
@@ -99,12 +98,16 @@ final class ErrorListenerTest extends TestCase
             ->willReturn($exception);
 
         $event->expects($this->once())
+            ->method('getEntityName')
+            ->willReturn($entityName);
+
+        $event->expects($this->once())
             ->method('getEventName')
             ->willReturn($eventName);
 
         $event->expects($this->once())
-            ->method('getEntityName')
-            ->willReturn($entityName);
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $exceptionMessage = sprintf(
             'An error occurred while performing the \'%s\' event for entity class \'%s\': %s',

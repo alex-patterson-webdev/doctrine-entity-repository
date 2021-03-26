@@ -8,9 +8,9 @@ use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\FlushListener;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
+use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -29,33 +29,31 @@ final class FlushListenerTest extends TestCase
     private $logger;
 
     /**
-     * Prepare the test case dependencies.
+     * Prepare the test case dependencies
      */
     public function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the class is callable.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\FlushListener
+     * Assert that the class is callable
      */
     public function testIsCallable(): void
     {
-        $listener = new FlushListener($this->logger);
+        $listener = new FlushListener();
 
         $this->assertIsCallable($listener);
     }
 
     /**
-     * Assert that if calling __invoke() without flush mode being ENABLED we will not perform the flush operation.
+     * Assert that if calling __invoke() without flush mode being ENABLED we will not perform the flush operation
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\FlushListener::__invoke
+     * @throws PersistenceException
      */
     public function testInvokeWillNotCallFlushIfFlushModeIsNotEnabled(): void
     {
-        $listener = new FlushListener($this->logger);
+        $listener = new FlushListener();
 
         $entityName = EntityInterface::class;
         $flushMode = FlushMode::DISABLED;
@@ -67,26 +65,25 @@ final class FlushListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED)
             ->willReturn($flushMode);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
-                    'Skipping flush operations for entity \'%s\' with mode \'%s\'',
+                    'Flush operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $flushMode
-                )
+                    FlushMode::DISABLED,
+                    EntityEventOption::FLUSH_MODE
+                ),
+                ['entity_name' => $entityName, EntityEventOption::FLUSH_MODE => FlushMode::DISABLED]
             );
 
         // Assert that we do not call on the entity manager
@@ -96,13 +93,13 @@ final class FlushListenerTest extends TestCase
     }
 
     /**
-     * Assert that if calling __invoke() with flush mode ENABLED we will perform the flush operation.
+     * Assert that if calling __invoke() with flush mode ENABLED we will perform the flush operation
      *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\FlushListener::__invoke
+     * @throws PersistenceException
      */
     public function testInvokeWillCallFlushIfFlushModeIsEnabled(): void
     {
-        $listener = new FlushListener($this->logger);
+        $listener = new FlushListener();
 
         $entityName = EntityInterface::class;
         $flushMode = FlushMode::ENABLED;
@@ -114,30 +111,34 @@ final class FlushListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED)
             ->willReturn($flushMode);
 
         $this->logger->expects($this->once())
-            ->method('info')
-            ->with(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
+            ->method('debug')
+            ->with(
+                sprintf(
+                    'Flush operations are enabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                    $entityName,
+                    FlushMode::ENABLED,
+                    EntityEventOption::FLUSH_MODE
+                )
+            );
 
-        /** @var EntityManagerInterface&MockObject $entityManager */
-        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+        /** @var PersistServiceInterface&MockObject $persistService */
+        $persistService = $this->createMock(PersistServiceInterface::class);
 
         $event->expects($this->once())
-            ->method('getEntityManager')
-            ->willReturn($entityManager);
+            ->method('getPersistService')
+            ->willReturn($persistService);
 
-        $entityManager->expects($this->once())->method('flush');
+        $persistService->expects($this->once())->method('flush');
 
         $listener($event);
     }

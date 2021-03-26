@@ -28,7 +28,6 @@ final class ExceptionListener implements AggregateListenerInterface
         $collection->addListenerForEvent(EntityEventName::CREATE_ERROR, [$this, 'onError'], -1000);
         $collection->addListenerForEvent(EntityEventName::UPDATE_ERROR, [$this, 'onError'], -1000);
         $collection->addListenerForEvent(EntityEventName::DELETE_ERROR, [$this, 'onError'], -1000);
-        $collection->addListenerForEvent(EntityEventName::DELETE_ERROR, [$this, 'onError'], -1000);
         $collection->addListenerForEvent(EntityEventName::SAVE_COLLECTION_ERROR, [$this, 'onError'], -1000);
         $collection->addListenerForEvent(EntityEventName::DELETE_COLLECTION_ERROR, [$this, 'onError'], -1000);
     }

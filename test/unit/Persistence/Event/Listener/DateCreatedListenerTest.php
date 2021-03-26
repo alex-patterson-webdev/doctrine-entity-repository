@@ -13,7 +13,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DateCreatedAwareInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,18 +36,16 @@ final class DateCreatedListenerTest extends TestCase
     private $logger;
 
     /**
-     * Prepare the test case dependencies.
+     * Prepare the test case dependencies
      */
     public function setUp(): void
     {
-        $this->dateTimeFactory = $this->getMockForAbstractClass(DateTimeFactoryInterface::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->dateTimeFactory = $this->createMock(DateTimeFactoryInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the class is callable.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__construct
+     * Assert that the class is callable
      */
     public function testIsCallable(): void
     {
@@ -73,6 +70,10 @@ final class DateCreatedListenerTest extends TestCase
         $entity = null;
 
         $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
+
+        $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
@@ -84,7 +85,7 @@ final class DateCreatedListenerTest extends TestCase
             ->method('debug')
             ->with(
                 sprintf(
-                    'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
+                    'Ignoring the date time update for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
                     DateCreatedAwareInterface::class
                 )
@@ -95,9 +96,7 @@ final class DateCreatedListenerTest extends TestCase
 
     /**
      * Assert that if the entity provided resolved to and object that does NOT implement DateCreatedListener that
-     * the listener will log and return early.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
+     * the listener will log and return early
      *
      * @throws PersistenceException
      */
@@ -111,7 +110,11 @@ final class DateCreatedListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -125,7 +128,7 @@ final class DateCreatedListenerTest extends TestCase
             ->method('debug')
             ->with(
                 sprintf(
-                    'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
+                    'Ignoring the date time update for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
                     DateCreatedAwareInterface::class
                 )
@@ -136,9 +139,7 @@ final class DateCreatedListenerTest extends TestCase
 
     /**
      * Assert that we can enabled/disable the date update if the configuration options include a DATE_CREATED_MODE of
-     * ENABLED/DISABLED.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
+     * ENABLED/DISABLED
      *
      * @throws PersistenceException
      */
@@ -152,7 +153,11 @@ final class DateCreatedListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         /** @var DateCreatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        $entity = $this->createMock(DateCreatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -162,20 +167,13 @@ final class DateCreatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::DISABLED); // Will cause use to exit early
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
                     'The date time update of field \'dateCreated\' '
@@ -189,11 +187,8 @@ final class DateCreatedListenerTest extends TestCase
     }
 
     /**
-     * Assert that DateTimeFactoryException's are caught and rethrown as PersistenceException in __invoke().
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::createDateTime
-     *
+     * Assert that DateTimeFactoryException's are caught and rethrown as PersistenceException in __invoke()
+
      * @throws PersistenceException
      */
     public function testDateTimeFactoryFailureWillBeLoggedAndRethrownAsAPersistenceException(): void
@@ -206,7 +201,11 @@ final class DateCreatedListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         /** @var DateCreatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        $entity = $this->createMock(DateCreatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -216,14 +215,7 @@ final class DateCreatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::ENABLED);
@@ -243,7 +235,7 @@ final class DateCreatedListenerTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('error')
-            ->with($errorMessage);
+            ->with($errorMessage, ['entity_name' => $entityName, 'exception' => $exception]);
 
         $this->expectException(PersistenceException::class);
         $this->expectExceptionMessage($errorMessage);
@@ -253,10 +245,7 @@ final class DateCreatedListenerTest extends TestCase
 
     /**
      * Assert that a valid DateUpdatedAwareInterface instance, with update mode enabled, will correctly set a new
-     * \DateTime instance using setDateUpdated() method.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateCreatedListener::createDateTime
+     * \DateTime instance using setDateUpdated() method
      *
      * @throws PersistenceException
      */
@@ -270,7 +259,11 @@ final class DateCreatedListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         /** @var DateCreatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateCreatedAwareInterface::class);
+        $entity = $this->createMock(DateCreatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -280,14 +273,7 @@ final class DateCreatedListenerTest extends TestCase
             ->method('getEntity')
             ->willReturn($entity);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_CREATED_MODE, DateCreateMode::ENABLED)
             ->willReturn(DateCreateMode::ENABLED);
@@ -305,7 +291,7 @@ final class DateCreatedListenerTest extends TestCase
         );
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with($message);
 
         $listener($event);

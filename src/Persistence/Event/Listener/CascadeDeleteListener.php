@@ -64,7 +64,7 @@ final class CascadeDeleteListener
             return;
         }
 
-        $event->getLogger()->debug(
+        $logger->debug(
             sprintf(
                 'Performing cascade delete operations for entity \'%s\' using \'%s\' configuration setting \'%s\'',
                 $entityName,

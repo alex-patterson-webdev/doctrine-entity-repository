@@ -53,9 +53,9 @@ class DateDeletedListener extends AbstractDateTimeListener
             );
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
+        $mode = $event->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
         if (DateDeleteMode::ENABLED !== $mode) {
-            $logger->info(
+            $logger->debug(
                 sprintf(
                     'The date time update of field \'dateDeleted\' '
                     . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
@@ -70,7 +70,7 @@ class DateDeletedListener extends AbstractDateTimeListener
         $dateDeleted = $this->createDateTime($entityName, $logger);
         $entity->setDateDeleted($dateDeleted);
 
-        $logger->info(
+        $logger->debug(
             sprintf(
                 'The \'dateDeleted\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
                 $entityName,

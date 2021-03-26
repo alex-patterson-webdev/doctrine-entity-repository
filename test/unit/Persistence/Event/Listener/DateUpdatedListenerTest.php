@@ -13,7 +13,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DateUpdatedAwareInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -37,22 +36,20 @@ final class DateUpdatedListenerTest extends TestCase
     private $logger;
 
     /**
-     * Prepare the test case dependencies.
+     * Prepare the test case dependencies
      */
     public function setUp(): void
     {
-        $this->dateTimeFactory = $this->getMockForAbstractClass(DateTimeFactoryInterface::class);
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->dateTimeFactory = $this->createMock(DateTimeFactoryInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the class is callable.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__construct
+     * Assert that the class is callable
      */
     public function testIsCallable(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         $this->assertIsCallable($listener);
     }
@@ -61,18 +58,20 @@ final class DateUpdatedListenerTest extends TestCase
      * Assert that if the entity provided resolved to NULL that we log and exit early from the event listener.
      *
      * @throws PersistenceException
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
      */
     public function testNullEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
         $entity = null;
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -100,12 +99,10 @@ final class DateUpdatedListenerTest extends TestCase
      * the listener will log and return early.
      *
      * @throws PersistenceException
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
      */
     public function testNonDateTimeAwareEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -113,7 +110,11 @@ final class DateUpdatedListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -138,15 +139,13 @@ final class DateUpdatedListenerTest extends TestCase
 
     /**
      * Assert that we can enabled/disable the date update if the configuration options include a DATE_UPDATED_MODE of
-     * ENABLED/DISABLED.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
+     * ENABLED/DISABLED
      *
      * @throws PersistenceException
      */
     public function testDateTimeModeSetToDisabledWillLogAndPreventDateUpdate(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -155,7 +154,11 @@ final class DateUpdatedListenerTest extends TestCase
         $entityId = 'ABC123';
 
         /** @var DateUpdatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateUpdatedAwareInterface::class);
+        $entity = $this->createMock(DateUpdatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -169,20 +172,13 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getId')
             ->willReturn($entityId);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::DISABLED); // Will cause use to exit early
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
                     'The date time update of field \'dateUpdated\' '
@@ -197,16 +193,13 @@ final class DateUpdatedListenerTest extends TestCase
     }
 
     /**
-     * Assert that DateTimeFactoryException's are caught and rethrown as PersistenceException in __invoke().
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::createDateTime
+     * Assert that DateTimeFactoryException's are caught and rethrown as PersistenceException in __invoke()
      *
      * @throws PersistenceException
      */
     public function testDateTimeFactoryFailureWillBeLoggedAndRethrownAsAPersistenceException(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -215,7 +208,11 @@ final class DateUpdatedListenerTest extends TestCase
         $entityId = 'ABC123';
 
         /** @var DateUpdatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateUpdatedAwareInterface::class);
+        $entity = $this->createMock(DateUpdatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -229,14 +226,7 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getId')
             ->willReturn($entityId);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::ENABLED);
@@ -266,16 +256,13 @@ final class DateUpdatedListenerTest extends TestCase
 
     /**
      * Assert that a valid DateUpdatedAwareInterface instance, with update mode enabled, will correctly set a new
-     * \DateTime instance using setDateUpdated() method.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::__invoke
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener::createDateTime
+     * \DateTime instance using setDateUpdated() method
      *
      * @throws PersistenceException
      */
     public function testDateUpdatedSuccess(): void
     {
-        $listener = new DateUpdatedListener($this->dateTimeFactory, $this->logger);
+        $listener = new DateUpdatedListener($this->dateTimeFactory);
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -284,7 +271,11 @@ final class DateUpdatedListenerTest extends TestCase
         $entityId = 'ABC123';
 
         /** @var DateUpdatedAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DateUpdatedAwareInterface::class);
+        $entity = $this->createMock(DateUpdatedAwareInterface::class);
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -298,14 +289,7 @@ final class DateUpdatedListenerTest extends TestCase
             ->method('getId')
             ->willReturn($entityId);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED)
             ->willReturn(DateUpdateMode::ENABLED);
@@ -324,7 +308,7 @@ final class DateUpdatedListenerTest extends TestCase
         );
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with($message);
 
         $listener($event);

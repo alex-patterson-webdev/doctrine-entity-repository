@@ -6,11 +6,12 @@ namespace ArpTest\DoctrineEntityRepository\Persistence;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
-use Arp\Entity\EntityInterface;
+use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\EventDispatcher\Resolver\EventNameAwareInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent
@@ -26,9 +27,9 @@ final class EntityErrorEventTest extends TestCase
     private string $eventName;
 
     /**
-     * @var string
+     * @var PersistServiceInterface&MockObject
      */
-    private string $entityName = EntityInterface::class;
+    private $persistService;
 
     /**
      * @var EntityManagerInterface&MockObject
@@ -39,6 +40,11 @@ final class EntityErrorEventTest extends TestCase
      * @var \Throwable
      */
     private \Throwable $exception;
+
+    /**
+     * @var LoggerInterface&MockObject
+     */
+    private $logger;
 
     /**
      * @var array<mixed>
@@ -54,6 +60,10 @@ final class EntityErrorEventTest extends TestCase
 
         $this->entityManager = $this->createMock(EntityManagerInterface::class);
 
+        $this->persistService = $this->createMock(PersistServiceInterface::class);
+
+        $this->logger = $this->createMock(LoggerInterface::class);
+
         $this->exception = new \Exception('This is a test exception message');
     }
 
@@ -64,8 +74,9 @@ final class EntityErrorEventTest extends TestCase
     {
         $event = new EntityErrorEvent(
             $this->eventName,
-            $this->entityName,
+            $this->persistService,
             $this->entityManager,
+            $this->logger,
             $this->exception,
             $this->params
         );
@@ -80,8 +91,9 @@ final class EntityErrorEventTest extends TestCase
     {
         $event = new EntityErrorEvent(
             $this->eventName,
-            $this->entityName,
+            $this->persistService,
             $this->entityManager,
+            $this->logger,
             $this->exception,
             $this->params
         );
@@ -96,8 +108,9 @@ final class EntityErrorEventTest extends TestCase
     {
         $event = new EntityErrorEvent(
             $this->eventName,
-            $this->entityName,
+            $this->persistService,
             $this->entityManager,
+            $this->logger,
             $this->exception,
             $this->params
         );

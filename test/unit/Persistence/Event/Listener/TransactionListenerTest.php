@@ -10,18 +10,18 @@ use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener;
+use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
 use Arp\EventDispatcher\Event\ParametersInterface;
 use Arp\EventDispatcher\Listener\AddListenerAwareInterface;
 use Arp\EventDispatcher\Listener\AggregateListenerInterface;
 use Arp\EventDispatcher\Listener\Exception\EventListenerException;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener
+ * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
@@ -38,17 +38,15 @@ final class TransactionListenerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
-     * Assert that the class implements AggregateListenerInterface.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener
+     * Assert that the class implements AggregateListenerInterface
      */
     public function testIsInstanceOfAggregateListenerInterface(): void
     {
-        $listener = new TransactionListener($this->logger);
+        $listener = new TransactionListener();
 
         $this->assertInstanceOf(AggregateListenerInterface::class, $listener);
     }
@@ -57,28 +55,32 @@ final class TransactionListenerTest extends TestCase
      * Assert that the expected event listeners are attached to the provided listener collection.
      *
      * @throws EventListenerException
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::addListeners
      */
     public function testAddListenersWillRegisterEventListenersWithProvidedCollection(): void
     {
-        $listener = new TransactionListener($this->logger);
+        $listener = new TransactionListener();
 
         /** @var AddListenerAwareInterface&MockObject $collection */
-        $collection = $this->getMockForAbstractClass(AddListenerAwareInterface::class);
+        $collection = $this->createMock(AddListenerAwareInterface::class);
 
-        $collection->expects($this->exactly(9))
+        $collection->expects($this->exactly(15))
             ->method('addListenerForEvent')
             ->withConsecutive(
                 [EntityEventName::CREATE, [$listener, 'beginTransaction'], 900],
                 [EntityEventName::UPDATE, [$listener, 'beginTransaction'], 900],
                 [EntityEventName::DELETE, [$listener, 'beginTransaction'], 900],
-                [EntityEventName::CREATE, [$listener, 'commitTransaction'], 1],
-                [EntityEventName::UPDATE, [$listener, 'commitTransaction'], 1],
-                [EntityEventName::DELETE, [$listener, 'commitTransaction'], 1],
+                [EntityEventName::SAVE_COLLECTION, [$listener, 'beginTransaction'], 900],
+                [EntityEventName::DELETE_COLLECTION, [$listener, 'beginTransaction'], 900],
+                [EntityEventName::CREATE, [$listener, 'commitTransaction']],
+                [EntityEventName::UPDATE, [$listener, 'commitTransaction']],
+                [EntityEventName::DELETE, [$listener, 'commitTransaction']],
+                [EntityEventName::SAVE_COLLECTION, [$listener, 'commitTransaction']],
+                [EntityEventName::DELETE_COLLECTION, [$listener, 'commitTransaction']],
                 [EntityEventName::CREATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
                 [EntityEventName::UPDATE_ERROR, [$listener, 'rollbackTransaction'], 1000],
                 [EntityEventName::DELETE_ERROR, [$listener, 'rollbackTransaction'], 1000],
+                [EntityEventName::SAVE_COLLECTION_ERROR, [$listener, 'rollbackTransaction'], 1000],
+                [EntityEventName::DELETE_COLLECTION_ERROR, [$listener, 'rollbackTransaction'], 1000],
             );
 
         $listener->addListeners($collection);
@@ -86,30 +88,21 @@ final class TransactionListenerTest extends TestCase
 
     /**
      * Assert that the beingTransaction() will not start a transaction if the event listener has been disabled
-     * by configuration option EntityEventOption::TRANSACTION_MODE.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::beginTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * by configuration option EntityEventOption::TRANSACTION_MODE
      */
     public function testBeginTransactionWillNotStartATransactionIfTheTransactionsHaveBeenDisabled(): void
     {
         $transactionMode = TransactionMode::DISABLED;
+        $defaultMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
+        $listener = new TransactionListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::TRANSACTION_MODE)
+            ->with(EntityEventOption::TRANSACTION_MODE, $defaultMode)
             ->willReturn($transactionMode);
 
         $entityName = EntityInterface::class;
@@ -118,36 +111,23 @@ final class TransactionListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        $eventName = EntityEventName::CREATE;
-
         $event->expects($this->once())
-            ->method('getEventName')
-            ->willReturn($eventName);
-
-        /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
-        $entityId = 'ABC123';
-
-        $event->expects($this->once())
-            ->method('getEntity')
-            ->willReturn($entity);
-
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
-                    'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
-                    $eventName,
-                    'beginTransaction',
+                    'Transactions are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $entityId,
-                    $transactionMode
+                    TransactionMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE
                 ),
-                compact('eventName', 'entityName', 'transactionMode')
+                [
+                    'entity_name' => $entityName,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+                ]
             );
 
         $listener->beginTransaction($event);
@@ -155,30 +135,21 @@ final class TransactionListenerTest extends TestCase
 
     /**
      * Assert that the commitTransaction() will not commit a transaction if the event listener has been disabled
-     * by configuration option EntityEventOption::TRANSACTION_MODE.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::commitTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * by configuration option EntityEventOption::TRANSACTION_MODE
      */
     public function testCommitTransactionWillNotCommitTheTransactionIfTheTransactionsHaveBeenDisabled(): void
     {
         $transactionMode = TransactionMode::DISABLED;
+        $defaultMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
+        $listener = new TransactionListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::TRANSACTION_MODE)
+            ->with(EntityEventOption::TRANSACTION_MODE, $defaultMode)
             ->willReturn($transactionMode);
 
         $entityName = EntityInterface::class;
@@ -187,36 +158,23 @@ final class TransactionListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        $eventName = EntityEventName::CREATE;
-
         $event->expects($this->once())
-            ->method('getEventName')
-            ->willReturn($eventName);
-
-        /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
-        $entityId = 'ABC123';
-
-        $event->expects($this->once())
-            ->method('getEntity')
-            ->willReturn($entity);
-
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
-                    'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
-                    $eventName,
-                    'commitTransaction',
+                    'Transactions are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $entityId,
-                    $transactionMode
+                    TransactionMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE
                 ),
-                compact('eventName', 'entityName', 'transactionMode')
+                [
+                    'entity_name' => $entityName,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+                ]
             );
 
         $listener->commitTransaction($event);
@@ -224,30 +182,21 @@ final class TransactionListenerTest extends TestCase
 
     /**
      * Assert that the rollbackTransaction() will not rollback a transaction if the event listener has been disabled
-     * by configuration option EntityEventOption::TRANSACTION_MODE.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::rollbackTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * by configuration option EntityEventOption::TRANSACTION_MODE
      */
     public function testRollbackTransactionWillNotRollbackIfTheTransactionsHaveBeenDisabled(): void
     {
         $transactionMode = TransactionMode::DISABLED;
+        $defaultMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
+        $listener = new TransactionListener();
 
         /** @var EntityErrorEvent&MockObject $errorEvent */
         $errorEvent = $this->createMock(EntityErrorEvent::class);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $errorEvent->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::TRANSACTION_MODE)
+            ->with(EntityEventOption::TRANSACTION_MODE, $defaultMode)
             ->willReturn($transactionMode);
 
         $entityName = EntityInterface::class;
@@ -256,144 +205,98 @@ final class TransactionListenerTest extends TestCase
             ->method('getEntityName')
             ->willReturn($entityName);
 
-        $eventName = EntityEventName::CREATE;
-
         $errorEvent->expects($this->once())
-            ->method('getEventName')
-            ->willReturn($eventName);
-
-        $entityId = '0';
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $this->logger->expects($this->once())
-            ->method('info')
+            ->method('debug')
             ->with(
                 sprintf(
-                    'Skipping \'%s::%s\' operation for entity \'%s::%s\' with mode \'%s\'',
-                    $eventName,
-                    'rollbackTransaction',
+                    'Transactions are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $entityId,
-                    $transactionMode
+                    TransactionMode::DISABLED,
+                    EntityEventOption::TRANSACTION_MODE
                 ),
-                compact('eventName', 'entityName', 'transactionMode')
+                [
+                    'entity_name' => $entityName,
+                    EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
+                ]
             );
 
         $listener->rollbackTransaction($errorEvent);
     }
 
     /**
-     * Assert that the beingTransaction() method will correctly start a new transaction with the event's event manager.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::beginTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * Assert that the beingTransaction() method will correctly start a new transaction with the event's event manager
      */
     public function testBeginTransaction(): void
     {
+        $eventName = EntityEventName::UPDATE;
         $transactionMode = TransactionMode::ENABLED;
+        $defaultMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
-
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $listener = new TransactionListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::TRANSACTION_MODE)
+            ->with(EntityEventOption::TRANSACTION_MODE, $defaultMode)
             ->willReturn($transactionMode);
 
-        /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
-
-        $event->expects($this->once())
-            ->method('getEntity')
-            ->willReturn($entity);
-
         $entityName = EntityInterface::class;
-        $entityId = 'ABC123';
 
-        $event->expects($this->once())
+        $event->expects($this->exactly(2))
             ->method('getEntityName')
             ->willReturn($entityName);
-
-        $eventName = EntityEventName::UPDATE;
 
         $event->expects($this->once())
             ->method('getEventName')
             ->willReturn($eventName);
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
-        /** @var EntityManagerInterface&MockObject $entityManager */
-        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
-
-        $this->logger->expects($this->once())
-            ->method('info')
-            ->with(
-                sprintf(
-                    'Starting a new \'%s\' transaction for entity \'%s::%s\'',
-                    $eventName,
-                    $entityName,
-                    $entityId
-                )
-            );
+        /** @var PersistServiceInterface&MockObject $persistService */
+        $persistService = $this->createMock(PersistServiceInterface::class);
 
         $event->expects($this->once())
-            ->method('getEntityManager')
-            ->willReturn($entityManager);
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
-        $entityManager->expects($this->once())->method('beginTransaction');
+        $this->logger->expects($this->once())
+            ->method('debug')
+            ->with(sprintf('Starting a new \'%s\' transaction for entity \'%s\'', $eventName, $entityName));
+
+        $event->expects($this->once())
+            ->method('getPersistService')
+            ->willReturn($persistService);
+
+        $persistService->expects($this->once())->method('beginTransaction');
 
         $listener->beginTransaction($event);
     }
 
     /**
      * Assert that the commitTransaction() method will correctly commit a new transaction
-     * with the event's event manager.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::commitTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * with the event's event manager
      */
     public function testCommitTransaction(): void
     {
         $transactionMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
-
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $listener = new TransactionListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
-            ->with(EntityEventOption::TRANSACTION_MODE)
+            ->with(EntityEventOption::TRANSACTION_MODE, $transactionMode)
             ->willReturn($transactionMode);
 
-        /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
-
-        $event->expects($this->once())
-            ->method('getEntity')
-            ->willReturn($entity);
-
         $entityName = EntityInterface::class;
-        $entityId = 'ABC123';
 
-        $event->expects($this->once())
+        $event->expects($this->exactly(2))
             ->method('getEntityName')
             ->willReturn($entityName);
 
@@ -403,64 +306,47 @@ final class TransactionListenerTest extends TestCase
             ->method('getEventName')
             ->willReturn($eventName);
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
-        /** @var EntityManagerInterface&MockObject $entityManager */
-        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $this->logger->expects($this->once())
-            ->method('info')
-            ->with(
-                sprintf(
-                    'Committing \'%s\' transaction for entity \'%s::%s\'',
-                    $eventName,
-                    $entityName,
-                    $entityId
-                )
-            );
+            ->method('debug')
+            ->with(sprintf('Committing \'%s\' transaction for entity \'%s\'', $eventName, $entityName));
+
+        /** @var PersistServiceInterface&MockObject $persistService */
+        $persistService = $this->createMock(PersistServiceInterface::class);
 
         $event->expects($this->once())
-            ->method('getEntityManager')
-            ->willReturn($entityManager);
+            ->method('getPersistService')
+            ->willReturn($persistService);
 
-        $entityManager->expects($this->once())->method('commit');
+        $persistService->expects($this->once())->method('commitTransaction');
 
         $listener->commitTransaction($event);
     }
 
     /**
      * Assert that the rollbackTransaction() method will correctly rollback the transaction
-     * with a call to the event's event manager.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::rollbackTransaction
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\TransactionListener::isEnabled
+     * with a call to the event's event manager
      */
     public function testRollbackTransaction(): void
     {
         $transactionMode = TransactionMode::ENABLED;
 
-        $listener = new TransactionListener($this->logger);
-
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
+        $listener = new TransactionListener();
 
         /** @var EntityErrorEvent&MockObject $errorEvent */
         $errorEvent = $this->createMock(EntityErrorEvent::class);
 
         $errorEvent->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::TRANSACTION_MODE)
             ->willReturn($transactionMode);
 
         $entityName = EntityInterface::class;
 
-        $errorEvent->expects($this->once())
+        $errorEvent->expects($this->exactly(2))
             ->method('getEntityName')
             ->willReturn($entityName);
 
@@ -470,24 +356,22 @@ final class TransactionListenerTest extends TestCase
             ->method('getEventName')
             ->willReturn($eventName);
 
-        /** @var EntityManagerInterface&MockObject $entityManager */
-        $entityManager = $this->getMockForAbstractClass(EntityManagerInterface::class);
+        $errorEvent->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $this->logger->expects($this->once())
-            ->method('info')
-            ->with(
-                sprintf(
-                    'Rolling back \'%s\' transaction for entity class \'%s\'',
-                    $eventName,
-                    $entityName
-                )
-            );
+            ->method('debug')
+            ->with(sprintf('Rolling back \'%s\' transaction for entity class \'%s\'', $eventName, $entityName));
+
+        /** @var PersistServiceInterface&MockObject $persistService */
+        $persistService = $this->createMock(PersistServiceInterface::class);
 
         $errorEvent->expects($this->once())
-            ->method('getEntityManager')
-            ->willReturn($entityManager);
+            ->method('getPersistService')
+            ->willReturn($persistService);
 
-        $entityManager->expects($this->once())->method('rollback');
+        $persistService->expects($this->once())->method('rollbackTransaction');
 
         $listener->rollbackTransaction($errorEvent);
     }
