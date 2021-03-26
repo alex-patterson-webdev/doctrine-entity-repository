@@ -835,6 +835,94 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
+     * Assert PersistenceException errors are caught an rethrown as EntityRepositoryException
+     * when calling deleteCollection()
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testDeleteCollectionExceptionWillBeCaughtAndRethrownAsEntityRepositoryException(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $options = [
+            'testing' => 456,
+            123 => 'Hello',
+            'nice' => true,
+        ];
+
+        /** @var array<EntityInterface> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
+
+        $this->persistService->expects($this->once())
+            ->method('deleteCollection')
+            ->with($collection, $options)
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf(
+            'Unable to delete entity collection of type \'%s\': %s',
+            $this->entityName,
+            $exceptionMessage
+        );
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionCode($exceptionCode);
+        $this->expectExceptionMessage($errorMessage);
+
+        $repository->deleteCollection($collection, $options);
+    }
+
+    /**
+     * Assert that an entity collection can be successfully saved using deleteCollection()
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testSDeleteCollection(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $options = [
+            'foo' => 456,
+            'bar123' => 'Testing Delete',
+        ];
+
+        /** @var array<EntityInterface> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $this->persistService->expects($this->once())
+            ->method('deleteCollection')
+            ->with($collection, $options)
+            ->willReturn(123);
+
+        $this->assertSame(123, $repository->deleteCollection($collection, $options));
+    }
+
+    /**
      * Assert that calls to clear that fail will be caught and rethrown as EntityRepositoryException
      *
      * @throws EntityRepositoryException

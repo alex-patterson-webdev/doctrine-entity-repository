@@ -19,6 +19,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DateUpdatedListener
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\AbstractDateTimeListener
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener

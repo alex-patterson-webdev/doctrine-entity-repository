@@ -57,14 +57,15 @@ final class ExceptionListener implements AggregateListenerInterface
             $event->getLogger()->error($exception->getMessage(), compact('exception'));
         }
 
+        if (true !== $event->getParam(EntityEventOption::THROW_EXCEPTIONS, true)) {
+            return;
+        }
+
         if (!$exception instanceof PersistenceException) {
             $exception = new PersistenceException($exceptionMessage, $exception->getCode(), $exception);
             $event->setException($exception);
         }
 
-        if (true !== $event->getParam(EntityEventOption::THROW_EXCEPTIONS, true)) {
-            return;
-        }
 
         throw $exception;
     }

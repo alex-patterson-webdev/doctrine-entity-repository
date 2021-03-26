@@ -78,11 +78,18 @@ final class ExceptionListenerTest extends TestCase
      * Assert that the onError() method will overwrite any exception that is not of type PersistenceException
      * and reset the exception on the provided event
      *
+     * @param bool $logErrors
+     * @param bool $throwExceptions
+     *
+     * @dataProvider getOnErrorWillOverwriteSetExceptionWithNewPersistenceExceptionData
+     *
      * @throws PersistenceException
      * @throws \Throwable
      */
-    public function testOnErrorWillOverwriteSetExceptionWithNewPersistenceException(): void
-    {
+    public function testOnErrorWillOverwriteSetExceptionWithNewPersistenceException(
+        bool $logErrors,
+        bool $throwExceptions
+    ): void {
         $entityName = EntityInterface::class;
 
         $listener = new ExceptionListener();
@@ -107,13 +114,9 @@ final class ExceptionListenerTest extends TestCase
                 [EntityEventOption::LOG_ERRORS, true],
                 [EntityEventOption::THROW_EXCEPTIONS, true]
             )->willReturnOnConsecutiveCalls(
-                true,
-                true
+                $logErrors,
+                $throwExceptions
             );
-
-        $event->expects($this->once())
-            ->method('getLogger')
-            ->willReturn($this->logger);
 
         $exceptionMessage = sprintf(
             'A persistence error occurred for entity class \'%s\': %s',
@@ -121,17 +124,39 @@ final class ExceptionListenerTest extends TestCase
             $internalExceptionMessage
         );
 
-        $this->logger->expects($this->once())
-            ->method('error')
-            ->with($internalExceptionMessage, $this->arrayHasKey('exception'));
+        if (true === $logErrors) {
+            $event->expects($this->once())
+                ->method('getLogger')
+                ->willReturn($this->logger);
 
-        $event->expects($this->once())
-            ->method('setException')
-            ->with($this->isInstanceOf(PersistenceException::class));
 
-        $this->expectException(PersistenceException::class);
-        $this->expectExceptionMessage($exceptionMessage);
+            $this->logger->expects($this->once())
+                ->method('error')
+                ->with($internalExceptionMessage, $this->arrayHasKey('exception'));
+        }
+
+        if (true === $throwExceptions) {
+            $event->expects($this->once())
+                ->method('setException')
+                ->with($this->isInstanceOf(PersistenceException::class));
+
+            $this->expectException(PersistenceException::class);
+            $this->expectExceptionMessage($exceptionMessage);
+        }
 
         $listener->onError($event);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getOnErrorWillOverwriteSetExceptionWithNewPersistenceExceptionData(): array
+    {
+        return [
+            [true, true],
+            [true, false],
+            [false, true],
+            [false, false],
+        ];
     }
 }

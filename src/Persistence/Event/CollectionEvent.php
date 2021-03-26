@@ -10,7 +10,7 @@ use Arp\Entity\EntityInterface;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event
  */
-final class CollectionEvent extends AbstractEntityEvent
+class CollectionEvent extends AbstractEntityEvent
 {
     /**
      * @var iterable<EntityInterface>
