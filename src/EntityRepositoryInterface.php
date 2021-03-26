@@ -19,8 +19,8 @@ interface EntityRepositoryInterface extends ObjectRepository
     /**
      * Save a single entity instance.
      *
-     * @param EntityInterface          $entity
-     * @param array<string|int, mixed> $options
+     * @param EntityInterface $entity
+     * @param array<mixed>    $options
      *
      * @return EntityInterface
      *
@@ -32,7 +32,7 @@ interface EntityRepositoryInterface extends ObjectRepository
      * Save a collection of entities in a single transaction.
      *
      * @param iterable<EntityInterface> $collection The collection of entities that should be saved.
-     * @param array<string|int, mixed>  $options    the optional save options.
+     * @param array<mixed>              $options    the optional save options.
      *
      * @return iterable<EntityInterface>
      *
@@ -44,7 +44,7 @@ interface EntityRepositoryInterface extends ObjectRepository
      * Delete an entity.
      *
      * @param EntityInterface|int|string $entity
-     * @param array<string|int, mixed>   $options
+     * @param array<mixed>               $options
      *
      * @return bool
      *
@@ -56,7 +56,7 @@ interface EntityRepositoryInterface extends ObjectRepository
      * Perform a deletion of a collection of entities.
      *
      * @param iterable<EntityInterface> $collection
-     * @param array<string|int, mixed>  $options
+     * @param array<mixed>              $options
      *
      * @return int
      *
