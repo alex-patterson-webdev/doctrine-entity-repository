@@ -54,8 +54,6 @@ final class QueryServiceTest extends TestCase
 
     /**
      * Assert that the QueryService implements QueryServiceInterface
-     *
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::__construct
      */
     public function testImplementsQueryServiceInterface(): void
     {
@@ -65,9 +63,17 @@ final class QueryServiceTest extends TestCase
     }
 
     /**
-     * Assert that a query builder is returned without an alias.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::createQueryBuilder
+     * Assert getEntityName() will return the entity class name
+     */
+    public function testGetEntityName(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        $this->assertSame($this->entityName, $queryService->getEntityName());
+    }
+
+    /**
+     * Assert that a query builder is returned without an alias
      */
     public function testCreateQueryBuilderWillReturnQueryBuilderWithoutAlias(): void
     {
@@ -88,8 +94,6 @@ final class QueryServiceTest extends TestCase
 
     /**
      * Assert that a query builder is returned with the provided $alias
-     *
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::createQueryBuilder
      */
     public function testCreateQueryBuilderWillReturnQueryBuilderWithAlias(): void
     {
@@ -117,9 +121,147 @@ final class QueryServiceTest extends TestCase
     }
 
     /**
-     * Assert that if we provide a invalid query object to execute() a QueryServiceException will be thrown.
+     * Assert calls to getSingleResultOrNull() will return NULL for an empty result set
      *
-     * @covers \Arp\DoctrineEntityRepository\Query\QueryService::execute
+     * @throws QueryServiceException
+     */
+    public function testGetSingleResultWillReturnNullForEmptyResultSet(): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var QueryBuilder&MockObject $queryBuilder */
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+
+        /** @var AbstractQuery&MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        $queryBuilder->expects($this->once())
+            ->method('getQuery')
+            ->willReturn($query);
+
+        $resultSet = []; // Empty result set will cause our NULL result
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertNull($queryService->getSingleResultOrNull($queryBuilder));
+    }
+
+    /**
+     * Assert calls to getSingleResultOrNull() will return the results for non-array values
+     *
+     * @dataProvider getGetSingleResultWillReturnResultForNonArrayResultSetData
+     *
+     * @param mixed        $resultSet
+     * @param array<mixed> $options
+     *
+     * @throws QueryServiceException
+     */
+    public function testGetSingleResultWillReturnResultForNonArrayResultSet($resultSet, array $options = []): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var QueryBuilder&MockObject $queryBuilder */
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+
+        /** @var AbstractQuery&MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        $queryBuilder->expects($this->once())
+            ->method('getQuery')
+            ->willReturn($query);
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertSame($resultSet, $queryService->getSingleResultOrNull($queryBuilder, $options));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getGetSingleResultWillReturnResultForNonArrayResultSetData(): array
+    {
+        return [
+            [true],
+            [new \stdClass()],
+            [$this->createMock(EntityInterface::class)],
+        ];
+    }
+
+    /**
+     * Assert calls to getSingleResultOrNull() will return NULL is the result set returned from the query is
+     * greater than one
+     *
+     * @param array<mixed> $options
+     *
+     * @throws QueryServiceException
+     */
+    public function testGetSingleResultWillReturnNullForResultsWithMoreThanOneRecord(array $options = []): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var QueryBuilder&MockObject $queryBuilder */
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+
+        /** @var AbstractQuery&MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        $queryBuilder->expects($this->once())
+            ->method('getQuery')
+            ->willReturn($query);
+
+        /** @var array<EntityInterface&MockObject> $resultSet */
+        $resultSet = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertNull($queryService->getSingleResultOrNull($queryBuilder, $options));
+    }
+
+    /**
+     * Assert just a single record is returned from getSingleResultOrNull()
+     *
+     * @param array<mixed> $options
+     *
+     * @throws QueryServiceException
+     */
+    public function testGetSingleResultWillReturnSingleResult(array $options = []): void
+    {
+        $queryService = new QueryService($this->entityName, $this->entityManager, $this->logger);
+
+        /** @var QueryBuilder&MockObject $queryBuilder */
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+
+        /** @var AbstractQuery&MockObject $query */
+        $query = $this->createMock(AbstractQuery::class);
+
+        $queryBuilder->expects($this->once())
+            ->method('getQuery')
+            ->willReturn($query);
+
+        /** @var array<EntityInterface&MockObject> $resultSet */
+        $resultSet = [
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $query->expects($this->once())
+            ->method('execute')
+            ->willReturn($resultSet);
+
+        $this->assertSame($resultSet[0], $queryService->getSingleResultOrNull($queryBuilder, $options));
+    }
+
+    /**
+     * Assert that if we provide a invalid query object to execute() a QueryServiceException will be thrown
      *
      * @throws QueryServiceException
      */
@@ -147,9 +289,6 @@ final class QueryServiceTest extends TestCase
      * Assert that a query object provided to execute will be prepared with the provided options and then executed.
      *
      * @param array<mixed> $options The optional query options to assert get set on the query when being prepared.
-     *
-     * @covers       \Arp\DoctrineEntityRepository\Query\QueryService::execute
-     * @covers       \Arp\DoctrineEntityRepository\Query\QueryService::prepareQuery
      *
      * @dataProvider getExecuteWillPrepareAndExecuteQueryData
      * @throws QueryServiceException
