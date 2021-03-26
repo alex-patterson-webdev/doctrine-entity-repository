@@ -40,7 +40,7 @@ final class SoftDeleteListener
             return;
         }
 
-        $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::SOFT);
+        $deleteMode = $event->getParam(EntityEventOption::DELETE_MODE, DeleteMode::SOFT);
 
         if (DeleteMode::SOFT !== $deleteMode) {
             $logger->debug(

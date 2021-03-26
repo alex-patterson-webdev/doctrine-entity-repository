@@ -10,7 +10,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener;
 use Arp\Entity\DeleteAwareInterface;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -33,29 +32,25 @@ final class SoftDeleteListenerTest extends TestCase
      */
     public function setUp(): void
     {
-        $this->logger = $this->getMockForAbstractClass(LoggerInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
     }
 
     /**
      * Assert that the listener is of a callable type
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener
      */
     public function testIsCallable(): void
     {
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         $this->assertIsCallable($listener);
     }
 
     /**
-     * Assert that providing NULL as the entity will result in the operation being logged and ignored.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
+     * Assert that providing NULL as the entity will result in the operation being logged and ignored
      */
     public function testNullEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -83,13 +78,11 @@ final class SoftDeleteListenerTest extends TestCase
 
     /**
      * Assert that providing an instance that is not implementing DeleteAwareInterface will result in the
-     * operation being logged and ignored.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
+     * operation being logged and ignored
      */
     public function testNonDeleteAwareEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -101,7 +94,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->willReturn($entityName);
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(EntityInterface::class);
+        $entity = $this->createMock(EntityInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -119,26 +112,27 @@ final class SoftDeleteListenerTest extends TestCase
     }
 
     /**
-     * Assert that already deleted entities are logged and ignored (no further updated required).
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
+     * Assert that already deleted entities are logged and ignored (no further updated required)
      */
     public function testAlreadyDeletedEntityWillBeLoggedAndIgnored(): void
     {
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
-        $entityId = 'ABC';
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
         /** @var DeleteAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
+        $entity = $this->createMock(DeleteAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -148,15 +142,10 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('isDeleted')
             ->willReturn(true); // Already deleted
 
-        $entity->expects($this->once())
-            ->method('getId')
-            ->willReturn($entityId);
-
         $this->logger->info(
             sprintf(
-                'Ignoring soft delete operations for already deleted entity \'%s::%s\'',
-                $entityName,
-                $entityId
+                'Ignoring soft delete operations for already deleted entity \'%s\'',
+                $entityName
             )
         );
 
@@ -167,15 +156,13 @@ final class SoftDeleteListenerTest extends TestCase
 
     /**
      * Assert that the soft delete listener will ignore/cancel soft delete operations if the provide 'delete mode'
-     * is set to 'hard'. This action should also be logged with the injected logger.
-     *
-     * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
+     * is set to 'hard'. This action should also be logged with the injected logger
      */
     public function testSoftDeleteIsDisabledIfDeleteModeIsHard(): void
     {
         $deleteMode = DeleteMode::HARD;
 
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
@@ -183,11 +170,15 @@ final class SoftDeleteListenerTest extends TestCase
         $entityName = EntityInterface::class;
 
         $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
+
+        $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
         /** @var DeleteAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
+        $entity = $this->createMock(DeleteAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -197,14 +188,7 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('isDeleted')
             ->willReturn(false);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DELETE_MODE, DeleteMode::SOFT)
             ->willReturn($deleteMode);
@@ -227,25 +211,27 @@ final class SoftDeleteListenerTest extends TestCase
      *
      * @param string|null $deleteMode
      *
-     * @covers       \Arp\DoctrineEntityRepository\Persistence\Event\Listener\SoftDeleteListener::__invoke
      * @dataProvider getSoftDeleteData
      */
     public function testSoftDelete(?string $deleteMode = null): void
     {
-        $listener = new SoftDeleteListener($this->logger);
+        $listener = new SoftDeleteListener();
 
         /** @var EntityEvent&MockObject $event */
         $event = $this->createMock(EntityEvent::class);
 
         $entityName = EntityInterface::class;
-        $entityId = 'ABC';
+
+        $event->expects($this->once())
+            ->method('getLogger')
+            ->willReturn($this->logger);
 
         $event->expects($this->once())
             ->method('getEntityName')
             ->willReturn($entityName);
 
         /** @var DeleteAwareInterface&MockObject $entity */
-        $entity = $this->getMockForAbstractClass(DeleteAwareInterface::class);
+        $entity = $this->createMock(DeleteAwareInterface::class);
 
         $event->expects($this->once())
             ->method('getEntity')
@@ -255,26 +241,12 @@ final class SoftDeleteListenerTest extends TestCase
             ->method('isDeleted')
             ->willReturn(false);
 
-        /** @var ParametersInterface<mixed>&MockObject $params */
-        $params = $this->getMockForAbstractClass(ParametersInterface::class);
-
         $event->expects($this->once())
-            ->method('getParameters')
-            ->willReturn($params);
-
-        $params->expects($this->once())
             ->method('getParam')
             ->with(EntityEventOption::DELETE_MODE, DeleteMode::SOFT)
             ->willReturn(($deleteMode ?? DeleteMode::SOFT));
 
-        $this->logger->info(
-            sprintf(
-                'Performing \'%s\' delete for entity \'%s::%s\'',
-                DeleteMode::SOFT,
-                $entityName,
-                $entityId
-            )
-        );
+        $this->logger->info(sprintf('Saving \'%s\' collection', $entityName));
 
         $entity->expects($this->once())
             ->method('setDeleted')
