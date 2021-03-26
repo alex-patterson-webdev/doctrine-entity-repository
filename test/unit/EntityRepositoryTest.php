@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ArpTest\DoctrineEntityRepository;
 
-use Arp\DoctrineEntityRepository\Constant\PersistServiceOption;
 use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
 use Arp\DoctrineEntityRepository\EntityRepository;
 use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
@@ -564,6 +563,88 @@ final class EntityRepositoryTest extends TestCase
     }
 
     /**
+     * Assert PersistenceException errors are caught an rethrown as EntityRepositoryException
+     * when calling saveCollection()
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testSaveCollectionExceptionWillBeCaughtAndRethrownAsEntityRepositoryException(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $options = [
+            'testing' => 456,
+            123 => 'Hello',
+            'nice' => true,
+        ];
+
+        /** @var array<EntityInterface> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 123;
+        $exception = new PersistenceException($exceptionMessage, $exceptionCode);
+
+        $this->persistService->expects($this->once())
+            ->method('saveCollection')
+            ->with($collection, $options)
+            ->willThrowException($exception);
+
+        $errorMessage = sprintf('Unable to save entity of type \'%s\': %s', $this->entityName, $exceptionMessage);
+
+        $this->logger->expects($this->once())
+            ->method('error')
+            ->with($errorMessage, ['exception' => $exception, 'entity_name' => $this->entityName]);
+
+        $this->expectException(EntityRepositoryException::class);
+        $this->expectExceptionCode($exceptionCode);
+        $this->expectExceptionMessage($errorMessage);
+
+        $repository->saveCollection($collection, $options);
+    }
+
+    /**
+     * Assert that an entity collection can be successfully saved using saveCollection()
+     *
+     * @throws EntityRepositoryException
+     */
+    public function testSaveCollection(): void
+    {
+        $repository = new EntityRepository(
+            $this->entityName,
+            $this->queryService,
+            $this->persistService,
+            $this->logger
+        );
+
+        $options = [
+            'foo' => 123,
+            'bar' => 'Test',
+        ];
+
+        /** @var array<EntityInterface> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $this->persistService->expects($this->once())
+            ->method('saveCollection')
+            ->with($collection, $options)
+            ->willReturn($collection);
+
+        $this->assertSame($collection, $repository->saveCollection($collection, $options));
+    }
+
+    /**
      * Assert that if we provide an incorrect data type for $entity to delete() an EntityRepositoryException
      * will be thrown
      *
@@ -663,7 +744,8 @@ final class EntityRepositoryTest extends TestCase
         $entity = $this->createMock(EntityInterface::class);
 
         $options = [
-            PersistServiceOption::FLUSH => true,
+            'foo' => 123,
+            'bar' => 'Test',
         ];
 
         $exceptionMessage = 'This is a test exception message';

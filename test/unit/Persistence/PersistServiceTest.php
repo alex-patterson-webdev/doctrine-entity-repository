@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ArpTest\DoctrineEntityRepository\Persistence;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
-use Arp\DoctrineEntityRepository\Constant\PersistServiceOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
@@ -190,12 +189,6 @@ final class PersistServiceTest extends TestCase
             [
                 [
                     // empty options
-                ],
-                [
-                    PersistServiceOption::FLUSH => true,
-                ],
-                [
-                    PersistServiceOption::FLUSH => false,
                 ],
             ],
         ];

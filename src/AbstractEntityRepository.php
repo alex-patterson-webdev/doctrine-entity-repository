@@ -130,10 +130,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a collection of entities that match the provided $criteria.
      *
-     * @param array<string, mixed>       $criteria
-     * @param array<string, string>|null $orderBy
-     * @param int|null                   $limit
-     * @param int|null                   $offset
+     * @param array<mixed>      $criteria
+     * @param array<mixed>|null $orderBy
+     * @param int|null          $limit
+     * @param int|null          $offset
      *
      * @return EntityInterface[]|iterable
      *
@@ -176,8 +176,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Save a single entity instance
      *
-     * @param EntityInterface      $entity
-     * @param array<string, mixed> $options
+     * @param EntityInterface $entity
+     * @param array<mixed>    $options
      *
      * @return EntityInterface
      *
@@ -200,7 +200,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * Save a collection of entities in a single transaction
      *
      * @param iterable<EntityInterface> $collection The collection of entities that should be saved.
-     * @param array<string, mixed>      $options    the optional save options.
+     * @param array<mixed>              $options    the optional save options.
      *
      * @return iterable<EntityInterface>
      *
@@ -221,7 +221,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
     /**
      * @param EntityInterface|string|int|mixed $entity
-     * @param array<string, mixed>             $options
+     * @param array<mixed>                     $options
      *
      * @return bool
      *
@@ -279,7 +279,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * Perform a deletion of a collection of entities
      *
      * @param iterable<EntityInterface> $collection
-     * @param array<string, mixed>      $options
+     * @param array<mixed>              $options
      *
      * @return int
      *
@@ -350,8 +350,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Execute query builder or query instance and return the results.
      *
-     * @param object               $query
-     * @param array<string, mixed> $options
+     * @param object       $query
+     * @param array<mixed> $options
      *
      * @return EntityInterface[]|iterable
      *
@@ -384,8 +384,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      *
      * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
      *
-     * @param object               $query
-     * @param array<string, mixed> $options
+     * @param object       $query
+     * @param array<mixed> $options
      *
      * @return array<mixed>|EntityInterface|null
      *
@@ -417,8 +417,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      * Return a result set containing a single array result. NULL will be returned if the result set
      * contains 0 or more than 1 result.
      *
-     * @param object               $query
-     * @param array<string, mixed> $options
+     * @param object       $query
+     * @param array<mixed> $options
      *
      * @return array<mixed>|null
      *
