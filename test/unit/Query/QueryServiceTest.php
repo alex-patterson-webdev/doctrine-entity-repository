@@ -232,6 +232,8 @@ final class QueryServiceTest extends TestCase
      *
      * @param array<mixed> $options
      *
+     * @dataProvider getGetSingleResultWillReturnSingleResultData
+     *
      * @throws QueryServiceException
      */
     public function testGetSingleResultWillReturnSingleResult(array $options = []): void
@@ -240,6 +242,32 @@ final class QueryServiceTest extends TestCase
 
         /** @var QueryBuilder&MockObject $queryBuilder */
         $queryBuilder = $this->createMock(QueryBuilder::class);
+
+        if (array_key_exists(QueryServiceOption::FIRST_RESULT, $options)) {
+            $queryBuilder->expects($this->once())
+                ->method('setFirstResult')
+                ->with($options[QueryServiceOption::FIRST_RESULT]);
+        }
+
+        if (array_key_exists(QueryServiceOption::MAX_RESULTS, $options)) {
+            $queryBuilder->expects($this->once())
+                ->method('setMaxResults')
+                ->with($options[QueryServiceOption::MAX_RESULTS]);
+        }
+
+        if (
+            array_key_exists(QueryServiceOption::ORDER_BY, $options)
+            && is_array($options[QueryServiceOption::ORDER_BY])
+        ) {
+            $addOrderByArgs = [];
+            foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
+                $addOrderByArgs[] = [$fieldName, $orderDirection];
+            }
+
+            $queryBuilder->expects($this->exactly(count($addOrderByArgs)))
+                ->method('addOrderBy')
+                ->withConsecutive(...$addOrderByArgs);
+        }
 
         /** @var AbstractQuery&MockObject $query */
         $query = $this->createMock(AbstractQuery::class);
@@ -258,6 +286,36 @@ final class QueryServiceTest extends TestCase
             ->willReturn($resultSet);
 
         $this->assertSame($resultSet[0], $queryService->getSingleResultOrNull($queryBuilder, $options));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getGetSingleResultWillReturnSingleResultData(): array
+    {
+        return [
+            [
+                [
+                    QueryServiceOption::FIRST_RESULT => 12,
+                ],
+            ],
+
+            [
+                [
+                    QueryServiceOption::MAX_RESULTS => 100,
+                ],
+            ],
+
+            [
+                [
+                    QueryServiceOption::MAX_RESULTS => 10,
+                    QueryServiceOption::ORDER_BY    => [
+                        'foo' => 'ASC',
+                        'bar' => 'DESC',
+                    ],
+                ],
+            ],
+        ];
     }
 
     /**

@@ -112,7 +112,7 @@ class QueryService implements QueryServiceInterface
     public function execute($queryOrBuilder, array $options = [])
     {
         if ($queryOrBuilder instanceof QueryBuilder) {
-            $this->prepareQueryBuilder($queryOrBuilder);
+            $this->prepareQueryBuilder($queryOrBuilder, $options);
 
             $queryOrBuilder = $queryOrBuilder->getQuery();
         }
@@ -253,7 +253,10 @@ class QueryService implements QueryServiceInterface
             $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
         }
 
-        if (array_key_exists(QueryServiceOption::ORDER_BY, $options)) {
+        if (
+            array_key_exists(QueryServiceOption::ORDER_BY, $options)
+            && is_array($options[QueryServiceOption::ORDER_BY])
+        ) {
             foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
                 $queryBuilder->addOrderBy(
                     $fieldName,
