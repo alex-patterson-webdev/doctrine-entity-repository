@@ -8,7 +8,6 @@ use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\PersistMode;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -16,19 +15,6 @@ use Psr\Log\LoggerInterface;
  */
 final class PersistListener
 {
-    /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
     /**
      * @param EntityEvent $event
      *
@@ -45,34 +31,34 @@ final class PersistListener
                 $entityName
             );
 
-            $this->logger->error($errorMessage, compact('entityName'));
+            $event->getLogger()->error($errorMessage, compact('entityName'));
 
             throw new PersistenceException($errorMessage);
         }
 
-        $persistMode = $event->getParameters()->getParam(EntityEventOption::PERSIST_MODE, PersistMode::ENABLED);
-
+        $persistMode = $event->getParam(EntityEventOption::PERSIST_MODE, PersistMode::ENABLED);
         if (PersistMode::ENABLED !== $persistMode) {
-            $this->logger->info(
+            $event->getLogger()->debug(
                 sprintf(
-                    'Skipping persist operation for entity \'%s\' with persist mode \'%s\'',
+                    'Persist operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $persistMode
+                    PersistMode::DISABLED,
+                    EntityEventOption::PERSIST_MODE
                 ),
-                compact('entityName', 'persistMode')
+                ['entity_name' => $entityName, EntityEventOption::PERSIST_MODE => PersistMode::DISABLED]
             );
             return;
         }
 
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf(
-                'Performing persist operation for entity \'%s\' with persist mode \'%s\'',
+                'Flush operations are enabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                 $entityName,
-                $persistMode
-            ),
-            compact('entityName', 'persistMode')
+                PersistMode::ENABLED,
+                EntityEventOption::PERSIST_MODE
+            )
         );
 
-        $event->getEntityManager()->persist($entity);
+        $event->getPersistService()->persist($entity);
     }
 }
