@@ -66,7 +66,6 @@ final class ExceptionListener implements AggregateListenerInterface
             $event->setException($exception);
         }
 
-
         throw $exception;
     }
 }
