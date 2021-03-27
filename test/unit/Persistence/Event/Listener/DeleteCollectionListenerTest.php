@@ -10,21 +10,22 @@ use Arp\DoctrineEntityRepository\Constant\FlushMode;
 use Arp\DoctrineEntityRepository\Constant\PersistMode;
 use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\Persistence\Event\CollectionEvent;
-use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CollectionSaveListener;
+use Arp\DoctrineEntityRepository\Persistence\Event\Listener\DeleteCollectionListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
+use Arp\EventDispatcher\Event\ParametersInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\CollectionSaveListener
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\Listener\DeleteCollectionListener
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class CollectionSaveListenerTest extends TestCase
+class DeleteCollectionListenerTest extends TestCase
 {
     /**
      * @var PersistServiceInterface&MockObject
@@ -51,7 +52,7 @@ final class CollectionSaveListenerTest extends TestCase
      */
     public function testIsCallable(): void
     {
-        $listener = new CollectionSaveListener();
+        $listener = new DeleteCollectionListener();
 
         $this->assertIsCallable($listener);
     }
@@ -62,8 +63,9 @@ final class CollectionSaveListenerTest extends TestCase
      * @param array<mixed> $options
      *
      * @throws PersistenceException
+     * @throws \Exception
      */
-    public function testInvokeWillSaveTheProvidedCollection(array $options = []): void
+    public function testInvokeWillDeleteTheProvidedCollection(array $options = []): void
     {
         $defaultOptions = [
             EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
@@ -74,20 +76,14 @@ final class CollectionSaveListenerTest extends TestCase
 
         $options = array_replace_recursive($defaultOptions, $options);
 
-        $listener = new CollectionSaveListener($defaultOptions);
+        $listener = new DeleteCollectionListener($options);
 
         $entityName = EntityInterface::class;
 
-        /** @var array<EntityInterface&MockObject> $collection */
-        $collection = [
+        /** @var array<EntityInterface&MockObject> $deleteCollection */
+        $deleteCollection = [
             $this->createMock(EntityInterface::class),
             $this->createMock(EntityInterface::class),
-            $this->createMock(EntityInterface::class),
-        ];
-
-        /** @var array<EntityInterface&MockObject> $returnCollection */
-        $returnCollection = [
-            $collection[0],
             $this->createMock(EntityInterface::class),
             $this->createMock(EntityInterface::class),
         ];
@@ -97,7 +93,7 @@ final class CollectionSaveListenerTest extends TestCase
 
         $event->expects($this->once())
             ->method('getCollection')
-            ->willReturn($collection);
+            ->willReturn($deleteCollection);
 
         $event->expects($this->once())
             ->method('getLogger')
@@ -105,7 +101,7 @@ final class CollectionSaveListenerTest extends TestCase
 
         $this->logger->expects($this->once())
             ->method('debug')
-            ->with(sprintf('Saving \'%s\' collection', $entityName));
+            ->with(sprintf('Deleting \'%s\' collection', $entityName));
 
         $event->expects($this->once())
             ->method('getEntityName')
@@ -113,23 +109,39 @@ final class CollectionSaveListenerTest extends TestCase
 
         $event->expects($this->once())
             ->method('getParam')
-            ->with('collection_save_options', [])
-            ->willReturn($options['collection_save_options'] ?? []);
+            ->with(EntityEventOption::COLLECTION_DELETE_OPTIONS, [])
+            ->willReturn($options[EntityEventOption::COLLECTION_DELETE_OPTIONS] ?? []);
 
         $event->expects($this->once())
             ->method('getPersistService')
             ->willReturn($this->persistService);
 
+        $deletedCount = 0;
         $saveArgs = $returnArgs = [];
-        foreach ($collection as $index => $entity) {
+        foreach ($deleteCollection as $index => $entity) {
             $saveArgs[] = [$entity, $options];
-            $returnArgs[] = $returnCollection[$index];
+            $isDeleted = (random_int(0, 100) >= 50);
+            $returnArgs[] = $isDeleted;
+            if ($isDeleted) {
+                $deletedCount++;
+            }
         }
 
-        $this->persistService->expects($this->exactly(count($collection)))
-            ->method('save')
+        $this->persistService->expects($this->exactly(count($deleteCollection)))
+            ->method('delete')
             ->withConsecutive(...$saveArgs)
             ->willReturnOnConsecutiveCalls(...$returnArgs);
+
+        /** @var ParametersInterface<mixed>&MockObject $params */
+        $params = $this->createMock(ParametersInterface::class);
+
+        $event->expects($this->once())
+            ->method('getParameters')
+            ->willReturn($params);
+
+        $params->expects($this->once())
+            ->method('setParam')
+            ->with('deleted_count', $deletedCount);
 
         $listener($event);
     }

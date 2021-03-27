@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\ClearMode;
+use Arp\DoctrineEntityRepository\Constant\DeleteMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
 use Arp\DoctrineEntityRepository\Constant\PersistMode;
@@ -16,10 +17,10 @@ use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository\Persistence\Event\Listener
  */
-final class CollectionSaveListener
+final class DeleteCollectionListener
 {
     /**
-     * @var array<string, mixed>
+     * @var array<mixed>
      */
     private array $defaultOptions = [
         EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
@@ -29,7 +30,7 @@ final class CollectionSaveListener
     ];
 
     /**
-     * @param array<string, mixed> $defaultOptions
+     * @param array<mixed> $defaultOptions
      */
     public function __construct(array $defaultOptions = [])
     {
@@ -50,16 +51,22 @@ final class CollectionSaveListener
             return;
         }
 
-        $event->getLogger()->debug(sprintf('Saving \'%s\' collection', $event->getEntityName()));
+        $event->getLogger()->debug(sprintf('Deleting \'%s\' collection', $event->getEntityName()));
 
         $saveOptions = array_replace_recursive(
             $this->defaultOptions,
-            $event->getParam('collection_save_options', [])
+            $event->getParam(EntityEventOption::COLLECTION_DELETE_OPTIONS, [])
         );
 
+        $deletedCount = 0;
         $persistService = $event->getPersistService();
         foreach ($collection as &$entity) {
-            $entity = $persistService->save($entity, $saveOptions);
+            if (true === $persistService->delete($entity, $saveOptions)) {
+                $deletedCount++;
+            }
         }
+        unset($entity);
+
+        $event->getParameters()->setParam('deleted_count', $deletedCount);
     }
 }

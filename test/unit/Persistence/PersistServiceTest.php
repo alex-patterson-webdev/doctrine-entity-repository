@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace ArpTest\DoctrineEntityRepository\Persistence;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Persistence\Event\CollectionEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
@@ -12,7 +14,6 @@ use Arp\DoctrineEntityRepository\Persistence\PersistService;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
 use Arp\Entity\EntityInterface;
 use Arp\Entity\EntityTrait;
-use Arp\EventDispatcher\Listener\Exception\EventListenerException;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -218,7 +219,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'Test exception message for ' . __FUNCTION__;
         $exceptionCode = 456;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->eventDispatcher->expects($this->exactly(2))
             ->method('dispatch')
@@ -329,7 +330,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 123;
-        $exception = new EventListenerException($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         /** @var EntityErrorEvent&MockObject $errorEvent */
         $errorEvent = $this->createMock(EntityErrorEvent::class);
@@ -390,6 +391,131 @@ final class PersistServiceTest extends TestCase
     }
 
     /**
+     * Assert that calls to deleteCollection() will dispatch the EntityEventName::DELETE_COLLECTION event using
+     * the provided $collection
+     *
+     * @throws PersistenceException
+     */
+    public function testDeleteCollectionWillDispatchDeleteCollectionEvent(): void
+    {
+        $entityName = EntityInterface::class;
+
+        /** @var PersistService&MockObject $persistService */
+        $persistService = $this->getMockBuilder(PersistService::class)
+            ->setConstructorArgs([
+                $entityName,
+                $this->entityManager,
+                $this->eventDispatcher,
+                $this->logger,
+            ])->onlyMethods(['createCollectionEvent'])
+            ->getMock();
+
+        /** @var array<EntityInterface&MockObject> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $options = [
+            EntityEventOption::LOG_ERRORS       => true,
+            EntityEventOption::THROW_EXCEPTIONS => true,
+            EntityEventOption::TRANSACTION_MODE => false,
+        ];
+
+        /** @var CollectionEvent&MockObject $event */
+        $event = $this->createMock(CollectionEvent::class);
+
+        $persistService->expects($this->once())
+            ->method('createCollectionEvent')
+            ->with(EntityEventName::DELETE_COLLECTION, $collection, $options)
+            ->willReturn($event);
+
+        $this->eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with($event)
+            ->willReturn($event);
+
+        $event->expects($this->once())
+            ->method('getParam')
+            ->with('deleted_count', 0)
+            ->willReturn(count($collection));
+
+        $this->assertSame(count($collection), $persistService->deleteCollection($collection, $options));
+    }
+
+    /**
+     * Assert that calls to deleteCollection() will dispatch the EntityEventName::DELETE_COLLECTION_ERROR
+     * if unable to delete the provided $collection
+     *
+     * @throws PersistenceException
+     */
+    public function testDeleteCollectionWillDispatchADeleteCollectionErrorEvent(): void
+    {
+        $entityName = EntityInterface::class;
+
+        /** @var PersistService&MockObject $persistService */
+        $persistService = $this->getMockBuilder(PersistService::class)
+            ->setConstructorArgs([
+                $entityName,
+                $this->entityManager,
+                $this->eventDispatcher,
+                $this->logger,
+            ])->onlyMethods(['createCollectionEvent', 'createErrorEvent'])
+            ->getMock();
+
+        /** @var array<EntityInterface&MockObject> $collection */
+        $collection = [
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+            $this->createMock(EntityInterface::class),
+        ];
+
+        $options = [
+            EntityEventOption::LOG_ERRORS       => true,
+            EntityEventOption::THROW_EXCEPTIONS => true,
+            EntityEventOption::TRANSACTION_MODE => false,
+        ];
+
+        /** @var CollectionEvent&MockObject $event */
+        $event = $this->createMock(CollectionEvent::class);
+
+        $persistService->expects($this->once())
+            ->method('createCollectionEvent')
+            ->with(EntityEventName::DELETE_COLLECTION, $collection, $options)
+            ->willReturn($event);
+
+        $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
+        $exceptionCode = 999;
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
+
+        /** @var EntityErrorEvent&MockObject $errorEvent */
+        $errorEvent = $this->createMock(EntityErrorEvent::class);
+
+        $persistService->expects($this->once())
+            ->method('createErrorEvent')
+            ->with(EntityEventName::DELETE_COLLECTION_ERROR, $exception)
+            ->willReturn($errorEvent);
+
+        $this->eventDispatcher->expects($this->exactly(2))
+            ->method('dispatch')
+            ->withConsecutive([$event], [$errorEvent])
+            ->willReturnOnConsecutiveCalls(
+                $this->throwException($exception),
+                $errorEvent
+            );
+
+        $event->expects($this->once())
+            ->method('getParam')
+            ->with('deleted_count', 0)
+            ->willReturn(0);
+
+        $this->assertSame(0, $persistService->deleteCollection($collection, $options));
+    }
+
+    /**
      * Assert that a PersistenceException will be thrown by persist() if the provided entity instance is not an
      * instance of the mapped entity class
      */
@@ -443,7 +569,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test error message for persist()';
         $exceptionCode = 456;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('persist')
@@ -507,7 +633,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test error message for flush()';
         $exceptionCode = 999;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('flush')
@@ -565,7 +691,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for clear()';
         $exceptionCode = 888;
-        $exception = new \Error($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('clear')
@@ -668,7 +794,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 987;
-        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('refresh')
@@ -747,7 +873,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 123;
-        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('beginTransaction')
@@ -795,7 +921,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 123;
-        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('commit')
@@ -843,7 +969,7 @@ final class PersistServiceTest extends TestCase
 
         $exceptionMessage = 'This is a test exception message for ' . __FUNCTION__;
         $exceptionCode = 123;
-        $exception = new \RuntimeException($exceptionMessage, $exceptionCode);
+        $exception = new \Exception($exceptionMessage, $exceptionCode);
 
         $this->entityManager->expects($this->once())
             ->method('rollback')

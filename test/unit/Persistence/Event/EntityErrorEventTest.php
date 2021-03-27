@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ArpTest\DoctrineEntityRepository\Persistence;
+namespace ArpTest\DoctrineEntityRepository\Persistence\Event;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
@@ -17,7 +17,7 @@ use Psr\Log\LoggerInterface;
  * @covers  \Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
- * @package ArpTest\DoctrineEntityRepository\Persistence
+ * @package ArpTest\DoctrineEntityRepository\Persistence\Event
  */
 final class EntityErrorEventTest extends TestCase
 {
@@ -82,6 +82,40 @@ final class EntityErrorEventTest extends TestCase
         );
 
         $this->assertInstanceOf(EventNameAwareInterface::class, $event);
+    }
+
+    /**
+     * Assert that hasException() will return TRUE when the exception instance is set
+     */
+    public function testHasExceptionWillReturnTrueIfExceptionIsSet(): void
+    {
+        $event = new EntityErrorEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger,
+            $this->exception,
+            $this->params
+        );
+
+        $this->assertTrue($event->hasException());
+    }
+
+    /**
+     * Assert that hasException() will return FALSE when the exception instance is NOT set
+     */
+    public function testHasExceptionWillReturnFalseIFNoExceptionIsSet(): void
+    {
+        $event = new EntityErrorEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger,
+            null,
+            $this->params
+        );
+
+        $this->assertFalse($event->hasException());
     }
 
     /**

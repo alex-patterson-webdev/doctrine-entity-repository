@@ -100,7 +100,7 @@ class PersistService implements PersistServiceInterface
         try {
             /** @var CollectionEvent $event */
             $event = $this->dispatchEvent($event);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->dispatchEvent($this->createErrorEvent(EntityEventName::SAVE_COLLECTION_ERROR, $e));
         }
 
@@ -122,7 +122,7 @@ class PersistService implements PersistServiceInterface
         try {
             /** @var EntityEvent $event */
             $event = $this->dispatchEvent($event);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
         }
 
@@ -144,7 +144,7 @@ class PersistService implements PersistServiceInterface
         try {
             /** @var EntityEvent $event */
             $event = $this->dispatchEvent($event);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
         }
 
@@ -164,7 +164,7 @@ class PersistService implements PersistServiceInterface
         try {
             $this->dispatchEvent($this->createEvent(EntityEventName::DELETE, $entity, $options));
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_ERROR, $e));
             return false;
         }
@@ -184,11 +184,11 @@ class PersistService implements PersistServiceInterface
 
         try {
             $event = $this->dispatchEvent($event);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_COLLECTION_ERROR, $e));
         }
 
-        return (int)$event->getParam('deleted', 0);
+        return (int)$event->getParam('deleted_count', 0);
     }
 
     /**
@@ -215,7 +215,7 @@ class PersistService implements PersistServiceInterface
 
         try {
             $this->entityManager->persist($entity);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The persist operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -237,7 +237,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->flush();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The flush operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -261,7 +261,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->clear();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The clear operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -296,7 +296,7 @@ class PersistService implements PersistServiceInterface
 
         try {
             $this->entityManager->refresh($entity);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf(
                     'The refresh operation failed for entity \'%s\' : %s',
@@ -316,7 +316,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->beginTransaction();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to start transaction : %s', $e->getMessage()),
                 $e->getCode(),
@@ -332,7 +332,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->commit();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to commit transaction : %s', $e->getMessage()),
                 $e->getCode(),

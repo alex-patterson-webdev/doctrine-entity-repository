@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent
+ * @covers \Arp\DoctrineEntityRepository\Persistence\Event\AbstractEntityEvent
  *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence\Event
@@ -114,6 +115,21 @@ class EntityEventTest extends TestCase
     }
 
     /**
+     * Assert calls to getPersistService() will return the expected PersistService instance
+     */
+    public function testGetPersistServiceWillReturnPersistService(): void
+    {
+        $entityEvent = new EntityEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger
+        );
+
+        $this->assertSame($this->persistService, $entityEvent->getPersistService());
+    }
+
+    /**
      * Assert that the entity manager can be returned via getEntityManager()
      */
     public function testGetEntityManagerWillReturnEntityManager(): void
@@ -141,6 +157,71 @@ class EntityEventTest extends TestCase
         );
 
         $this->assertInstanceOf(Parameters::class, $entityEvent->getParameters());
+    }
+
+    /**
+     * Assert parameter values can be returned from getParams() if the value exists within the collection
+     */
+    public function testGetParamWillReturnMatchedParameterValue(): void
+    {
+        $entityEvent = new EntityEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger
+        );
+
+        $name = 'foo';
+        $value = 123;
+
+        $entityEvent->getParameters()->setParam($name, $value);
+
+        $this->assertSame($value, $entityEvent->getParam($name));
+    }
+
+    /**
+     * Assert that the default parameter values will be returned from getParams() if the value
+     * does not exists within the collection
+     */
+    public function testGetParamWillReturnDefaultValueIfParamNotFound(): void
+    {
+        $entityEvent = new EntityEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger
+        );
+
+        $name = 'test';
+        $default = 'hello';
+
+        // Default fallback is NULL
+        $this->assertNull($entityEvent->getParam($name));
+
+        // Provided default expected
+        $this->assertSame($default, $entityEvent->getParam($name, $default));
+    }
+
+    /**
+     * Assert the logger can be set and returned by setLogger() and getLogger()
+     */
+    public function testSetAndGetLogger(): void
+    {
+        $entityEvent = new EntityEvent(
+            $this->eventName,
+            $this->persistService,
+            $this->entityManager,
+            $this->logger
+        );
+
+        $this->assertSame($this->logger, $entityEvent->getLogger());
+
+        /** @var LoggerInterface&MockObject $logger */
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $entityEvent->setLogger($logger);
+
+        $this->assertSame($logger, $entityEvent->getLogger());
     }
 
     /**
