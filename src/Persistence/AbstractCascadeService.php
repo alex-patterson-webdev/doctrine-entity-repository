@@ -31,8 +31,8 @@ abstract class AbstractCascadeService
      */
     protected array $options = [
         EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
-        EntityEventOption::FLUSH_MODE => FlushMode::DISABLED,
-        EntityEventOption::CLEAR_MODE => ClearMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
     ];
 
     /**
@@ -40,25 +40,25 @@ abstract class AbstractCascadeService
      */
     protected array $collectionOptions = [
         EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
-        EntityEventOption::FLUSH_MODE => FlushMode::DISABLED,
-        EntityEventOption::CLEAR_MODE => ClearMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
     ];
 
     /**
-     * @param LoggerInterface          $logger
-     * @param array<string|int, mixed> $options
-     * @param array<string|int, mixed> $collectionOptions
+     * @param LoggerInterface      $logger
+     * @param array<string, mixed> $options
+     * @param array<string, mixed> $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
         $this->logger = $logger;
-        $this->options = $options;
-        $this->collectionOptions = $collectionOptions;
+        $this->options = empty($options) ? $this->options : $options;
+        $this->collectionOptions = empty($collectionOptions) ? $this->collectionOptions : $collectionOptions;
     }
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param class-string            $entityName
+     * @param class-string           $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
@@ -184,7 +184,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string                  $entityName
+     * @param string                 $entityName
      *
      * @return ClassMetadata
      *
