@@ -19,8 +19,8 @@ class CascadeDeleteService extends AbstractCascadeService
      * @param EntityManagerInterface $entityManager
      * @param string                 $entityName
      * @param EntityInterface        $entity
-     * @param array<string, mixed>   $deleteOptions
-     * @param array<string, mixed>   $deleteCollectionOptions
+     * @param array<mixed>           $deleteOptions
+     * @param array<mixed>           $deleteCollectionOptions
      *
      * @throws EntityRepositoryException
      * @throws PersistenceException
@@ -105,7 +105,7 @@ class CascadeDeleteService extends AbstractCascadeService
      * @param EntityManagerInterface                          $entityManager
      * @param class-string                                    $targetEntityName
      * @param EntityInterface|iterable<EntityInterface>|mixed $entityOrCollection
-     * @param array<string, mixed>                            $options
+     * @param array<mixed>                                    $options
      *
      * @throws PersistenceException
      * @throws EntityRepositoryException

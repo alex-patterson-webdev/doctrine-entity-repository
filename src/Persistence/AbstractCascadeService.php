@@ -33,9 +33,9 @@ abstract class AbstractCascadeService
     protected array $collectionOptions;
 
     /**
-     * @param LoggerInterface          $logger
-     * @param array<string|int, mixed> $options
-     * @param array<string|int, mixed> $collectionOptions
+     * @param LoggerInterface $logger
+     * @param array<mixed>    $options
+     * @param array<mixed>    $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
@@ -46,7 +46,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param class-string            $entityName
+     * @param class-string           $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
@@ -172,7 +172,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string                  $entityName
+     * @param string                 $entityName
      *
      * @return ClassMetadata
      *
