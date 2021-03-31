@@ -132,7 +132,7 @@ class QueryService implements QueryServiceInterface
             $query = $this->prepareQuery($queryOrBuilder, $options);
 
             return $query->execute();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $message = sprintf('Failed to execute query : %s', $e->getMessage());
 
             $this->logger->error($message, ['exception' => $e]);
@@ -182,7 +182,7 @@ class QueryService implements QueryServiceInterface
             );
 
             return ($entity instanceof EntityInterface) ? $entity : null;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $message = sprintf('Failed to execute \'findOne\' query: %s', $e->getMessage());
 
             $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
@@ -212,7 +212,7 @@ class QueryService implements QueryServiceInterface
                 $options[QueryServiceOption::LIMIT] ?? null,
                 $options[QueryServiceOption::OFFSET] ?? null
             );
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());
 
             $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
@@ -275,9 +275,6 @@ class QueryService implements QueryServiceInterface
      * @param array<string, mixed> $options
      *
      * @return AbstractQuery
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @todo Reduce cyclomatic complexity
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {

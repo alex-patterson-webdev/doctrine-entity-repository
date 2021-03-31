@@ -262,7 +262,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
         try {
             return $this->persistService->delete($entity, $options);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'Unable to delete entity of type \'%s\': %s',
                 $this->entityName,

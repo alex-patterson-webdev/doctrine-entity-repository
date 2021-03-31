@@ -80,7 +80,7 @@ abstract class AbstractCascadeService
         try {
             /** @var EntityRepositoryInterface|object|null $targetRepository */
             $targetRepository = $entityManager->getRepository($entityName);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'An error occurred while attempting to load the repository for entity class \'%s\' : %s',
                 $entityName,
@@ -143,7 +143,7 @@ abstract class AbstractCascadeService
 
         try {
             $targetEntityOrCollection = $sourceEntity->{$methodName}();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The call to resolve entity of type \'%s\' from method call \'%s::%s\' failed: %s',
                 $targetMetadata->getName(),
@@ -194,7 +194,7 @@ abstract class AbstractCascadeService
     {
         try {
             return $entityManager->getClassMetadata($entityName);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The entity metadata mapping for class \'%s\' could not be loaded: %s',
                 $entityName,
