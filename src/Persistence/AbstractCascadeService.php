@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence;
 
+use Arp\DoctrineEntityRepository\Constant\ClearMode;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
@@ -25,23 +29,31 @@ abstract class AbstractCascadeService
     /**
      * @var array<string|int, mixed>
      */
-    protected array $options;
+    protected array $options = [
+        EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
+    ];
 
     /**
      * @var array<string|int, mixed>
      */
-    protected array $collectionOptions;
+    protected array $collectionOptions = [
+        EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
+    ];
 
     /**
-     * @param LoggerInterface $logger
-     * @param array<mixed>    $options
-     * @param array<mixed>    $collectionOptions
+     * @param LoggerInterface      $logger
+     * @param array<string, mixed> $options
+     * @param array<string, mixed> $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
         $this->logger = $logger;
-        $this->options = $options;
-        $this->collectionOptions = $collectionOptions;
+        $this->options = empty($options) ? $this->options : $options;
+        $this->collectionOptions = empty($collectionOptions) ? $this->collectionOptions : $collectionOptions;
     }
 
     /**
