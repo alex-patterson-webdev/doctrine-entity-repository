@@ -477,7 +477,7 @@ final class CascadeSaveServiceTest extends TestCase
         $entityName = EntityInterface::class;
 
         $exceptionMessage = 'This is a test exception message';
-        $exception = new \Error($exceptionMessage);
+        $exception = new \Exception($exceptionMessage);
 
         /** @var EntityInterface&MockObject $entity */
         $entity = new class($exception) implements EntityInterface {

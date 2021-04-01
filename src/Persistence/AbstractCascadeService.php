@@ -27,7 +27,7 @@ abstract class AbstractCascadeService
     protected LoggerInterface $logger;
 
     /**
-     * @var array<string|int, mixed>
+     * @var array<string, mixed>
      */
     protected array $options = [
         EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
@@ -36,7 +36,7 @@ abstract class AbstractCascadeService
     ];
 
     /**
-     * @var array<string|int, mixed>
+     * @var array<string, mixed>
      */
     protected array $collectionOptions = [
         EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
@@ -46,8 +46,8 @@ abstract class AbstractCascadeService
 
     /**
      * @param LoggerInterface      $logger
-     * @param array<string, mixed> $options
-     * @param array<string, mixed> $collectionOptions
+     * @param array<mixed> $options
+     * @param array<mixed> $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
@@ -161,7 +161,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param iterable<EntityInterface>|EntityInterface|mixed|null $entityOrCollection
-     * @param array<string, mixed>                                 $mapping
+     * @param array<mixed>                                 $mapping
      *
      * @return bool
      */
