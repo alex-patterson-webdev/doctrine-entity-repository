@@ -174,9 +174,7 @@ abstract class AbstractCascadeService
              * Note that we are hard coding the '0' key as the single field the we use as the id/primary key.
              * If we implement EntityInterface correctly we will never have a composite key.
              */
-            return isset($mapping['joinColumns'][0]['nullable'])
-                ? (bool)$mapping['joinColumns'][0]['nullable']
-                : false;
+            return isset($mapping['joinColumns'][0]['nullable']) && (bool)$mapping['joinColumns'][0]['nullable'];
         }
 
         return (is_iterable($entityOrCollection) || $entityOrCollection instanceof EntityInterface);
