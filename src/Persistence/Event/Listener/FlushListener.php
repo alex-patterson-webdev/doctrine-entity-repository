@@ -6,6 +6,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Persistence\Event\AbstractEntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 
@@ -18,11 +19,11 @@ final class FlushListener
     /**
      * Perform a flush of the current unit of work
      *
-     * @param EntityEvent $event
+     * @param AbstractEntityEvent $event
      *
      * @throws PersistenceException
      */
-    public function __invoke(EntityEvent $event): void
+    public function __invoke(AbstractEntityEvent $event): void
     {
         $flushMode = $event->getParam(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED);
         $entityName = $event->getEntityName();

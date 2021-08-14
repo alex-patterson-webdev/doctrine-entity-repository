@@ -22,4 +22,5 @@ final class QueryServiceOption
     public const DQL = 'dql';
     public const HYDRATION_MODE = 'hydration_mode';
     public const PARAMS = 'params';
+    public const FETCH_MODE = 'fetch_mode';
 }

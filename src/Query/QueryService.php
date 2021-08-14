@@ -245,18 +245,15 @@ class QueryService implements QueryServiceInterface
      */
     protected function prepareQueryBuilder(QueryBuilder $queryBuilder, array $options = []): QueryBuilder
     {
-        if (array_key_exists(QueryServiceOption::FIRST_RESULT, $options)) {
+        if (isset($options[QueryServiceOption::FIRST_RESULT])) {
             $queryBuilder->setFirstResult($options[QueryServiceOption::FIRST_RESULT]);
         }
 
-        if (array_key_exists(QueryServiceOption::MAX_RESULTS, $options)) {
+        if (isset($options[QueryServiceOption::MAX_RESULTS])) {
             $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
         }
 
-        if (
-            array_key_exists(QueryServiceOption::ORDER_BY, $options)
-            && is_array($options[QueryServiceOption::ORDER_BY])
-        ) {
+        if (isset($options[QueryServiceOption::ORDER_BY]) && is_array($options[QueryServiceOption::ORDER_BY])) {
             foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
                 $queryBuilder->addOrderBy(
                     $fieldName,
@@ -278,15 +275,15 @@ class QueryService implements QueryServiceInterface
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {
-        if (array_key_exists('params', $options)) {
+        if (isset($options['params'])) {
             $query->setParameters($options['params']);
         }
 
-        if (array_key_exists(QueryServiceOption::HYDRATION_MODE, $options)) {
+        if (isset($options[QueryServiceOption::HYDRATION_MODE])) {
             $query->setHydrationMode($options[QueryServiceOption::HYDRATION_MODE]);
         }
 
-        if (array_key_exists('result_set_mapping', $options)) {
+        if (isset($options['result_set_mapping'])) {
             $query->setResultSetMapping($options['result_set_mapping']);
         }
 
@@ -296,8 +293,18 @@ class QueryService implements QueryServiceInterface
             }
         }
 
-        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
-            $query->setDQL($options[QueryServiceOption::DQL]);
+        if (isset($options[QueryServiceOption::FETCH_MODE])) {
+            $query->setFetchMode($options[QueryServiceOption::FETCH_MODE]);
+        }
+
+        if ($query instanceof Query) {
+            if (!empty($options[QueryServiceOption::DQL])) {
+                $query->setDQL($options[QueryServiceOption::DQL]);
+            }
+
+            if (isset($options[QueryServiceOption::LOCK_MODE])) {
+                $query->setLockMode($options[QueryServiceOption::LOCK_MODE]);
+            }
         }
 
         return $query;
