@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;
@@ -73,6 +74,16 @@ interface QueryServiceInterface
      * @return QueryBuilder
      */
     public function createQueryBuilder(string $alias = null): QueryBuilder;
+
+    /**
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<mixed>               $options
+     *
+     * @return int|mixed|string
+     *
+     * @throws QueryServiceException
+     */
+    public function getSingleScalarResult($queryOrBuilder, array $options = []);
 
     /**
      * Construct and execute the query.

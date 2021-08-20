@@ -9,6 +9,7 @@ use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Log\LoggerInterface;
@@ -55,24 +56,6 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
-     * Return a new query builder instance.
-     *
-     * @param string|null $alias The optional query builder alias.
-     *
-     * @return QueryBuilder
-     */
-    public function createQueryBuilder(string $alias = null): QueryBuilder
-    {
-        $queryBuilder = $this->entityManager->createQueryBuilder();
-
-        if (null !== $alias) {
-            $queryBuilder->select($alias)->from($this->entityName, $alias);
-        }
-
-        return $queryBuilder;
-    }
-
-    /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
      * @param array<string, mixed>       $options
      *
@@ -100,6 +83,32 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<mixed>               $options
+     *
+     * @return int|mixed|string
+     *
+     * @throws QueryServiceException
+     */
+    public function getSingleScalarResult($queryOrBuilder, array $options = [])
+    {
+        try {
+            return $this->getQuery($queryOrBuilder, $options)->getSingleScalarResult();
+        } catch (ORMException $e) {
+            throw new EntityRepositoryException(
+                sprintf(
+                    'An error occurred while loading ship count for planet \'%d\' and ship \'%s\': %s',
+                    $planet->getId(),
+                    $ship->getId(),
+                    $e->getMessage()
+                ),
+                $e->getCode(),
+                $e
+            );
+        }
+    }
+
+    /**
      * Construct and execute the query.
      *
      * @param AbstractQuery|QueryBuilder|mixed $queryOrBuilder
@@ -111,25 +120,8 @@ class QueryService implements QueryServiceInterface
      */
     public function execute($queryOrBuilder, array $options = [])
     {
-        if ($queryOrBuilder instanceof QueryBuilder) {
-            $this->prepareQueryBuilder($queryOrBuilder, $options);
-
-            $queryOrBuilder = $queryOrBuilder->getQuery();
-        }
-
-        if (!$queryOrBuilder instanceof AbstractQuery) {
-            throw new QueryServiceException(
-                sprintf(
-                    'Query provided must be of type \'%s\'; \'%s\' provided in \'%s\'.',
-                    AbstractQuery::class,
-                    (is_object($queryOrBuilder) ? get_class($queryOrBuilder) : gettype($queryOrBuilder)),
-                    __METHOD__
-                )
-            );
-        }
-
         try {
-            $query = $this->prepareQuery($queryOrBuilder, $options);
+            $query = $this->prepareQuery($query, $options);
 
             return $query->execute();
         } catch (\Exception $e) {
@@ -308,5 +300,56 @@ class QueryService implements QueryServiceInterface
         }
 
         return $query;
+    }
+
+    /**
+     * Return a new query builder instance.
+     *
+     * @param string|null $alias The optional query builder alias.
+     *
+     * @return QueryBuilder
+     */
+    public function createQueryBuilder(string $alias = null): QueryBuilder
+    {
+        $queryBuilder = $this->entityManager->createQueryBuilder();
+
+        if (null !== $alias) {
+            $queryBuilder->select($alias)->from($this->entityName, $alias);
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
+     * Resolve the ORM Query instance for a QueryBuilder and set the optional $options
+     *
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<mixed>               $options
+     *
+     * @return AbstractQuery
+     *
+     * @throws QueryServiceException
+     */
+    private function getQuery($queryOrBuilder, array $options = []): AbstractQuery
+    {
+        if (!$queryOrBuilder instanceof AbstractQuery || !$queryOrBuilder instanceof QueryBuilder) {
+            throw new QueryServiceException(
+                sprintf(
+                    'The queryOrBuilder argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'.',
+                    AbstractQuery::class,
+                    QueryBuilder::class,
+                    (is_object($queryOrBuilder) ? get_class($queryOrBuilder) : gettype($queryOrBuilder)),
+                    __METHOD__
+                )
+            );
+        }
+
+        if ($queryOrBuilder instanceof QueryBuilder) {
+            $query = $this->prepareQueryBuilder($queryOrBuilder, $options)->getQuery();
+        } else {
+            $query = $queryOrBuilder;
+        }
+
+        return $this->prepareQuery($query, $options);
     }
 }
