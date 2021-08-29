@@ -350,8 +350,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Execute query builder or query instance and return the results.
      *
-     * @param object       $query
-     * @param array<mixed> $options
+     * @param QueryBuilder|AbstractQuery $query
+     * @param array<mixed>               $options
      *
      * @return EntityInterface[]|iterable
      *
@@ -359,8 +359,6 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     protected function executeQuery(object $query, array $options = [])
     {
-        $query = $this->resolveQuery($query);
-
         try {
             return $this->queryService->execute($query, $options);
         } catch (QueryServiceException $e) {
@@ -370,10 +368,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
                 $e->getMessage()
             );
 
-            $this->logger->error(
-                $errorMessage,
-                ['exception' => $e, 'entity_name' => $this->entityName, 'sql' => $query->getSQL()]
-            );
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -384,8 +379,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      *
      * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
      *
-     * @param object       $query
-     * @param array<mixed> $options
+     * @param AbstractQuery|QueryBuilder $query
+     * @param array<string, mixed>       $options
      *
      * @return array<mixed>|EntityInterface|null
      *
@@ -393,8 +388,6 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     protected function getSingleResultOrNull(object $query, array $options = [])
     {
-        $query = $this->resolveQuery($query);
-
         try {
             return $this->queryService->getSingleResultOrNull($query, $options);
         } catch (QueryServiceException $e) {
@@ -406,7 +399,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             $this->logger->error(
                 $errorMessage,
-                ['exception' => $e, 'entity_name' => $this->entityName, 'sql' => $query->getSQL()]
+                ['exception' => $e, 'entity_name' => $this->entityName, 'dql' => $query->getDQL()]
             );
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
@@ -426,45 +419,14 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     protected function getSingleArrayResultOrNull(object $query, array $options = []): ?array
     {
-        $options = array_replace_recursive(
-            $options,
-            [
-                QueryServiceOption::HYDRATION_MODE => HydrateMode::ARRAY,
-            ]
+        $result = $this->getSingleResultOrNull(
+            $query,
+            array_replace_recursive(
+                $options,
+                [QueryServiceOption::HYDRATION_MODE => HydrateMode::ARRAY]
+            )
         );
 
-        $result = $this->getSingleResultOrNull($query, $options);
-
         return is_array($result) ? $result : null;
-    }
-
-    /**
-     * Resolve the Doctrine query object from a possible QueryBuilder instance.
-     *
-     * @param object $query
-     *
-     * @return AbstractQuery
-     *
-     * @throws EntityRepositoryException
-     */
-    private function resolveQuery(object $query): AbstractQuery
-    {
-        if ($query instanceof QueryBuilder) {
-            $query = $query->getQuery();
-        }
-
-        if (!$query instanceof AbstractQuery) {
-            throw new EntityRepositoryException(
-                sprintf(
-                    'The \'query\' argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'',
-                    QueryBuilder::class,
-                    AbstractQuery::class,
-                    get_class($query),
-                    __METHOD__
-                )
-            );
-        }
-
-        return $query;
     }
 }

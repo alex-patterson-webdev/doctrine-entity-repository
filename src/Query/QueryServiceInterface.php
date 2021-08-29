@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Query;
 
-use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\QueryBuilder;
@@ -58,44 +57,35 @@ interface QueryServiceInterface
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>                      $options
+     * @param array<string, mixed>       $options
      *
      * @return EntityInterface|array<mixed>|null
      *
      * @throws Exception\QueryServiceException
      */
-    public function getSingleResultOrNull($queryOrBuilder, array $options = []);
-
-    /**
-     * Return a new query builder instance.
-     *
-     * @param string|null $alias The optional query builder alias.
-     *
-     * @return QueryBuilder
-     */
-    public function createQueryBuilder(string $alias = null): QueryBuilder;
+    public function getSingleResultOrNull(object $queryOrBuilder, array $options = []);
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<mixed>               $options
+     * @param array<string, mixed>       $options
      *
      * @return int|mixed|string
      *
-     * @throws QueryServiceException
+     * @throws Exception\QueryServiceException
      */
-    public function getSingleScalarResult($queryOrBuilder, array $options = []);
+    public function getSingleScalarResult(object $queryOrBuilder, array $options = []);
 
     /**
      * Construct and execute the query.
      *
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>                      $options
+     * @param array<string, mixed>       $options
      *
      * @return mixed
      *
      * @throws Exception\QueryServiceException
      */
-    public function execute($queryOrBuilder, array $options = []);
+    public function execute(object $queryOrBuilder, array $options = []);
 
     /**
      * Return the result set count.
@@ -105,4 +95,13 @@ interface QueryServiceInterface
      * @return mixed
      */
     public function count(array $criteria);
+
+    /**
+     * Return a new query builder instance.
+     *
+     * @param string|null $alias The optional query builder alias.
+     *
+     * @return QueryBuilder
+     */
+    public function createQueryBuilder(string $alias = null): QueryBuilder;
 }

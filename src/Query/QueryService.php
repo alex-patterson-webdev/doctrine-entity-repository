@@ -63,7 +63,7 @@ class QueryService implements QueryServiceInterface
      *
      * @throws QueryServiceException
      */
-    public function getSingleResultOrNull($queryOrBuilder, array $options = [])
+    public function getSingleResultOrNull(object $queryOrBuilder, array $options = [])
     {
         $result = $this->execute($queryOrBuilder, $options);
 
@@ -84,46 +84,46 @@ class QueryService implements QueryServiceInterface
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<mixed>               $options
+     * @param array<string, mixed>       $options
      *
      * @return int|mixed|string
      *
      * @throws QueryServiceException
      */
-    public function getSingleScalarResult($queryOrBuilder, array $options = [])
+    public function getSingleScalarResult(object $queryOrBuilder, array $options = [])
     {
         try {
             return $this->getQuery($queryOrBuilder, $options)->getSingleScalarResult();
-        } catch (ORMException $e) {
-            throw new EntityRepositoryException(
-                sprintf(
-                    'An error occurred while loading ship count for planet \'%d\' and ship \'%s\': %s',
-                    $planet->getId(),
-                    $ship->getId(),
-                    $e->getMessage()
-                ),
-                $e->getCode(),
-                $e
+        } catch (QueryServiceException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            $message = sprintf(
+                'An error occurred while loading fetching a single scalar result: %s',
+                $e->getMessage()
             );
+
+            $this->logger->error($message, ['exception' => $e]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
         }
     }
 
     /**
      * Construct and execute the query.
      *
-     * @param AbstractQuery|QueryBuilder|mixed $queryOrBuilder
-     * @param array<string, mixed>             $options
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>       $options
      *
      * @return mixed
      *
      * @throws QueryServiceException
      */
-    public function execute($queryOrBuilder, array $options = [])
+    public function execute(object $queryOrBuilder, array $options = [])
     {
         try {
-            $query = $this->prepareQuery($query, $options);
-
-            return $query->execute();
+            return $this->getQuery($queryOrBuilder)->execute();
+        } catch (QueryServiceException $e) {
+            throw $e;
         } catch (\Exception $e) {
             $message = sprintf('Failed to execute query : %s', $e->getMessage());
 
@@ -332,7 +332,7 @@ class QueryService implements QueryServiceInterface
      */
     private function getQuery($queryOrBuilder, array $options = []): AbstractQuery
     {
-        if (!$queryOrBuilder instanceof AbstractQuery || !$queryOrBuilder instanceof QueryBuilder) {
+        if (!$queryOrBuilder instanceof AbstractQuery && !$queryOrBuilder instanceof QueryBuilder) {
             throw new QueryServiceException(
                 sprintf(
                     'The queryOrBuilder argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'.',
