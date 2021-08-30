@@ -149,11 +149,11 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
             }
 
             if (null !== $limit) {
-                $options[QueryServiceOption::LIMIT] = $limit;
+                $options[QueryServiceOption::MAX_RESULTS] = $limit;
             }
 
             if (null !== $offset) {
-                $options[QueryServiceOption::OFFSET] = $offset;
+                $options[QueryServiceOption::FIRST_RESULT] = $offset;
             }
 
             return $this->queryService->findMany($criteria, $options);

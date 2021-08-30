@@ -121,7 +121,7 @@ class QueryService implements QueryServiceInterface
     public function execute(object $queryOrBuilder, array $options = [])
     {
         try {
-            return $this->getQuery($queryOrBuilder)->execute();
+            return $this->getQuery($queryOrBuilder, $options)->execute();
         } catch (QueryServiceException $e) {
             throw $e;
         } catch (\Exception $e) {
@@ -201,8 +201,8 @@ class QueryService implements QueryServiceInterface
             return $persister->loadAll(
                 $criteria,
                 $options[QueryServiceOption::ORDER_BY] ?? null,
-                $options[QueryServiceOption::LIMIT] ?? null,
-                $options[QueryServiceOption::OFFSET] ?? null
+                $options[QueryServiceOption::MAX_RESULTS] ?? null,
+                $options[QueryServiceOption::FIRST_RESULT] ?? null
             );
         } catch (\Exception $e) {
             $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());

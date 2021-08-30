@@ -11,8 +11,6 @@ namespace Arp\DoctrineEntityRepository\Constant;
 final class QueryServiceOption
 {
     public const ORDER_BY = 'order_by';
-    public const LIMIT = 'limit';
-    public const OFFSET = 'offset';
     public const ASSOCIATION = 'association';
     public const HINTS = 'hints';
     public const LOCK_MODE = 'lock_mode';
