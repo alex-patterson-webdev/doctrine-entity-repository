@@ -6,8 +6,9 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Persistence\Event\AbstractEntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
-use Psr\Log\LoggerInterface;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -16,40 +17,39 @@ use Psr\Log\LoggerInterface;
 final class FlushListener
 {
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * Perform a flush of the current unit of work.
+     * Perform a flush of the current unit of work
      *
-     * @param EntityEvent $event
+     * @param AbstractEntityEvent $event
+     *
+     * @throws PersistenceException
      */
-    public function __invoke(EntityEvent $event): void
+    public function __invoke(AbstractEntityEvent $event): void
     {
-        $flushMode = $event->getParameters()->getParam(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED);
+        $flushMode = $event->getParam(EntityEventOption::FLUSH_MODE, FlushMode::ENABLED);
         $entityName = $event->getEntityName();
 
         if (FlushMode::ENABLED !== $flushMode) {
-            $this->logger->info(
+            $event->getLogger()->debug(
                 sprintf(
-                    'Skipping flush operations for entity \'%s\' with mode \'%s\'',
+                    'Flush operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $flushMode
-                )
+                    FlushMode::DISABLED,
+                    EntityEventOption::FLUSH_MODE
+                ),
+                ['entity_name' => $entityName, EntityEventOption::FLUSH_MODE => FlushMode::DISABLED]
             );
             return;
         }
 
-        $this->logger->info(sprintf('Performing flush operations with mode \'%s\'', $flushMode));
-        $event->getEntityManager()->flush();
+        $event->getLogger()->debug(
+            sprintf(
+                'Flush operations are enabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
+                $entityName,
+                FlushMode::ENABLED,
+                EntityEventOption::FLUSH_MODE
+            )
+        );
+
+        $event->getPersistService()->flush();
     }
 }

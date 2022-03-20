@@ -14,17 +14,17 @@ use Arp\Entity\EntityInterface;
 interface PersistServiceInterface extends TransactionServiceInterface
 {
     /**
-     * Return the full qualified class name of the entity.
+     * Return the full qualified class name of the entity
      *
      * @return string
      */
     public function getEntityName(): string;
 
     /**
-     * Create or update a entity instance.
+     * Create or update a entity instance
      *
-     * @param EntityInterface $entity  The entity instance that should be saved.
-     * @param array           $options The optional save options.
+     * @param EntityInterface      $entity  The entity instance that should be saved
+     * @param array<string, mixed> $options The optional save options
      *
      * @return EntityInterface
      *
@@ -33,7 +33,17 @@ interface PersistServiceInterface extends TransactionServiceInterface
     public function save(EntityInterface $entity, array $options = []): EntityInterface;
 
     /**
-     * Schedule the entity for insertion.
+     * @param iterable<EntityInterface> $collection The collection of entities that should be saved
+     * @param array<string|int, mixed>  $options    the optional save options
+     *
+     * @return iterable<EntityInterface>
+     *
+     * @throws PersistenceException
+     */
+    public function saveCollection(iterable $collection, array $options = []): iterable;
+
+    /**
+     * Schedule the entity for insertion
      *
      * @param EntityInterface $entity
      *
@@ -42,10 +52,10 @@ interface PersistServiceInterface extends TransactionServiceInterface
     public function persist(EntityInterface $entity): void;
 
     /**
-     * Delete an entity instance.
+     * Delete an entity instance
      *
-     * @param EntityInterface $entity  The entity that should be deleted.
-     * @param array           $options The optional deletion options.
+     * @param EntityInterface      $entity  The entity that should be deleted
+     * @param array<string, mixed> $options The optional deletion options
      *
      * @return boolean
      *
@@ -54,14 +64,26 @@ interface PersistServiceInterface extends TransactionServiceInterface
     public function delete(EntityInterface $entity, array $options = []): bool;
 
     /**
-     * Perform a flush of the unit of work.
+     * Perform a deletion of a collection of entities
+     *
+     * @param iterable<EntityInterface> $collection
+     * @param array<string, mixed>      $options
+     *
+     * @return int
+     *
+     * @throws PersistenceException
+     */
+    public function deleteCollection(iterable $collection, array $options = []): int;
+
+    /**
+     * Perform a flush of the unit of work
      *
      * @throws PersistenceException
      */
     public function flush(): void;
 
     /**
-     * Release managed entities from the identity map.
+     * Release managed entities from the identity map
      *
      * @return void
      *

@@ -11,7 +11,6 @@ use Arp\DoctrineEntityRepository\Persistence\CascadeSaveService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\AggregateEntityInterface;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -25,18 +24,11 @@ final class CascadeSaveListener
     private CascadeSaveService $cascadeSaveService;
 
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
      * @param CascadeSaveService $cascadeSaveService
-     * @param LoggerInterface    $logger
      */
-    public function __construct(CascadeSaveService $cascadeSaveService, LoggerInterface $logger)
+    public function __construct(CascadeSaveService $cascadeSaveService)
     {
         $this->cascadeSaveService = $cascadeSaveService;
-        $this->logger = $logger;
     }
 
     /**
@@ -55,13 +47,11 @@ final class CascadeSaveListener
             return;
         }
 
+        $cascadeMode = $event->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
         $entityName = $event->getEntityName();
-        $parameters = $event->getParameters();
-
-        $cascadeMode = $parameters->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
 
         if (CascadeMode::ALL !== $cascadeMode && CascadeMode::SAVE !== $cascadeMode) {
-            $this->logger->info(
+            $event->getLogger()->debug(
                 sprintf(
                     'Ignoring cascade save operations with mode \'%s\' for entity \'%s\'',
                     $cascadeMode,
@@ -71,19 +61,16 @@ final class CascadeSaveListener
             return;
         }
 
-        $this->logger->info(
+        $event->getLogger()->debug(
             sprintf('Performing cascade save operations for entity \'%s\'', $entityName)
         );
-
-        $saveOptions = $parameters->getParam(EntityEventOption::CASCADE_SAVE_OPTIONS, []);
-        $saveCollectionOptions = $parameters->getParam(EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, []);
 
         $this->cascadeSaveService->saveAssociations(
             $event->getEntityManager(),
             $entityName,
             $entity,
-            $saveOptions,
-            $saveCollectionOptions
+            $event->getParam(EntityEventOption::CASCADE_SAVE_OPTIONS, []),
+            $event->getParam(EntityEventOption::CASCADE_SAVE_COLLECTION_OPTIONS, [])
         );
     }
 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Arp\DoctrineEntityRepository\Persistence;
 
 use Arp\DoctrineEntityRepository\Constant\EntityEventName;
+use Arp\DoctrineEntityRepository\Persistence\Event\AbstractEntityEvent;
+use Arp\DoctrineEntityRepository\Persistence\Event\CollectionEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityErrorEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
@@ -30,18 +32,18 @@ class PersistService implements PersistServiceInterface
     protected EntityManagerInterface $entityManager;
 
     /**
-     * @var LoggerInterface
-     */
-    protected LoggerInterface $logger;
-
-    /**
      * @var EventDispatcherInterface
      */
     protected EventDispatcherInterface $eventDispatcher;
 
     /**
+     * @var LoggerInterface
+     */
+    protected LoggerInterface $logger;
+
+    /**
      * @param string                   $entityName
-     * @param EntityManagerInterface   $entityManager
+     * @param EntityManagerInterface  $entityManager
      * @param EventDispatcherInterface $eventDispatcher
      * @param LoggerInterface          $logger
      */
@@ -68,8 +70,8 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string|int, mixed> $options
      *
      * @return EntityInterface
      *
@@ -80,13 +82,34 @@ class PersistService implements PersistServiceInterface
         if ($entity->hasId()) {
             return $this->update($entity, $options);
         }
-
         return $this->insert($entity, $options);
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param iterable<EntityInterface> $collection The collection of entities that should be saved
+     * @param array<string|int, mixed>  $options    the optional save options
+     *
+     * @return iterable<EntityInterface>
+     *
+     * @throws PersistenceException
+     */
+    public function saveCollection(iterable $collection, array $options = []): iterable
+    {
+        $event = $this->createCollectionEvent(EntityEventName::SAVE_COLLECTION, $collection, $options);
+
+        try {
+            /** @var CollectionEvent $event */
+            $event = $this->dispatchEvent($event);
+        } catch (\Exception $e) {
+            $this->dispatchEvent($this->createErrorEvent(EntityEventName::SAVE_COLLECTION_ERROR, $e));
+        }
+
+        return $event->getCollection();
+    }
+
+    /**
+     * @param EntityInterface          $entity
+     * @param array<string|int, mixed> $options
      *
      * @return EntityInterface
      *
@@ -94,21 +117,21 @@ class PersistService implements PersistServiceInterface
      */
     protected function update(EntityInterface $entity, array $options = []): EntityInterface
     {
+        $event = $this->createEvent(EntityEventName::UPDATE, $entity, $options);
+
         try {
-            $event = $this->dispatchEvent($this->createEvent(EntityEventName::UPDATE, $entity, $options));
-
-            return $event->getEntity();
-        } catch (\Throwable $e) {
-            /** @var EntityErrorEvent $event */
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
-
-            throw $this->createEventException($event->getException());
+            /** @var EntityEvent $event */
+            $event = $this->dispatchEvent($event);
+        } catch (\Exception $e) {
+            $this->dispatchEvent($this->createErrorEvent(EntityEventName::UPDATE_ERROR, $e));
         }
+
+        return $event->getEntity() ?? $entity;
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string|int, mixed> $options
      *
      * @return EntityInterface
      *
@@ -116,21 +139,21 @@ class PersistService implements PersistServiceInterface
      */
     protected function insert(EntityInterface $entity, array $options = []): EntityInterface
     {
+        $event = $this->createEvent(EntityEventName::CREATE, $entity, $options);
+
         try {
-            $event = $this->dispatchEvent($this->createEvent(EntityEventName::CREATE, $entity, $options));
-
-            return $event->getEntity();
-        } catch (\Throwable $e) {
-            /** @var EntityErrorEvent $event */
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
-
-            throw $this->createEventException($event->getException());
+            /** @var EntityEvent $event */
+            $event = $this->dispatchEvent($event);
+        } catch (\Exception $e) {
+            $this->dispatchEvent($this->createErrorEvent(EntityEventName::CREATE_ERROR, $e));
         }
+
+        return $event->getEntity() ?? $entity;
     }
 
     /**
-     * @param EntityInterface $entity
-     * @param array           $options
+     * @param EntityInterface      $entity
+     * @param array<string|int, mixed> $options
      *
      * @return bool
      *
@@ -140,13 +163,32 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->dispatchEvent($this->createEvent(EntityEventName::DELETE, $entity, $options));
-
             return true;
-        } catch (\Throwable $e) {
-            $event = $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_ERROR, $e));
-
-            throw $this->createEventException($event->getException());
+        } catch (\Exception $e) {
+            $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_ERROR, $e));
+            return false;
         }
+    }
+
+    /**
+     * @param iterable<EntityInterface> $collection
+     * @param array<string|int, mixed>  $options
+     *
+     * @return int
+     *
+     * @throws PersistenceException
+     */
+    public function deleteCollection(iterable $collection, array $options = []): int
+    {
+        $event = $this->createCollectionEvent(EntityEventName::DELETE_COLLECTION, $collection, $options);
+
+        try {
+            $event = $this->dispatchEvent($event);
+        } catch (\Exception $e) {
+            $this->dispatchEvent($this->createErrorEvent(EntityEventName::DELETE_COLLECTION_ERROR, $e));
+        }
+
+        return (int)$event->getParam('deleted_count', 0);
     }
 
     /**
@@ -173,7 +215,7 @@ class PersistService implements PersistServiceInterface
 
         try {
             $this->entityManager->persist($entity);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The persist operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -195,7 +237,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->flush();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The flush operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -219,7 +261,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->clear();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The clear operation failed for entity \'%s\': %s',
                 $this->entityName,
@@ -239,13 +281,13 @@ class PersistService implements PersistServiceInterface
      */
     public function refresh(EntityInterface $entity): void
     {
-        $entityName = $this->getEntityName();
+        $entityName = $this->entityName;
 
         if (!$entity instanceof $entityName) {
             throw new PersistenceException(
                 sprintf(
                     'The \'entity\' argument must be an object of type \'%s\'; \'%s\' provided in \'%s\'',
-                    $this->getEntityName(),
+                    $entityName,
                     get_class($entity),
                     __METHOD__
                 )
@@ -254,11 +296,11 @@ class PersistService implements PersistServiceInterface
 
         try {
             $this->entityManager->refresh($entity);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf(
                     'The refresh operation failed for entity \'%s\' : %s',
-                    $this->getEntityName(),
+                    $entityName,
                     $e->getMessage()
                 ),
                 $e->getCode(),
@@ -274,7 +316,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->beginTransaction();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to start transaction : %s', $e->getMessage()),
                 $e->getCode(),
@@ -290,7 +332,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->commit();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to commit transaction : %s', $e->getMessage()),
                 $e->getCode(),
@@ -306,7 +348,7 @@ class PersistService implements PersistServiceInterface
     {
         try {
             $this->entityManager->rollback();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new PersistenceException(
                 sprintf('Failed to rollback transaction : %s', $e->getMessage()),
                 $e->getCode(),
@@ -318,21 +360,33 @@ class PersistService implements PersistServiceInterface
     /**
      * Perform the event dispatch.
      *
-     * @param object $event The event that should be dispatched.
+     * @param AbstractEntityEvent $event The event that should be dispatched.
      *
-     * @return object
+     * @return AbstractEntityEvent
+     * @throws PersistenceException
      */
-    protected function dispatchEvent(object $event): object
+    protected function dispatchEvent(AbstractEntityEvent $event): AbstractEntityEvent
     {
-        return $this->eventDispatcher->dispatch($event);
+        $result = $this->eventDispatcher->dispatch($event);
+
+        if (!$result instanceof AbstractEntityEvent) {
+            throw new PersistenceException(
+                sprintf(
+                    'The return \'event\' must be an object of type \'%s\'; \'%s\' returned for entity \'%s\'',
+                    AbstractEntityEvent::class,
+                    get_class($result),
+                    $this->getEntityName()
+                )
+            );
+        }
+
+        return $result;
     }
 
     /**
-     * Create a new PersistEvent.
-     *
-     * @param string               $eventName
-     * @param EntityInterface|null $entity
-     * @param array                $params
+     * @param string                   $eventName
+     * @param EntityInterface|null     $entity
+     * @param array<string|int, mixed> $params
      *
      * @return EntityEvent
      */
@@ -340,8 +394,9 @@ class PersistService implements PersistServiceInterface
     {
         $event = new EntityEvent(
             $eventName,
-            $this->entityName,
+            $this,
             $this->entityManager,
+            $this->logger,
             $params
         );
 
@@ -353,45 +408,46 @@ class PersistService implements PersistServiceInterface
     }
 
     /**
-     * Create a new PersistErrorEvent.
+     * @param string                    $eventName
+     * @param iterable<EntityInterface> $collection
+     * @param array<string|int, mixed>  $params
      *
-     * @param string     $eventName
-     * @param \Throwable $exception
-     * @param array      $params
-     *
-     * @return EntityErrorEvent
+     * @return CollectionEvent
      */
-    private function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
-    {
-        return new EntityErrorEvent(
+    protected function createCollectionEvent(
+        string $eventName,
+        iterable $collection,
+        array $params = []
+    ): CollectionEvent {
+        $event = new CollectionEvent(
             $eventName,
-            $this->entityName,
+            $this,
             $this->entityManager,
-            $exception,
+            $this->logger,
             $params
         );
+
+        $event->setCollection($collection);
+
+        return $event;
     }
 
     /**
-     * @param \Throwable $exception
+     * @param string               $eventName
+     * @param \Throwable           $exception
+     * @param array<string|int, mixed> $params
      *
-     * @return PersistenceException
+     * @return EntityErrorEvent
      */
-    private function createEventException(\Throwable $exception): PersistenceException
+    protected function createErrorEvent(string $eventName, \Throwable $exception, array $params = []): EntityErrorEvent
     {
-        $errorMessage = sprintf(
-            'The persistence operation for entity \'%s\' failed: %s',
-            $this->entityName,
-            $exception->getMessage()
+        return new EntityErrorEvent(
+            $eventName,
+            $this,
+            $this->entityManager,
+            $this->logger,
+            $exception,
+            $params
         );
-
-        /** @var PersistenceException $exception */
-        if (!$exception instanceof PersistenceException) {
-            $exception = new PersistenceException($errorMessage, $exception->getCode(), $exception);
-        }
-
-        $this->logger->error($errorMessage, compact('exception'));
-
-        return $exception;
     }
 }

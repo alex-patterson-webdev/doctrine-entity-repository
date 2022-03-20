@@ -10,5 +10,4 @@ namespace Arp\DoctrineEntityRepository\Query\Exception;
  */
 class QueryServiceException extends \Exception
 {
-
 }

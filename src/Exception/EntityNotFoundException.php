@@ -10,5 +10,4 @@ namespace Arp\DoctrineEntityRepository\Exception;
  */
 class EntityNotFoundException extends EntityRepositoryException
 {
-
 }

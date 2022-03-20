@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository;
 
-use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
-use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\HydrateMode;
 use Arp\DoctrineEntityRepository\Constant\QueryServiceOption;
-use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\Exception\EntityNotFoundException;
 use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
+use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\DoctrineEntityRepository\Persistence\PersistServiceInterface;
+use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\DoctrineEntityRepository\Query\QueryServiceInterface;
 use Arp\Entity\EntityInterface;
+use Doctrine\ORM\AbstractQuery;
+use Doctrine\ORM\QueryBuilder;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -72,7 +74,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a single entity instance matching the provided $id.
      *
-     * @param string $id
+     * @param string|int $id
      *
      * @return EntityInterface|null
      *
@@ -82,7 +84,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             return $this->queryService->findOneById($id);
-        } catch (\Throwable $e) {
+        } catch (QueryServiceException $e) {
             $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
             $this->logger->error($errorMessage, ['exception' => $e, 'id' => $id]);
@@ -94,7 +96,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a single entity instance matching the provided $criteria.
      *
-     * @param array $criteria The entity filter criteria.
+     * @param array<mixed> $criteria The entity filter criteria.
      *
      * @return EntityInterface|null
      *
@@ -104,7 +106,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             return $this->queryService->findOne($criteria);
-        } catch (\Throwable $e) {
+        } catch (QueryServiceException $e) {
             $errorMessage = sprintf('Unable to find entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
             $this->logger->error($errorMessage, ['exception' => $e, 'criteria' => $criteria]);
@@ -128,10 +130,10 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Return a collection of entities that match the provided $criteria.
      *
-     * @param array      $criteria
-     * @param array|null $orderBy
-     * @param int|null   $limit
-     * @param int|null   $offset
+     * @param array<mixed>      $criteria
+     * @param array<mixed>|null $orderBy
+     * @param int|null          $limit
+     * @param int|null          $offset
      *
      * @return EntityInterface[]|iterable
      *
@@ -139,40 +141,43 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function findBy(array $criteria, ?array $orderBy = null, $limit = null, $offset = null): iterable
     {
-        try {
-            $options = [];
+        $options = [];
 
+        try {
             if (null !== $orderBy) {
                 $options[QueryServiceOption::ORDER_BY] = $orderBy;
             }
 
             if (null !== $limit) {
-                $options[QueryServiceOption::LIMIT] = $limit;
+                $options[QueryServiceOption::MAX_RESULTS] = $limit;
             }
 
             if (null !== $offset) {
-                $options[QueryServiceOption::OFFSET] = $offset;
+                $options[QueryServiceOption::FIRST_RESULT] = $offset;
             }
 
             return $this->queryService->findMany($criteria, $options);
-        } catch (\Throwable $e) {
+        } catch (QueryServiceException $e) {
             $errorMessage = sprintf(
                 'Unable to return a collection of type \'%s\': %s',
                 $this->entityName,
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+            $this->logger->error(
+                $errorMessage,
+                ['exception' => $e, 'criteria' => $criteria, 'options' => $options]
+            );
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
     }
 
     /**
-     * Save a single entity instance.
+     * Save a single entity instance
      *
      * @param EntityInterface $entity
-     * @param array           $options
+     * @param array<mixed>    $options
      *
      * @return EntityInterface
      *
@@ -182,75 +187,41 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             return $this->persistService->save($entity, $options);
-        } catch (\Throwable $e) {
+        } catch (PersistenceException $e) {
             $errorMessage = sprintf('Unable to save entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
     }
 
     /**
-     * Save a collection of entities in a single transaction.
+     * Save a collection of entities in a single transaction
      *
-     * @param iterable|EntityInterface[] $collection The collection of entities that should be saved.
-     * @param array                      $options    the optional save options.
+     * @param iterable<EntityInterface> $collection The collection of entities that should be saved.
+     * @param array<mixed>              $options    the optional save options.
      *
-     * @return iterable
+     * @return iterable<EntityInterface>
      *
      * @throws EntityRepositoryException If the save cannot be completed
      */
     public function saveCollection(iterable $collection, array $options = []): iterable
     {
-        $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
-        $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
-
         try {
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->beginTransaction();
-            }
+            return $this->persistService->saveCollection($collection, $options);
+        } catch (PersistenceException $e) {
+            $errorMessage = sprintf('Unable to save entity of type \'%s\': %s', $this->entityName, $e->getMessage());
 
-            $entities = [];
-            $saveOptions = [
-                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
-                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED
-            ];
-
-            foreach ($collection as $entity) {
-                $entities[] = $this->save($entity, $saveOptions);
-            }
-
-            if (FlushMode::ENABLED === $flushMode) {
-                $this->persistService->flush();
-            }
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->commitTransaction();
-            }
-
-            return $entities;
-        } catch (\Throwable $e) {
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->rollbackTransaction();
-            }
-
-            $errorMessage = sprintf(
-                'Unable to save collection of type \'%s\' : %s',
-                $this->entityName,
-                $e->getMessage()
-            );
-
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
     }
 
     /**
-     * Delete an entity.
-     *
-     * @param EntityInterface|string $entity
-     * @param array                  $options
+     * @param EntityInterface|string|int|mixed $entity
+     * @param array<mixed>                     $options
      *
      * @return bool
      *
@@ -258,22 +229,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function delete($entity, array $options = []): bool
     {
-        if (!is_string($entity) && !$entity instanceof EntityInterface) {
-            $errorMessage = sprintf(
-                'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
-                . '\'%s\' provided in \'%s::%s\'',
-                EntityInterface::class,
-                (is_object($entity) ? get_class($entity) : gettype($entity)),
-                static::class,
-                __FUNCTION__
-            );
-
-            $this->logger->error($errorMessage);
-
-            throw new EntityRepositoryException($errorMessage);
-        }
-
-        if (is_string($entity)) {
+        if (is_string($entity) || is_int($entity)) {
             $id = $entity;
             $entity = $this->find($id);
 
@@ -288,28 +244,42 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
                 throw new EntityNotFoundException($errorMessage);
             }
+        } elseif (!$entity instanceof EntityInterface) {
+            $errorMessage = sprintf(
+                'The \'entity\' argument must be a \'string\' or an object of type \'%s\'; '
+                . '\'%s\' provided in \'%s::%s\'',
+                EntityInterface::class,
+                (is_object($entity) ? get_class($entity) : gettype($entity)),
+                static::class,
+                __FUNCTION__
+            );
+
+            $this->logger->error($errorMessage);
+
+            throw new EntityRepositoryException($errorMessage);
         }
+
 
         try {
             return $this->persistService->delete($entity, $options);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'Unable to delete entity of type \'%s\': %s',
                 $this->entityName,
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
     }
 
     /**
-     * Perform a deletion of a collection of entities.
+     * Perform a deletion of a collection of entities
      *
-     * @param iterable|EntityInterface $collection
-     * @param array                    $options
+     * @param iterable<EntityInterface> $collection
+     * @param array<mixed>              $options
      *
      * @return int
      *
@@ -317,47 +287,16 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      */
     public function deleteCollection(iterable $collection, array $options = []): int
     {
-        $flushMode = $options[EntityEventOption::FLUSH_MODE] ?? FlushMode::ENABLED;
-        $transactionMode = $options[EntityEventOption::TRANSACTION_MODE] ?? TransactionMode::ENABLED;
-
         try {
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->beginTransaction();
-            }
-
-            $deleteOptions = [
-                EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
-                EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
-            ];
-
-            $deleted = 0;
-            foreach ($collection as $entity) {
-                if (true === $this->delete($entity, $deleteOptions)) {
-                    $deleted++;
-                }
-            }
-
-            if (FlushMode::ENABLED === $flushMode) {
-                $this->persistService->flush();
-            }
-
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->commitTransaction();
-            }
-
-            return $deleted;
-        } catch (\Throwable $e) {
-            if (TransactionMode::ENABLED === $transactionMode) {
-                $this->persistService->rollbackTransaction();
-            }
-
+            return $this->persistService->deleteCollection($collection, $options);
+        } catch (PersistenceException $e) {
             $errorMessage = sprintf(
-                'Unable to delete collection of type \'%s\' : %s',
+                'Unable to delete entity collection of type \'%s\': %s',
                 $this->entityName,
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -370,14 +309,14 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             $this->persistService->clear();
-        } catch (\Throwable $e) {
+        } catch (PersistenceException $e) {
             $errorMessage = sprintf(
                 'Unable to clear entity of type \'%s\': %s',
                 $this->entityName,
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage, ['exception' => $e]);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $this->entityName]);
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
@@ -392,9 +331,39 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     {
         try {
             $this->persistService->refresh($entity);
-        } catch (\Throwable $e) {
+        } catch (PersistenceException $e) {
             $errorMessage = sprintf(
                 'Unable to refresh entity of type \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
+            );
+
+            $this->logger->error(
+                $errorMessage,
+                ['exception' => $e, 'entity_name' => $this->entityName, 'id' => $entity->getId()]
+            );
+
+            throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Execute query builder or query instance and return the results.
+     *
+     * @param object|QueryBuilder|AbstractQuery $query
+     * @param array<mixed>                      $options
+     *
+     * @return EntityInterface[]|iterable
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function executeQuery(object $query, array $options = [])
+    {
+        try {
+            return $this->queryService->execute($query, $options);
+        } catch (QueryServiceException $e) {
+            $errorMessage = sprintf(
+                'Failed to perform query for entity type \'%s\': %s',
                 $this->entityName,
                 $e->getMessage()
             );
@@ -403,5 +372,61 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
         }
+    }
+
+    /**
+     * Return a single entity instance. NULL will be returned if the result set contains 0 or more than 1 result.
+     *
+     * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
+     *
+     * @param object|AbstractQuery|QueryBuilder $query
+     * @param array<string, mixed>       $options
+     *
+     * @return array<mixed>|EntityInterface|null
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function getSingleResultOrNull(object $query, array $options = [])
+    {
+        try {
+            return $this->queryService->getSingleResultOrNull($query, $options);
+        } catch (QueryServiceException $e) {
+            $errorMessage = sprintf(
+                'Failed to perform query for entity type \'%s\': %s',
+                $this->entityName,
+                $e->getMessage()
+            );
+
+            $this->logger->error(
+                $errorMessage,
+                ['exception' => $e, 'entity_name' => $this->entityName]
+            );
+
+            throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Return a result set containing a single array result. NULL will be returned if the result set
+     * contains 0 or more than 1 result.
+     *
+     * @param object       $query
+     * @param array<mixed> $options
+     *
+     * @return array<mixed>|null
+     *
+     * @throws EntityRepositoryException
+     */
+    protected function getSingleArrayResultOrNull(object $query, array $options = []): ?array
+    {
+        $result = $this->getSingleResultOrNull(
+            $query,
+            array_replace_recursive(
+                $options,
+                [QueryServiceOption::HYDRATION_MODE => HydrateMode::ARRAY]
+            )
+        );
+
+        return is_array($result) ? $result : null;
     }
 }

@@ -7,9 +7,7 @@ namespace Arp\DoctrineEntityRepository\Persistence\Event\Listener;
 use Arp\DoctrineEntityRepository\Constant\DeleteMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
-use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\DeleteAwareInterface;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -18,26 +16,11 @@ use Psr\Log\LoggerInterface;
 final class HardDeleteListener
 {
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
      * Perform the entity hard deletion operation.
      *
      * @param EntityEvent $event
-     *
-     * @throws PersistenceException
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
         $entity = $event->getEntity();
 
@@ -45,50 +28,29 @@ final class HardDeleteListener
             return;
         }
 
+        $logger = $event->getLogger();
         $entityName = $event->getEntityName();
-        $entityId = $entity->getId();
 
-        $deleteMode = $event->getParameters()->getParam(
+        $deleteMode = $event->getParam(
             EntityEventOption::DELETE_MODE,
             ($entity instanceof DeleteAwareInterface ? DeleteMode::SOFT : DeleteMode::HARD)
         );
 
         if (DeleteMode::HARD !== $deleteMode) {
-            $this->logger->info(
+            $logger->debug(
                 sprintf(
-                    'Delete mode \'%s\' detected : Skipping hard delete operations for entity \'%s::%s\'',
-                    $deleteMode,
+                    'Delete operations are disabled for entity \'%s\' using \'%s\' for configuration setting \'%s\'',
                     $entityName,
-                    $entityId
-                )
+                    $deleteMode,
+                    EntityEventOption::DELETE_MODE
+                ),
+                ['entity_name' => $entityName, EntityEventOption::DELETE_MODE => $deleteMode]
             );
             return;
         }
 
-        try {
-            $event->getEntityManager()->remove($entity);
+        $event->getEntityManager()->remove($entity);
 
-            $this->logger->info(
-                sprintf(
-                    'Successfully performed the hard delete operation for entity \'%s::%s\'',
-                    $entityName,
-                    $entityId
-                )
-            );
-        } catch (\Throwable $e) {
-            $errorMessage = sprintf(
-                'Failed to perform delete of entity \'%s::%s\' : %s',
-                $entityName,
-                $entityId,
-                $e->getMessage()
-            );
-
-            $this->logger->error(
-                $errorMessage,
-                ['exception' => $e, 'entity_name' => $entityName, 'id' => $entityId]
-            );
-
-            throw new PersistenceException($errorMessage, $e->getCode(), $e);
-        }
+        $logger->debug(sprintf('Successfully performed the delete operation for entity \'%s\'', $entityName));
     }
 }

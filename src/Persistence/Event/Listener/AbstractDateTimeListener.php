@@ -21,28 +21,22 @@ abstract class AbstractDateTimeListener
     protected DateTimeFactoryInterface $dateTimeFactory;
 
     /**
-     * @var LoggerInterface
-     */
-    protected LoggerInterface $logger;
-
-    /**
      * @param DateTimeFactoryInterface $dateTimeFactory
-     * @param LoggerInterface $logger
      */
-    public function __construct(DateTimeFactoryInterface $dateTimeFactory, LoggerInterface $logger)
+    public function __construct(DateTimeFactoryInterface $dateTimeFactory)
     {
         $this->dateTimeFactory = $dateTimeFactory;
-        $this->logger = $logger;
     }
 
     /**
-     * @param string $entityName
+     * @param string          $entityName
+     * @param LoggerInterface $logger
      *
      * @return \DateTimeInterface
      *
      * @throws PersistenceException
      */
-    protected function createDateTime(string $entityName): \DateTimeInterface
+    protected function createDateTime(string $entityName, LoggerInterface $logger): \DateTimeInterface
     {
         try {
             return $this->dateTimeFactory->createDateTime();
@@ -53,7 +47,7 @@ abstract class AbstractDateTimeListener
                 $e->getMessage()
             );
 
-            $this->logger->error($errorMessage);
+            $logger->error($errorMessage, ['entity_name' => $entityName, 'exception' => $e]);
 
             throw new PersistenceException($errorMessage);
         }

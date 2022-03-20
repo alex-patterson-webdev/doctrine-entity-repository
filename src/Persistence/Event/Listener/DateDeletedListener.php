@@ -27,11 +27,12 @@ class DateDeletedListener extends AbstractDateTimeListener
      */
     public function __invoke(EntityEvent $event): void
     {
+        $logger = $event->getLogger();
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
         if (null === $entity || !$entity instanceof DateDeletedAwareInterface) {
-            $this->logger->debug(
+            $logger->debug(
                 sprintf(
                     'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
@@ -52,9 +53,9 @@ class DateDeletedListener extends AbstractDateTimeListener
             );
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
+        $mode = $event->getParam(EntityEventOption::DATE_DELETED_MODE, DateDeleteMode::ENABLED);
         if (DateDeleteMode::ENABLED !== $mode) {
-            $this->logger->info(
+            $logger->debug(
                 sprintf(
                     'The date time update of field \'dateDeleted\' '
                     . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
@@ -66,10 +67,10 @@ class DateDeletedListener extends AbstractDateTimeListener
             return;
         }
 
-        $dateDeleted = $this->createDateTime($entityName);
+        $dateDeleted = $this->createDateTime($entityName, $logger);
         $entity->setDateDeleted($dateDeleted);
 
-        $this->logger->info(
+        $logger->debug(
             sprintf(
                 'The \'dateDeleted\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
                 $entityName,

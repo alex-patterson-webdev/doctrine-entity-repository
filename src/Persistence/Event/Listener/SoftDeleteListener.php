@@ -8,7 +8,6 @@ use Arp\DoctrineEntityRepository\Constant\DeleteMode;
 use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\Entity\DeleteAwareInterface;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -17,39 +16,21 @@ use Psr\Log\LoggerInterface;
 final class SoftDeleteListener
 {
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
      * @param EntityEvent $event
      */
-    public function __invoke(EntityEvent $event)
+    public function __invoke(EntityEvent $event): void
     {
+        $logger = $event->getLogger();
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
         if (null === $entity || !$entity instanceof DeleteAwareInterface) {
-            $this->logger->info(
-                sprintf(
-                    'Ignoring soft delete for entity \'%s\': The entity value is either null '
-                    . 'or this entity has not configured to be able to perform soft deletes',
-                    $entityName
-                )
-            );
+            $logger->debug(sprintf('Soft delete operations are not available for entity \'%s\'', $entityName));
             return;
         }
 
         if ($entity->isDeleted()) {
-            $this->logger->info(
+            $logger->warning(
                 sprintf(
                     'Ignoring soft delete operations for already deleted entity \'%s::%s\'',
                     $entityName,
@@ -59,28 +40,25 @@ final class SoftDeleteListener
             return;
         }
 
-        $deleteMode = $event->getParameters()->getParam(EntityEventOption::DELETE_MODE, DeleteMode::SOFT);
+        $deleteMode = $event->getParam(EntityEventOption::DELETE_MODE, DeleteMode::SOFT);
 
         if (DeleteMode::SOFT !== $deleteMode) {
-            $this->logger->info(
+            $logger->debug(
                 sprintf(
-                    'Soft deleting has been disabled for entity \'%s\' via configuration option \'%s\'',
+                    'Soft delete operations are disabled for entity \'%s\' '
+                    . 'using \'%s\' for configuration setting \'%s\'',
                     $entityName,
+                    $deleteMode,
                     EntityEventOption::DELETE_MODE
-                )
+                ),
+                ['entity_name' => $entityName, EntityEventOption::DELETE_MODE => $deleteMode]
             );
             return;
         }
 
-        $this->logger->info(
-            sprintf(
-                'Performing \'%s\' delete for entity \'%s::%s\'',
-                DeleteMode::SOFT,
-                $entityName,
-                $entity->getId()
-            )
-        );
-
         $entity->setDeleted(true);
+        $logger->debug(
+            sprintf('Soft delete operations completed successfully for entity \'%s\'', $entityName)
+        );
     }
 }

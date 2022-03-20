@@ -10,7 +10,6 @@ use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\CascadeDeleteService;
 use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
-use Psr\Log\LoggerInterface;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -24,18 +23,11 @@ final class CascadeDeleteListener
     private CascadeDeleteService $cascadeDeleteService;
 
     /**
-     * @var LoggerInterface
-     */
-    private LoggerInterface $logger;
-
-    /**
      * @param CascadeDeleteService $cascadeDeleteService
-     * @param LoggerInterface      $logger
      */
-    public function __construct(CascadeDeleteService $cascadeDeleteService, LoggerInterface $logger)
+    public function __construct(CascadeDeleteService $cascadeDeleteService)
     {
         $this->cascadeDeleteService = $cascadeDeleteService;
-        $this->logger = $logger;
     }
 
     /**
@@ -46,42 +38,47 @@ final class CascadeDeleteListener
      */
     public function __invoke(EntityEvent $event): void
     {
+        $entityName = $event->getEntityName();
+        $logger = $event->getLogger();
         $entity = $event->getEntity();
 
         if (null === $entity) {
-            $errorMessage = sprintf('Missing required entity in \'%s\'', static::class);
-            $this->logger->error($errorMessage);
+            $errorMessage = sprintf('Missing required entity in \'%s\'', self::class);
+            $logger->error($errorMessage, ['entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage);
         }
 
-        $entityName = $event->getEntityName();
-        $parameters = $event->getParameters();
-
-        $cascadeMode = $parameters->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
+        $cascadeMode = $event->getParam(EntityEventOption::CASCADE_MODE, CascadeMode::ALL);
 
         if (CascadeMode::ALL !== $cascadeMode && CascadeMode::DELETE !== $cascadeMode) {
-            $this->logger->info(
+            $logger->debug(
                 sprintf(
-                    'Ignoring cascade delete operations with mode \'%s\' for entity \'%s\'',
+                    'The cascade delete operations are disabled for entity \'%s\' '
+                    . 'using \'%s\' for configuration setting \'%s\'',
+                    $entityName,
                     $cascadeMode,
-                    $entityName
+                    EntityEventOption::CASCADE_MODE
                 )
             );
             return;
         }
 
-        $this->logger->info(sprintf('Performing cascade delete operations for entity \'%s\'', $entityName));
-
-        $deleteOptions = $parameters->getParam(EntityEventOption::CASCADE_DELETE_OPTIONS, []);
-        $deleteCollectionOptions = $parameters->getParam(EntityEventOption::CASCADE_DELETE_COLLECTION_OPTIONS, []);
+        $logger->debug(
+            sprintf(
+                'Performing cascade delete operations for entity \'%s\' using \'%s\' configuration setting \'%s\'',
+                $entityName,
+                $cascadeMode,
+                EntityEventOption::CASCADE_MODE
+            ),
+        );
 
         $this->cascadeDeleteService->deleteAssociations(
             $event->getEntityManager(),
             $entityName,
             $entity,
-            $deleteOptions,
-            $deleteCollectionOptions
+            $event->getParam(EntityEventOption::CASCADE_DELETE_OPTIONS, []),
+            $event->getParam(EntityEventOption::CASCADE_DELETE_COLLECTION_OPTIONS, [])
         );
     }
 }

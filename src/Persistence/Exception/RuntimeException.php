@@ -10,5 +10,4 @@ namespace Arp\DoctrineEntityRepository\Persistence\Exception;
  */
 class RuntimeException extends PersistenceException
 {
-
 }

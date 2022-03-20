@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Arp\DoctrineEntityRepository\Persistence;
 
+use Arp\DoctrineEntityRepository\Constant\ClearMode;
+use Arp\DoctrineEntityRepository\Constant\EntityEventOption;
+use Arp\DoctrineEntityRepository\Constant\FlushMode;
+use Arp\DoctrineEntityRepository\Constant\TransactionMode;
 use Arp\DoctrineEntityRepository\EntityRepositoryInterface;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
@@ -23,45 +27,60 @@ abstract class AbstractCascadeService
     protected LoggerInterface $logger;
 
     /**
-     * @var array
+     * @var array<string, mixed>
      */
-    protected array $options;
+    protected array $options = [
+        EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
+    ];
 
     /**
-     * @var array
+     * @var array<string, mixed>
      */
-    protected array $collectionOptions;
+    protected array $collectionOptions = [
+        EntityEventOption::TRANSACTION_MODE => TransactionMode::DISABLED,
+        EntityEventOption::FLUSH_MODE       => FlushMode::DISABLED,
+        EntityEventOption::CLEAR_MODE       => ClearMode::DISABLED,
+    ];
 
     /**
      * @param LoggerInterface $logger
-     * @param array           $options
-     * @param array           $collectionOptions
+     * @param array<mixed>    $options
+     * @param array<mixed>    $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
         $this->logger = $logger;
-        $this->options = $options;
-        $this->collectionOptions = $collectionOptions;
+        $this->options = empty($options) ? $this->options : $options;
+        $this->collectionOptions = empty($collectionOptions) ? $this->collectionOptions : $collectionOptions;
     }
 
     /**
      * @param EntityManagerInterface $entityManager
-     * @param string                 $entityName
+     * @param class-string           $entityName
      *
      * @return EntityRepositoryInterface
      * @throws PersistenceException
      * @todo We should implement a way to decorate the call the getRepository() with a concrete implementation
      *       of the EntityRepositoryProviderInterface
-     *
      */
     protected function getTargetRepository(
         EntityManagerInterface $entityManager,
         string $entityName
     ): EntityRepositoryInterface {
+        if (!class_exists($entityName, true) && !$entityManager->getMetadataFactory()->hasMetadataFor($entityName)) {
+            $errorMessage = sprintf('The target repository class \'%s\' could not be found', $entityName);
+
+            $this->logger->error($errorMessage, ['entity_name' => $entityName]);
+
+            throw new PersistenceException($errorMessage);
+        }
+
         try {
-            /** @var EntityRepositoryInterface $targetRepository */
+            /** @var EntityRepositoryInterface|object|null $targetRepository */
             $targetRepository = $entityManager->getRepository($entityName);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'An error occurred while attempting to load the repository for entity class \'%s\' : %s',
                 $entityName,
@@ -72,7 +91,7 @@ abstract class AbstractCascadeService
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
 
-        if (null === $targetRepository || !($targetRepository instanceof EntityRepositoryInterface)) {
+        if (!isset($targetRepository) || !($targetRepository instanceof EntityRepositoryInterface)) {
             $errorMessage = sprintf(
                 'The entity repository must be an object of type \'%s\'; \'%s\' returned in \'%s::%s\'',
                 EntityRepositoryInterface::class,
@@ -80,7 +99,8 @@ abstract class AbstractCascadeService
                 static::class,
                 __FUNCTION__
             );
-            $this->logger->error($errorMessage);
+
+            $this->logger->error($errorMessage, ['entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage);
         }
@@ -89,10 +109,10 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @param EntityInterface $sourceEntity
-     * @param string          $fieldName
-     * @param ClassMetadata   $sourceMetadata
-     * @param ClassMetadata   $targetMetadata
+     * @param EntityInterface                $sourceEntity
+     * @param string                         $fieldName
+     * @param ClassMetadata<EntityInterface> $sourceMetadata
+     * @param ClassMetadata<EntityInterface> $targetMetadata
      *
      * @return EntityInterface|EntityInterface[]|iterable
      *
@@ -123,7 +143,7 @@ abstract class AbstractCascadeService
 
         try {
             $targetEntityOrCollection = $sourceEntity->{$methodName}();
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The call to resolve entity of type \'%s\' from method call \'%s::%s\' failed: %s',
                 $targetMetadata->getName(),
@@ -131,7 +151,7 @@ abstract class AbstractCascadeService
                 $methodName,
                 $e->getMessage()
             );
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e]);
 
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }
@@ -140,8 +160,8 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @param EntityInterface|EntityInterface[]|iterable $entityOrCollection
-     * @param array                                      $mapping
+     * @param iterable<EntityInterface>|EntityInterface|mixed|null $entityOrCollection
+     * @param array<mixed>                                         $mapping
      *
      * @return bool
      */
@@ -151,12 +171,10 @@ abstract class AbstractCascadeService
             /**
              * @todo mapping class has a methods to fetch the id field mapping directly
              *
-             * Note that we are hard coding the '0' key as the single field the we use as the id/primary key.
+             * Note that we are hard coding the '0' key as the single field to use as the id/primary key.
              * If we implement EntityInterface correctly we will never have a composite key.
              */
-            return isset($mapping['joinColumns'][0]['nullable'])
-                ? (bool)$mapping['joinColumns'][0]['nullable']
-                : false;
+            return isset($mapping['joinColumns'][0]['nullable']) && $mapping['joinColumns'][0]['nullable'];
         }
 
         return (is_iterable($entityOrCollection) || $entityOrCollection instanceof EntityInterface);
@@ -166,7 +184,7 @@ abstract class AbstractCascadeService
      * @param EntityManagerInterface $entityManager
      * @param string                 $entityName
      *
-     * @return ClassMetadata
+     * @return ClassMetadata<EntityInterface|object>
      *
      * @throws PersistenceException
      */
@@ -174,13 +192,13 @@ abstract class AbstractCascadeService
     {
         try {
             return $entityManager->getClassMetadata($entityName);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             $errorMessage = sprintf(
                 'The entity metadata mapping for class \'%s\' could not be loaded: %s',
                 $entityName,
                 $e->getMessage()
             );
-            $this->logger->error($errorMessage);
+            $this->logger->error($errorMessage, ['exception' => $e, 'entity_name' => $entityName]);
 
             throw new PersistenceException($errorMessage, $e->getCode(), $e);
         }

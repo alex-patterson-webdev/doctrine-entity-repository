@@ -10,6 +10,6 @@ A Doctrine ORM entity repository implementation.
 
 ## Installation
 
-Installation via [composer](https://getcomposer.org).
+Installation via [Composer](https://getcomposer.org).
 
-    require alex-patterson-webdev/doctrine-entity-repository ^1
+    require alex-patterson-webdev/doctrine-entity-repository ^2

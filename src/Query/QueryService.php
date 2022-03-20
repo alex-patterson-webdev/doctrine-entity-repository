@@ -11,6 +11,7 @@ use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\TransactionRequiredException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -20,7 +21,7 @@ use Psr\Log\LoggerInterface;
 class QueryService implements QueryServiceInterface
 {
     /**
-     * @var string
+     * @var class-string
      */
     protected string $entityName;
 
@@ -35,7 +36,7 @@ class QueryService implements QueryServiceInterface
     protected LoggerInterface $logger;
 
     /**
-     * @param string                 $entityName
+     * @param class-string           $entityName
      * @param EntityManagerInterface $entityManager
      * @param LoggerInterface        $logger
      */
@@ -44,6 +45,263 @@ class QueryService implements QueryServiceInterface
         $this->entityName = $entityName;
         $this->entityManager = $entityManager;
         $this->logger = $logger;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+
+    /**
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
+     *
+     * @return EntityInterface|null|array<mixed>
+     *
+     * @throws QueryServiceException
+     */
+    public function getSingleResultOrNull(object $queryOrBuilder, array $options = [])
+    {
+        $result = $this->execute($queryOrBuilder, $options);
+
+        if (empty($result)) {
+            return null;
+        }
+
+        if (!is_array($result)) {
+            return $result;
+        }
+
+        if (count($result) > 1) {
+            return null;
+        }
+
+        return array_shift($result);
+    }
+
+    /**
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
+     *
+     * @return int|mixed|string
+     *
+     * @throws QueryServiceException
+     */
+    public function getSingleScalarResult(object $queryOrBuilder, array $options = [])
+    {
+        try {
+            return $this->getQuery($queryOrBuilder, $options)->getSingleScalarResult();
+        } catch (QueryServiceException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            $message = sprintf(
+                'An error occurred while loading fetching a single scalar result: %s',
+                $e->getMessage()
+            );
+
+            $this->logger->error($message, ['exception' => $e]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Construct and execute the query.
+     *
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
+     *
+     * @return mixed
+     *
+     * @throws QueryServiceException
+     */
+    public function execute(object $queryOrBuilder, array $options = [])
+    {
+        try {
+            return $this->getQuery($queryOrBuilder, $options)->execute();
+        } catch (QueryServiceException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            $message = sprintf('Failed to execute query : %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Find a single entity matching the provided identity.
+     *
+     * @param mixed                $id      The identity of the entity to match.
+     * @param array<string, mixed> $options The optional query options.
+     *
+     * @return EntityInterface|null
+     *
+     * @throws QueryServiceException
+     */
+    public function findOneById($id, array $options = []): ?EntityInterface
+    {
+        return $this->findOne(compact('id'), $options);
+    }
+
+    /**
+     * Find a single entity matching the provided criteria.
+     *
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
+     *
+     * @return EntityInterface|null
+     *
+     * @throws QueryServiceException
+     */
+    public function findOne(array $criteria, array $options = []): ?EntityInterface
+    {
+        try {
+            $persist = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
+
+            $entity = $persist->load(
+                $criteria,
+                $options[QueryServiceOption::ENTITY] ?? null,
+                $options[QueryServiceOption::ASSOCIATION] ?? null,
+                $options[QueryServiceOption::HINTS] ?? [],
+                $options[QueryServiceOption::LOCK_MODE] ?? null,
+                1,
+                $options[QueryServiceOption::ORDER_BY] ?? null
+            );
+
+            return ($entity instanceof EntityInterface) ? $entity : null;
+        } catch (\Exception $e) {
+            $message = sprintf('Failed to execute \'findOne\' query: %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Find a collection of entities that match the provided criteria.
+     *
+     * @param array<string, mixed> $criteria The search criteria that should be matched on.
+     * @param array<string, mixed> $options  The optional query options.
+     *
+     * @return iterable<EntityInterface>
+     *
+     * @throws QueryServiceException
+     */
+    public function findMany(array $criteria, array $options = []): iterable
+    {
+        try {
+            $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
+
+            return $persister->loadAll(
+                $criteria,
+                $options[QueryServiceOption::ORDER_BY] ?? null,
+                $options[QueryServiceOption::MAX_RESULTS] ?? null,
+                $options[QueryServiceOption::FIRST_RESULT] ?? null
+            );
+        } catch (\Exception $e) {
+            $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());
+
+            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
+
+            throw new QueryServiceException($message, $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Return the result set count.
+     *
+     * @param array<string, mixed> $criteria
+     *
+     * @return int
+     */
+    public function count(array $criteria): int
+    {
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+
+        return $unitOfWork->getEntityPersister($this->entityName)->count($criteria);
+    }
+
+    /**
+     * Set the query builder options.
+     *
+     * @param QueryBuilder         $queryBuilder The query builder to update.
+     * @param array<string, mixed> $options      The query builder options to set.
+     *
+     * @return QueryBuilder
+     */
+    protected function prepareQueryBuilder(QueryBuilder $queryBuilder, array $options = []): QueryBuilder
+    {
+        if (isset($options[QueryServiceOption::FIRST_RESULT])) {
+            $queryBuilder->setFirstResult($options[QueryServiceOption::FIRST_RESULT]);
+        }
+
+        if (isset($options[QueryServiceOption::MAX_RESULTS])) {
+            $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
+        }
+
+        if (isset($options[QueryServiceOption::ORDER_BY]) && is_array($options[QueryServiceOption::ORDER_BY])) {
+            foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
+                $queryBuilder->addOrderBy(
+                    $fieldName,
+                    ('DESC' === strtoupper($orderDirection) ? 'DESC' : 'ASC')
+                );
+            }
+        }
+
+        return $queryBuilder;
+    }
+
+    /**
+     * Prepare the provided query by setting the $options.
+     *
+     * @param AbstractQuery        $query
+     * @param array<string, mixed> $options
+     *
+     * @return AbstractQuery
+     *
+     * @throws QueryServiceException
+     */
+    protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
+    {
+        if (isset($options['params'])) {
+            $query->setParameters($options['params']);
+        }
+
+        if (isset($options[QueryServiceOption::HYDRATION_MODE])) {
+            $query->setHydrationMode($options[QueryServiceOption::HYDRATION_MODE]);
+        }
+
+        if (isset($options['result_set_mapping'])) {
+            $query->setResultSetMapping($options['result_set_mapping']);
+        }
+
+        if (isset($options[QueryServiceOption::HINTS]) && is_array($options[QueryServiceOption::HINTS])) {
+            foreach ($options[QueryServiceOption::HINTS] as $hint => $hintValue) {
+                $query->setHint($hint, $hintValue);
+            }
+        }
+
+        if ($query instanceof Query) {
+            if (!empty($options[QueryServiceOption::DQL])) {
+                $query->setDQL($options[QueryServiceOption::DQL]);
+            }
+
+            if (isset($options[QueryServiceOption::LOCK_MODE])) {
+                try {
+                    $query->setLockMode($options[QueryServiceOption::LOCK_MODE]);
+                } catch (TransactionRequiredException $e) {
+                    throw new QueryServiceException($e->getMessage(), $e->getCode(), $e);
+                }
+            }
+        }
+
+        return $query;
     }
 
     /**
@@ -65,232 +323,36 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
+     * Resolve the ORM Query instance for a QueryBuilder and set the optional $options
      *
-     * @return EntityInterface|null|array
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<mixed>               $options
      *
-     * @throws QueryServiceException
-     */
-    public function getSingleResultOrNull($queryOrBuilder, array $options = [])
-    {
-        $result = $this->execute($queryOrBuilder, $options);
-
-        if (empty($result)) {
-            return null;
-        }
-        if (!is_array($result)) {
-            return $result;
-        }
-        if (count($result) > 1) {
-            return null;
-        }
-
-        return array_shift($result);
-    }
-
-    /**
-     * Construct and execute the query.
-     *
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array                      $options
-     *
-     * @return mixed
+     * @return AbstractQuery
      *
      * @throws QueryServiceException
      */
-    public function execute($queryOrBuilder, array $options = [])
+    private function getQuery(object $queryOrBuilder, array $options = []): AbstractQuery
     {
-        if ($queryOrBuilder instanceof QueryBuilder) {
-            $this->prepareQueryBuilder($queryOrBuilder);
-
-            $queryOrBuilder = $queryOrBuilder->getQuery();
-        }
-
-        if (!$queryOrBuilder instanceof AbstractQuery) {
+        if (!$queryOrBuilder instanceof AbstractQuery && !$queryOrBuilder instanceof QueryBuilder) {
             throw new QueryServiceException(
                 sprintf(
-                    'Query provided must be of type \'%s\'; \'%s\' provided in \'%s\'.',
+                    'The queryOrBuilder argument must be an object of type '
+                    . '\'%s\' or \'%s\'; \'%s\' provided in \'%s\'.',
                     AbstractQuery::class,
-                    (is_object($queryOrBuilder) ? get_class($queryOrBuilder) : gettype($queryOrBuilder)),
+                    QueryBuilder::class,
+                    get_class($queryOrBuilder),
                     __METHOD__
                 )
             );
         }
 
-        try {
-            $query = $this->prepareQuery($queryOrBuilder, $options);
-
-            return $query->execute();
-        } catch (\Throwable $e) {
-            $message = sprintf('Failed to execute query : %s', $e->getMessage());
-
-            $this->logger->error($message, ['exception' => $e]);
-
-            throw new QueryServiceException($message, $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Find a single entity matching the provided identity.
-     *
-     * @param mixed $id      The identity of the entity to match.
-     * @param array $options The optional query options.
-     *
-     * @return EntityInterface|null
-     *
-     * @throws QueryServiceException
-     */
-    public function findOneById($id, array $options = []): ?EntityInterface
-    {
-        return $this->findOne(compact('id'), $options);
-    }
-
-    /**
-     * Find a single entity matching the provided criteria.
-     *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
-     *
-     * @return EntityInterface|null
-     *
-     * @throws QueryServiceException
-     */
-    public function findOne(array $criteria, array $options = []): ?EntityInterface
-    {
-        try {
-            $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
-
-            $entity = $persister->load(
-                $criteria,
-                $options[QueryServiceOption::ENTITY] ?? null,
-                $options[QueryServiceOption::ASSOCIATION] ?? null,
-                $options[QueryServiceOption::HINTS] ?? [],
-                $options[QueryServiceOption::LOCK_MODE] ?? null,
-                1,
-                $options[QueryServiceOption::ORDER_BY] ?? null
-            );
-
-            return ($entity instanceof EntityInterface) ? $entity : null;
-        } catch (\Throwable $e) {
-            $message = sprintf('Failed to execute \'findOne\' query: %s', $e->getMessage());
-
-            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
-
-            throw new QueryServiceException($message, $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Find a collection of entities that match the provided criteria.
-     *
-     * @param array $criteria The search criteria that should be matched on.
-     * @param array $options  The optional query options.
-     *
-     * @return EntityInterface[]|iterable
-     *
-     * @throws QueryServiceException
-     */
-    public function findMany(array $criteria, array $options = []): iterable
-    {
-        try {
-            $persister = $this->entityManager->getUnitOfWork()->getEntityPersister($this->entityName);
-
-            return $persister->loadAll(
-                $criteria,
-                $options[QueryServiceOption::ORDER_BY] ?? null,
-                $options[QueryServiceOption::LIMIT] ?? null,
-                $options[QueryServiceOption::OFFSET] ?? null
-            );
-        } catch (\Throwable $e) {
-            $message = sprintf('Failed to execute \'findMany\' query: %s', $e->getMessage());
-
-            $this->logger->error($message, ['exception' => $e, 'criteria' => $criteria, 'options' => $options]);
-
-            throw new QueryServiceException($message, $e->getCode(), $e);
-        }
-    }
-
-    /**
-     * Return the result set count.
-     *
-     * @param array $criteria
-     *
-     * @return mixed
-     */
-    public function count(array $criteria)
-    {
-        $unitOfWork = $this->entityManager->getUnitOfWork();
-
-        return $unitOfWork->getEntityPersister($this->entityName)->count($criteria);
-    }
-
-    /**
-     * Set the query builder options.
-     *
-     * @param QueryBuilder $queryBuilder The query builder to update.
-     * @param array        $options      The query builder options to set.
-     *
-     * @return QueryBuilder
-     */
-    protected function prepareQueryBuilder(QueryBuilder $queryBuilder, array $options = []): QueryBuilder
-    {
-        if (array_key_exists(QueryServiceOption::FIRST_RESULT, $options)) {
-            $queryBuilder->setFirstResult($options[QueryServiceOption::FIRST_RESULT]);
+        if ($queryOrBuilder instanceof QueryBuilder) {
+            $query = $this->prepareQueryBuilder($queryOrBuilder, $options)->getQuery();
+        } else {
+            $query = $queryOrBuilder;
         }
 
-        if (array_key_exists(QueryServiceOption::MAX_RESULTS, $options)) {
-            $queryBuilder->setMaxResults($options[QueryServiceOption::MAX_RESULTS]);
-        }
-
-        if (array_key_exists(QueryServiceOption::ORDER_BY, $options)) {
-            foreach ($options[QueryServiceOption::ORDER_BY] as $fieldName => $orderDirection) {
-                $queryBuilder->addOrderBy(
-                    $fieldName,
-                    ('DESC' === strtoupper($orderDirection) ? 'DESC' : 'ASC')
-                );
-            }
-        }
-
-        return $queryBuilder;
-    }
-
-    /**
-     * Prepare the provided query by setting the $options.
-     *
-     * @param AbstractQuery $query
-     * @param array         $options
-     *
-     * @return AbstractQuery
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @todo Reduce cyclomatic complexity
-     *
-     */
-    protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
-    {
-        if (array_key_exists('params', $options)) {
-            $query->setParameters($options['params']);
-        }
-
-        if (array_key_exists(QueryServiceOption::HYDRATION_MODE, $options)) {
-            $query->setHydrationMode($options[QueryServiceOption::HYDRATION_MODE]);
-        }
-
-        if (array_key_exists('result_set_mapping', $options)) {
-            $query->setResultSetMapping($options['result_set_mapping']);
-        }
-
-        if (isset($options[QueryServiceOption::HINTS]) && is_array($options[QueryServiceOption::HINTS])) {
-            foreach ($options[QueryServiceOption::HINTS] as $hint => $hintValue) {
-                $query->setHint($hint, $hintValue);
-            }
-        }
-
-        if (!empty($options[QueryServiceOption::DQL]) && $query instanceof Query) {
-            $query->setDQL($options[QueryServiceOption::DQL]);
-        }
-
-        return $query;
+        return $this->prepareQuery($query, $options);
     }
 }

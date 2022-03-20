@@ -9,6 +9,8 @@ use Arp\Entity\EntityInterface;
 use Doctrine\Persistence\ObjectRepository;
 
 /**
+ * @extends ObjectRepository<EntityInterface>
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package Arp\DoctrineEntityRepository
  */
@@ -18,7 +20,7 @@ interface EntityRepositoryInterface extends ObjectRepository
      * Save a single entity instance.
      *
      * @param EntityInterface $entity
-     * @param array           $options
+     * @param array<mixed>    $options
      *
      * @return EntityInterface
      *
@@ -29,10 +31,10 @@ interface EntityRepositoryInterface extends ObjectRepository
     /**
      * Save a collection of entities in a single transaction.
      *
-     * @param iterable|EntityInterface[] $collection The collection of entities that should be saved.
-     * @param array                      $options    the optional save options.
+     * @param iterable<EntityInterface> $collection The collection of entities that should be saved.
+     * @param array<mixed>              $options    the optional save options.
      *
-     * @return iterable
+     * @return iterable<EntityInterface>
      *
      * @throws EntityRepositoryException If the save cannot be completed
      */
@@ -42,7 +44,7 @@ interface EntityRepositoryInterface extends ObjectRepository
      * Delete an entity.
      *
      * @param EntityInterface|int|string $entity
-     * @param array                      $options
+     * @param array<mixed>               $options
      *
      * @return bool
      *
@@ -53,8 +55,8 @@ interface EntityRepositoryInterface extends ObjectRepository
     /**
      * Perform a deletion of a collection of entities.
      *
-     * @param iterable|EntityInterface $collection
-     * @param array                    $options
+     * @param iterable<EntityInterface> $collection
+     * @param array<mixed>              $options
      *
      * @return int
      *

@@ -27,11 +27,12 @@ class DateUpdatedListener extends AbstractDateTimeListener
      */
     public function __invoke(EntityEvent $event): void
     {
+        $logger = $event->getLogger();
         $entityName = $event->getEntityName();
         $entity = $event->getEntity();
 
         if (null === $entity || !$entity instanceof DateUpdatedAwareInterface) {
-            $this->logger->debug(
+            $logger->debug(
                 sprintf(
                     'Ignoring update date time for entity \'%s\': The entity does not implement \'%s\'',
                     $entityName,
@@ -52,23 +53,24 @@ class DateUpdatedListener extends AbstractDateTimeListener
             );
         }
 
-        $mode = $event->getParameters()->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
+        $mode = $event->getParam(EntityEventOption::DATE_UPDATED_MODE, DateUpdateMode::ENABLED);
         if (DateUpdateMode::ENABLED !== $mode) {
-            $message = sprintf(
-                'The date time update of field \'dateUpdated\' '
-                . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
-                $entityName,
-                $entityId,
-                EntityEventOption::DATE_UPDATED_MODE
+            $logger->debug(
+                sprintf(
+                    'The date time update of field \'dateUpdated\' '
+                    . 'has been disabled for entity \'%s::%s\' using configuration option \'%s\'',
+                    $entityName,
+                    $entityId,
+                    EntityEventOption::DATE_UPDATED_MODE
+                )
             );
-            $this->logger->info($message);
             return;
         }
 
-        $dateUpdated = $this->createDateTime($entityName);
+        $dateUpdated = $this->createDateTime($entityName, $logger);
         $entity->setDateUpdated($dateUpdated);
 
-        $this->logger->info(
+        $logger->debug(
             sprintf(
                 'The \'dateUpdated\' property for entity \'%s::%s\' has been updated with new date time \'%s\'',
                 $entityName,

@@ -10,5 +10,4 @@ namespace Arp\DoctrineEntityRepository;
  */
 class EntityRepository extends AbstractEntityRepository
 {
-
 }

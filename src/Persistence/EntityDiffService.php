@@ -17,12 +17,10 @@ class EntityDiffService
      * @param UnitOfWork      $unitOfWork
      * @param EntityInterface $entity
      *
-     * @return array
+     * @return array<mixed>
      */
     public function calculateChangeSet(UnitOfWork $unitOfWork, EntityInterface $entity): array
     {
-        $originalEntityData = $unitOfWork->getOriginalEntityData($entity);
-
-        return $originalEntityData;
+        return $unitOfWork->getOriginalEntityData($entity);
     }
 }
