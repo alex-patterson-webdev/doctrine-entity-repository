@@ -61,8 +61,8 @@ class CascadeDeleteService extends AbstractCascadeService
                 sprintf(
                     'The entity field \'%s::%s\' is configured for cascade delete operations for target entity \'%s\'',
                     $entityName,
-                    $mappings['fieldName'],
-                    $mappings['targetEntity']
+                    $mapping['fieldName'],
+                    $mapping['targetEntity']
                 )
             );
 
@@ -77,7 +77,7 @@ class CascadeDeleteService extends AbstractCascadeService
                 $errorMessage = sprintf(
                     'The entity field \'%s::%s\' value could not be resolved',
                     $entityName,
-                    $mappings['fieldName']
+                    $mapping['fieldName']
                 );
 
                 $this->logger->error($errorMessage);
@@ -89,7 +89,7 @@ class CascadeDeleteService extends AbstractCascadeService
                 sprintf(
                     'Performing cascading delete operations for field \'%s::%s\'',
                     $entityName,
-                    $mappings['fieldName']
+                    $mapping['fieldName']
                 )
             );
 

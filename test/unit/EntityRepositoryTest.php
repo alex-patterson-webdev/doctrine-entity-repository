@@ -407,11 +407,11 @@ final class EntityRepositoryTest extends TestCase
         }
 
         if (isset($data['limit'])) {
-            $options[QueryServiceOption::LIMIT] = $data['limit'];
+            $options[QueryServiceOption::MAX_RESULTS] = $data['limit'];
         }
 
         if (isset($data['offset'])) {
-            $options[QueryServiceOption::OFFSET] = $data['offset'];
+            $options[QueryServiceOption::FIRST_RESULT] = $data['offset'];
         }
 
         /** @var EntityInterface[]&MockObject[] $collection */

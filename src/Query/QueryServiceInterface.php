@@ -57,34 +57,35 @@ interface QueryServiceInterface
 
     /**
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>                      $options
+     * @param array<string, mixed>       $options
      *
      * @return EntityInterface|array<mixed>|null
      *
      * @throws Exception\QueryServiceException
      */
-    public function getSingleResultOrNull($queryOrBuilder, array $options = []);
+    public function getSingleResultOrNull(object $queryOrBuilder, array $options = []);
 
     /**
-     * Return a new query builder instance.
+     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>       $options
      *
-     * @param string|null $alias The optional query builder alias.
+     * @return int|mixed|string
      *
-     * @return QueryBuilder
+     * @throws Exception\QueryServiceException
      */
-    public function createQueryBuilder(string $alias = null): QueryBuilder;
+    public function getSingleScalarResult(object $queryOrBuilder, array $options = []);
 
     /**
      * Construct and execute the query.
      *
      * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>                      $options
+     * @param array<string, mixed>       $options
      *
      * @return mixed
      *
      * @throws Exception\QueryServiceException
      */
-    public function execute($queryOrBuilder, array $options = []);
+    public function execute(object $queryOrBuilder, array $options = []);
 
     /**
      * Return the result set count.
@@ -94,4 +95,13 @@ interface QueryServiceInterface
      * @return mixed
      */
     public function count(array $criteria);
+
+    /**
+     * Return a new query builder instance.
+     *
+     * @param string|null $alias The optional query builder alias.
+     *
+     * @return QueryBuilder
+     */
+    public function createQueryBuilder(string $alias = null): QueryBuilder;
 }
