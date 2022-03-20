@@ -12,4 +12,4 @@ A Doctrine ORM entity repository implementation.
 
 Installation via [Composer](https://getcomposer.org).
 
-    require alex-patterson-webdev/doctrine-entity-repository ^1
+    require alex-patterson-webdev/doctrine-entity-repository ^2
