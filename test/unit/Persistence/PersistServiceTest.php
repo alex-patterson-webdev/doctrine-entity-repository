@@ -741,11 +741,11 @@ final class PersistServiceTest extends TestCase
      */
     public function testRefreshWillThrowPersistenceExceptionForInvalidEntity(): void
     {
-        $entity = new class() implements EntityInterface {
+        $entity = new class () implements EntityInterface {
             use EntityTrait;
         };
 
-        $entity2 = new class() implements EntityInterface {
+        $entity2 = new class () implements EntityInterface {
             use EntityTrait;
         };
 

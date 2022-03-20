@@ -56,8 +56,8 @@ interface QueryServiceInterface
     public function findMany(array $criteria, array $options = []): iterable;
 
     /**
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return EntityInterface|array<mixed>|null
      *
@@ -66,8 +66,8 @@ interface QueryServiceInterface
     public function getSingleResultOrNull(object $queryOrBuilder, array $options = []);
 
     /**
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return int|mixed|string
      *
@@ -78,8 +78,8 @@ interface QueryServiceInterface
     /**
      * Construct and execute the query.
      *
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return mixed
      *

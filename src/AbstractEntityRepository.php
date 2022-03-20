@@ -350,8 +350,8 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
     /**
      * Execute query builder or query instance and return the results.
      *
-     * @param QueryBuilder|AbstractQuery $query
-     * @param array<mixed>               $options
+     * @param object|QueryBuilder|AbstractQuery $query
+     * @param array<mixed>                      $options
      *
      * @return EntityInterface[]|iterable
      *
@@ -379,7 +379,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
      *
      * Optionally control the object hydration with QueryServiceOption::HYDRATE_MODE.
      *
-     * @param AbstractQuery|QueryBuilder $query
+     * @param object|AbstractQuery|QueryBuilder $query
      * @param array<string, mixed>       $options
      *
      * @return array<mixed>|EntityInterface|null
@@ -399,7 +399,7 @@ abstract class AbstractEntityRepository implements EntityRepositoryInterface
 
             $this->logger->error(
                 $errorMessage,
-                ['exception' => $e, 'entity_name' => $this->entityName, 'dql' => $query->getDQL()]
+                ['exception' => $e, 'entity_name' => $this->entityName]
             );
 
             throw new EntityRepositoryException($errorMessage, $e->getCode(), $e);

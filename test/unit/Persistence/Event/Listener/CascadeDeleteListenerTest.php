@@ -12,7 +12,6 @@ use Arp\DoctrineEntityRepository\Persistence\Event\EntityEvent;
 use Arp\DoctrineEntityRepository\Persistence\Event\Listener\CascadeDeleteListener;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
-use Arp\EventDispatcher\Event\ParametersInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -236,7 +235,7 @@ final class CascadeDeleteListenerTest extends TestCase
     }
 
     /**
-     * @return array|array[]
+     * @return array<mixed>
      */
     public function getCascadeDeleteData(): array
     {

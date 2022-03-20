@@ -8,6 +8,7 @@ use Arp\DoctrineEntityRepository\Exception\EntityRepositoryException;
 use Arp\DoctrineEntityRepository\Persistence\Exception\PersistenceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
@@ -35,7 +36,9 @@ class CascadeDeleteService extends AbstractCascadeService
         $deleteOptions = array_replace_recursive($this->options, $deleteOptions);
         $deleteCollectionOptions = array_replace_recursive($this->collectionOptions, $deleteCollectionOptions);
 
+        /** @var ClassMetadata<EntityInterface> $classMetadata */
         $classMetadata = $this->getClassMetadata($entityManager, $entityName);
+
         /** @var array<string, mixed> $mappings */
         $mappings = $classMetadata->getAssociationMappings();
 
@@ -66,11 +69,14 @@ class CascadeDeleteService extends AbstractCascadeService
                 )
             );
 
+            /** @var ClassMetadata<EntityInterface> $targetMetadata */
+            $targetMetadata = $this->getClassMetadata($entityManager, $mapping['targetEntity']);
+
             $targetEntityOrCollection = $this->resolveTargetEntityOrCollection(
                 $entity,
                 $mapping['fieldName'],
                 $classMetadata,
-                $this->getClassMetadata($entityManager, $mapping['targetEntity'])
+                $targetMetadata
             );
 
             if (!$this->isValidAssociation($targetEntityOrCollection, $mapping)) {

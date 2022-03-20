@@ -9,9 +9,9 @@ use Arp\DoctrineEntityRepository\Query\Exception\QueryServiceException;
 use Arp\Entity\EntityInterface;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\TransactionRequiredException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -21,7 +21,7 @@ use Psr\Log\LoggerInterface;
 class QueryService implements QueryServiceInterface
 {
     /**
-     * @var string
+     * @var class-string
      */
     protected string $entityName;
 
@@ -36,7 +36,7 @@ class QueryService implements QueryServiceInterface
     protected LoggerInterface $logger;
 
     /**
-     * @param string                 $entityName
+     * @param class-string           $entityName
      * @param EntityManagerInterface $entityManager
      * @param LoggerInterface        $logger
      */
@@ -56,8 +56,8 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return EntityInterface|null|array<mixed>
      *
@@ -83,8 +83,8 @@ class QueryService implements QueryServiceInterface
     }
 
     /**
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return int|mixed|string
      *
@@ -111,8 +111,8 @@ class QueryService implements QueryServiceInterface
     /**
      * Construct and execute the query.
      *
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
-     * @param array<string, mixed>       $options
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param array<string, mixed>              $options
      *
      * @return mixed
      *
@@ -218,9 +218,9 @@ class QueryService implements QueryServiceInterface
      *
      * @param array<string, mixed> $criteria
      *
-     * @return mixed
+     * @return int
      */
-    public function count(array $criteria)
+    public function count(array $criteria): int
     {
         $unitOfWork = $this->entityManager->getUnitOfWork();
 
@@ -264,6 +264,8 @@ class QueryService implements QueryServiceInterface
      * @param array<string, mixed> $options
      *
      * @return AbstractQuery
+     *
+     * @throws QueryServiceException
      */
     protected function prepareQuery(AbstractQuery $query, array $options = []): AbstractQuery
     {
@@ -285,17 +287,17 @@ class QueryService implements QueryServiceInterface
             }
         }
 
-        if (isset($options[QueryServiceOption::FETCH_MODE])) {
-            $query->setFetchMode($options[QueryServiceOption::FETCH_MODE]);
-        }
-
         if ($query instanceof Query) {
             if (!empty($options[QueryServiceOption::DQL])) {
                 $query->setDQL($options[QueryServiceOption::DQL]);
             }
 
             if (isset($options[QueryServiceOption::LOCK_MODE])) {
-                $query->setLockMode($options[QueryServiceOption::LOCK_MODE]);
+                try {
+                    $query->setLockMode($options[QueryServiceOption::LOCK_MODE]);
+                } catch (TransactionRequiredException $e) {
+                    throw new QueryServiceException($e->getMessage(), $e->getCode(), $e);
+                }
             }
         }
 
@@ -323,22 +325,23 @@ class QueryService implements QueryServiceInterface
     /**
      * Resolve the ORM Query instance for a QueryBuilder and set the optional $options
      *
-     * @param AbstractQuery|QueryBuilder $queryOrBuilder
+     * @param object|AbstractQuery|QueryBuilder $queryOrBuilder
      * @param array<mixed>               $options
      *
      * @return AbstractQuery
      *
      * @throws QueryServiceException
      */
-    private function getQuery($queryOrBuilder, array $options = []): AbstractQuery
+    private function getQuery(object $queryOrBuilder, array $options = []): AbstractQuery
     {
         if (!$queryOrBuilder instanceof AbstractQuery && !$queryOrBuilder instanceof QueryBuilder) {
             throw new QueryServiceException(
                 sprintf(
-                    'The queryOrBuilder argument must be an object of type \'%s\' or \'%s\'; \'%s\' provided in \'%s\'.',
+                    'The queryOrBuilder argument must be an object of type '
+                    . '\'%s\' or \'%s\'; \'%s\' provided in \'%s\'.',
                     AbstractQuery::class,
                     QueryBuilder::class,
-                    (is_object($queryOrBuilder) ? get_class($queryOrBuilder) : gettype($queryOrBuilder)),
+                    get_class($queryOrBuilder),
                     __METHOD__
                 )
             );

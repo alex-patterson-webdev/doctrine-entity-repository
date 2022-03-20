@@ -45,9 +45,9 @@ abstract class AbstractCascadeService
     ];
 
     /**
-     * @param LoggerInterface      $logger
-     * @param array<mixed> $options
-     * @param array<mixed> $collectionOptions
+     * @param LoggerInterface $logger
+     * @param array<mixed>    $options
+     * @param array<mixed>    $collectionOptions
      */
     public function __construct(LoggerInterface $logger, array $options = [], array $collectionOptions = [])
     {
@@ -109,10 +109,10 @@ abstract class AbstractCascadeService
     }
 
     /**
-     * @param EntityInterface $sourceEntity
-     * @param string          $fieldName
-     * @param ClassMetadata   $sourceMetadata
-     * @param ClassMetadata   $targetMetadata
+     * @param EntityInterface                $sourceEntity
+     * @param string                         $fieldName
+     * @param ClassMetadata<EntityInterface> $sourceMetadata
+     * @param ClassMetadata<EntityInterface> $targetMetadata
      *
      * @return EntityInterface|EntityInterface[]|iterable
      *
@@ -161,7 +161,7 @@ abstract class AbstractCascadeService
 
     /**
      * @param iterable<EntityInterface>|EntityInterface|mixed|null $entityOrCollection
-     * @param array<mixed>                                 $mapping
+     * @param array<mixed>                                         $mapping
      *
      * @return bool
      */
@@ -171,10 +171,10 @@ abstract class AbstractCascadeService
             /**
              * @todo mapping class has a methods to fetch the id field mapping directly
              *
-             * Note that we are hard coding the '0' key as the single field the we use as the id/primary key.
+             * Note that we are hard coding the '0' key as the single field to use as the id/primary key.
              * If we implement EntityInterface correctly we will never have a composite key.
              */
-            return isset($mapping['joinColumns'][0]['nullable']) && (bool)$mapping['joinColumns'][0]['nullable'];
+            return isset($mapping['joinColumns'][0]['nullable']) && $mapping['joinColumns'][0]['nullable'];
         }
 
         return (is_iterable($entityOrCollection) || $entityOrCollection instanceof EntityInterface);
@@ -184,7 +184,7 @@ abstract class AbstractCascadeService
      * @param EntityManagerInterface $entityManager
      * @param string                 $entityName
      *
-     * @return ClassMetadata
+     * @return ClassMetadata<EntityInterface|object>
      *
      * @throws PersistenceException
      */

@@ -229,7 +229,7 @@ final class CascadeSaveListenerTest extends TestCase
     }
 
     /**
-     * @return array|array[]
+     * @return array<mixed>
      */
     public function getCascadeSaveData(): array
     {

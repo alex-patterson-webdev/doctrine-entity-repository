@@ -12,12 +12,14 @@ use Arp\Entity\EntityInterface;
 use Arp\Entity\EntityTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\Persistence\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * @covers \Arp\DoctrineEntityRepository\Persistence\CascadeSaveService
+ *
  * @author  Alex Patterson <alex.patterson.webdev@gmail.com>
  * @package ArpTest\DoctrineEntityRepository\Persistence
  */
@@ -355,7 +357,7 @@ final class CascadeSaveServiceTest extends TestCase
         $exceptionMessage = 'This is a test exception message';
         $exception = new \Exception($exceptionMessage, 123);
 
-        $errorMessage = $errorMessage = sprintf(
+        $errorMessage = sprintf(
             'The entity metadata mapping for class \'%s\' could not be loaded: %s',
             $entityName,
             $exceptionMessage
@@ -393,10 +395,10 @@ final class CascadeSaveServiceTest extends TestCase
         /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
-        /** @var ClassMetadata&MockObject $classMetadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $classMetadata */
         $classMetadata = $this->createMock(ClassMetadata::class);
 
-        /** @var ClassMetadata&MockObject $targetMetadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $mapping = [
@@ -480,7 +482,7 @@ final class CascadeSaveServiceTest extends TestCase
         $exception = new \Exception($exceptionMessage);
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = new class($exception) implements EntityInterface {
+        $entity = new class ($exception) implements EntityInterface {
             use EntityTrait;
 
             public \Throwable $exception;
@@ -497,10 +499,11 @@ final class CascadeSaveServiceTest extends TestCase
         };
 
         /**
-         * @var ClassMetadata&MockObject $classMetadata
-         * @var ClassMetadata&MockObject $targetMetadata
+         * @var ClassMetadata<EntityInterface>&MockObject $classMetadata
          */
         $classMetadata = $this->createMock(ClassMetadata::class);
+
+        /** @var ClassMetadata<EntityInterface>&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $mapping = [
@@ -595,7 +598,7 @@ final class CascadeSaveServiceTest extends TestCase
         /** @var EntityInterface&MockObject $entity */
         $entity = $this->getMockForAbstractClass(EntityInterface::class);
 
-        /** @var ClassMetadata&MockObject $classMetadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $classMetadata */
         $classMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->once())
@@ -677,7 +680,7 @@ final class CascadeSaveServiceTest extends TestCase
         $mappingData['fieldName'] = 'foo';
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = new class($returnValue) implements EntityInterface {
+        $entity = new class ($returnValue) implements EntityInterface {
             use EntityTrait;
 
             /**
@@ -702,10 +705,10 @@ final class CascadeSaveServiceTest extends TestCase
             }
         };
 
-        /** @var ClassMetadata&MockObject $metadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $metadata */
         $metadata = $this->createMock(ClassMetadata::class);
 
-        /** @var ClassMetadata&MockObject $targetMetadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->exactly(2))
@@ -828,7 +831,7 @@ final class CascadeSaveServiceTest extends TestCase
         $mappingData['fieldName'] = 'foo';
 
         /** @var EntityInterface&MockObject $entity */
-        $entity = new class($returnValue) implements EntityInterface {
+        $entity = new class ($returnValue) implements EntityInterface {
             use EntityTrait;
 
             /**
@@ -853,10 +856,10 @@ final class CascadeSaveServiceTest extends TestCase
             }
         };
 
-        /** @var ClassMetadata&MockObject $metadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $metadata */
         $metadata = $this->createMock(ClassMetadata::class);
 
-        /** @var ClassMetadata&MockObject $targetMetadata */
+        /** @var ClassMetadata<EntityInterface>&MockObject $targetMetadata */
         $targetMetadata = $this->createMock(ClassMetadata::class);
 
         $this->entityManager->expects($this->exactly(2))

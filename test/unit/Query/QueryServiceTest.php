@@ -26,7 +26,7 @@ use Psr\Log\LoggerInterface;
 final class QueryServiceTest extends TestCase
 {
     /**
-     * @var string
+     * @var class-string
      */
     private string $entityName;
 
@@ -319,7 +319,7 @@ final class QueryServiceTest extends TestCase
     }
 
     /**
-     * Assert that if we provide a invalid query object to execute() a QueryServiceException will be thrown
+     * Assert that if we provide an invalid query object to execute() a QueryServiceException will be thrown
      *
      * @throws QueryServiceException
      */
@@ -332,11 +332,13 @@ final class QueryServiceTest extends TestCase
         $this->expectException(QueryServiceException::class);
         $this->expectExceptionMessage(
             sprintf(
-                'Query provided must be of type \'%s\'; \'%s\' provided in \'%s::%s\'.',
+                'The queryOrBuilder argument must be an object of type '
+                . '\'%s\' or \'%s\'; \'%s\' provided in \'%s::%s\'.',
                 AbstractQuery::class,
+                QueryBuilder::class,
                 get_class($invalidQuery),
                 QueryService::class,
-                'execute'
+                'getQuery'
             )
         );
 
